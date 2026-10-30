@@ -1,21 +1,25 @@
 """本地判題：跑解答、比對輸出、對拍。判對錯只看測資，不看任何 AI 的意見。"""
 from __future__ import annotations
 
+import os
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Optional
+from typing import List, NamedTuple, Optional
 
-AC, WA, PE, TLE, RE, CE = "AC", "WA", "PE", "TLE", "RE", "CE"
+AC, WA, PE, TLE, RE, CE, MLE = "AC", "WA", "PE", "TLE", "RE", "CE", "MLE"
 VERDICT_ZH = {
     AC: "通過", WA: "答案錯誤", PE: "格式錯誤（內容對但空白／換行不同）",
-    TLE: "超過時間", RE: "執行時錯誤", CE: "語法錯誤",
+    TLE: "超過時間", RE: "執行時錯誤", CE: "語法錯誤", MLE: "記憶體超過上限",
 }
-FAILS = (WA, PE, TLE, RE, CE)
+FAILS = (WA, PE, TLE, RE, CE, MLE)
+DEFAULT_MEM_MB = 1024
+OUT_LIMIT_MB = 32
 
 
 @dataclass
@@ -84,16 +88,116 @@ def prepare(path: Path):
     return [str(exe)], tmp, None
 
 
-def run_program(path: Path, stdin_text: str, timeout: float, cmd=None):
-    start = time.perf_counter()
+class RunResult(NamedTuple):
+    rc: Optional[int]
+    out: str
+    err: str
+    elapsed: float
+    timed_out: bool
+    mle: bool = False
+    ole: bool = False
+
+
+# POSIX：在 exec 之前設定資源上限（不用 preexec_fn：多執行緒的網頁伺服器下不安全）。
+_LAUNCH = (
+    "import os,sys,resource\n"
+    "m=int(sys.argv[1])*1048576; f=int(sys.argv[2])*1048576\n"
+    "for k,v in ((resource.RLIMIT_AS,m),(resource.RLIMIT_FSIZE,f)):\n"
+    "    try: resource.setrlimit(k,(v,v))\n"
+    "    except Exception: pass\n"
+    "os.execvp(sys.argv[3], sys.argv[3:])\n"
+)
+
+
+def _win_limit(proc, mem_mb: int) -> None:
+    """Windows：用 Job Object 限制單一行程的記憶體（盡力而為；失敗就不限制）。尚未在真實 Windows 上驗證，見 CI。"""
     try:
-        proc = subprocess.run(cmd or [sys.executable, str(path)], input=stdin_text.encode("utf-8"),
-                              capture_output=True, timeout=timeout)
-    except subprocess.TimeoutExpired as e:
-        return None, (e.stdout or b"").decode("utf-8", "replace"), "", timeout, True
-    elapsed = time.perf_counter() - start
-    return (proc.returncode, proc.stdout.decode("utf-8", "replace"),
-            proc.stderr.decode("utf-8", "replace"), elapsed, False)
+        import ctypes
+        from ctypes import wintypes as w
+
+        class BASIC(ctypes.Structure):
+            _fields_ = [("PerProcessUserTimeLimit", ctypes.c_int64), ("PerJobUserTimeLimit", ctypes.c_int64),
+                        ("LimitFlags", w.DWORD), ("MinimumWorkingSetSize", ctypes.c_size_t), ("MaximumWorkingSetSize", ctypes.c_size_t),
+                        ("ActiveProcessLimit", w.DWORD), ("Affinity", ctypes.c_size_t), ("PriorityClass", w.DWORD), ("SchedulingClass", w.DWORD)]
+
+        class IOC(ctypes.Structure):
+            _fields_ = [(n, ctypes.c_uint64) for n in ("ReadOps", "WriteOps", "OtherOps", "ReadBytes", "WriteBytes", "OtherBytes")]
+
+        class EXT(ctypes.Structure):
+            _fields_ = [("Basic", BASIC), ("Io", IOC), ("ProcessMemoryLimit", ctypes.c_size_t), ("JobMemoryLimit", ctypes.c_size_t),
+                        ("PeakProcessMemoryUsed", ctypes.c_size_t), ("PeakJobMemoryUsed", ctypes.c_size_t)]
+        k32 = ctypes.windll.kernel32
+        job = k32.CreateJobObjectW(None, None)
+        info = EXT()
+        info.Basic.LimitFlags = 0x100 | 0x2000          # PROCESS_MEMORY | KILL_ON_JOB_CLOSE
+        info.ProcessMemoryLimit = mem_mb * 1048576
+        k32.SetInformationJobObject(job, 9, ctypes.byref(info), ctypes.sizeof(info))
+        k32.AssignProcessToJobObject(job, int(proc._handle))
+        proc._cpe_job = job                              # 保持參照，行程結束後才關閉
+    except Exception:
+        pass
+
+
+def _kill(proc) -> None:
+    try:
+        if os.name == "posix":
+            os.killpg(proc.pid, signal.SIGKILL)
+        else:
+            proc.kill()
+    except (ProcessLookupError, PermissionError, OSError):
+        pass
+
+
+def run_program(path: Path, stdin_text: str, timeout: float, cmd=None, mem_mb: int = DEFAULT_MEM_MB) -> RunResult:
+    """在資源上限下執行：時間、記憶體（POSIX 用 RLIMIT_AS、Windows 用 Job Object）、輸出大小。
+    輸出走暫存檔而不是管線，所以無窮輸出不會撐爆記憶體；超過上限就強制結束。"""
+    cmd = list(cmd or [sys.executable, str(path)])
+    cap = OUT_LIMIT_MB * 1048576
+    with tempfile.TemporaryDirectory(prefix="cpe-run-") as d:
+        fin, fout, ferr = Path(d) / "in", Path(d) / "out", Path(d) / "err"
+        fin.write_bytes(stdin_text.encode("utf-8"))
+        kw = {}
+        if os.name == "posix":
+            cmd = [sys.executable, "-c", _LAUNCH, str(mem_mb), str(OUT_LIMIT_MB)] + cmd
+            kw["start_new_session"] = True
+        else:
+            kw["creationflags"] = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+        timed_out = ole = False
+        with open(fin, "rb") as si, open(fout, "wb") as so, open(ferr, "wb") as se:
+            start = time.perf_counter()
+            proc = subprocess.Popen(cmd, stdin=si, stdout=so, stderr=se, **kw)
+            if os.name != "posix":
+                _win_limit(proc, mem_mb)
+            while True:
+                try:
+                    proc.wait(timeout=0.02)
+                    break
+                except subprocess.TimeoutExpired:
+                    pass
+                if time.perf_counter() - start > timeout:
+                    timed_out = True
+                    _kill(proc)
+                    proc.wait()
+                    break
+                if fout.stat().st_size > cap:
+                    ole = True
+                    _kill(proc)
+                    proc.wait()
+                    break
+            elapsed = time.perf_counter() - start
+        rc = proc.returncode
+        if fout.stat().st_size >= cap:                    # 寫到上限就被作業系統擋下（Python 會得到 OSError）
+            ole = True
+        with open(fout, "rb") as f:
+            out = f.read(cap).decode("utf-8", "replace")
+        with open(ferr, "rb") as f:
+            err = f.read(65536).decode("utf-8", "replace")
+    if os.name == "posix" and rc == -signal.SIGXFSZ:
+        ole = True
+    mle = (not timed_out) and rc not in (0, None) and ("MemoryError" in err or "bad_alloc" in err or "std::bad_alloc" in err)
+    if ole:
+        err = (err + "\n輸出超過 %d MB，已強制結束。" % OUT_LIMIT_MB).strip()
+    return RunResult(None if timed_out else rc, out, err, timeout if timed_out else elapsed, timed_out, mle, ole)
 
 
 def find_cases(tests_dir: Path):
@@ -103,7 +207,7 @@ def find_cases(tests_dir: Path):
     return [(f, f.with_suffix(".out")) for f in sorted(tests_dir.glob("*.in")) if f.with_suffix(".out").exists()]
 
 
-def judge(solution: Path, tests_dir: Path, timeout: float = 3.0) -> JudgeResult:
+def judge(solution: Path, tests_dir: Path, timeout: float = 3.0, mem_mb: int = DEFAULT_MEM_MB) -> JudgeResult:
     if not solution.exists():
         return JudgeResult(CE, message=f"找不到解答檔 {solution}", setup_error=True)
     cases = find_cases(tests_dir)
@@ -122,14 +226,16 @@ def judge(solution: Path, tests_dir: Path, timeout: float = 3.0) -> JudgeResult:
         for fin, fout in cases:
             inp = fin.read_text(encoding="utf-8")
             exp = fout.read_text(encoding="utf-8")
-            rc, out, err_text, secs, timed_out = run_program(solution, inp, timeout, cmd)
-            if timed_out:
+            r = run_program(solution, inp, timeout, cmd, mem_mb)
+            if r.timed_out:
                 v = TLE
-            elif rc != 0:
+            elif r.mle:
+                v = MLE
+            elif r.rc != 0:
                 v = RE
             else:
-                v = compare(out, exp)
-            results.append(CaseResult(fin.stem, v, secs, inp, exp, out, err_text))
+                v = compare(r.out, exp)
+            results.append(CaseResult(fin.stem, v, r.elapsed, inp, exp, r.out, r.err))
     finally:
         if tmp:
             shutil.rmtree(tmp, ignore_errors=True)
@@ -149,16 +255,18 @@ def stress(solution: Path, brute: Path, gen: Path, rounds: int, timeout: float =
             if g.returncode != 0:
                 raise RuntimeError(f"產生器失敗：{g.stderr.decode('utf-8', 'replace')[-300:]}")
             inp = g.stdout.decode("utf-8")
-            rc_b, out_b, _, _, to_b = run_program(brute, inp, timeout, cmd_b)
-            if to_b or rc_b != 0:
+            rb = run_program(brute, inp, timeout, cmd_b)
+            if rb.timed_out or rb.rc != 0:
                 raise RuntimeError("暴力解本身執行失敗或超時，請先修好暴力解")
-            rc_s, out_s, _, _, to_s = run_program(solution, inp, timeout, cmd_s)
-            if to_s:
-                return seed, inp, out_b, out_s, TLE
-            if rc_s != 0:
-                return seed, inp, out_b, out_s, RE
-            if out_s.split() != out_b.split():
-                return seed, inp, out_b, out_s, WA
+            rs = run_program(solution, inp, timeout, cmd_s)
+            if rs.timed_out:
+                return seed, inp, rb.out, rs.out, TLE
+            if rs.mle:
+                return seed, inp, rb.out, rs.out, MLE
+            if rs.rc != 0:
+                return seed, inp, rb.out, rs.out, RE
+            if rs.out.split() != rb.out.split():
+                return seed, inp, rb.out, rs.out, WA
         return None
     finally:
         for t in (tmp_s, tmp_b):

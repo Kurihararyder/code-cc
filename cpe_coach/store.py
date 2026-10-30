@@ -1,17 +1,20 @@
 """工作區：狀態、事件紀錄、設定。全部存成純文字 JSON，方便備份與 git。"""
 from __future__ import annotations
 
+import contextlib
 import json
 import os
+import threading
 import time
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, Iterator, Optional
 
 CPE_DIR = ".cpe"
 DEFAULT_CONFIG: Dict[str, Any] = {
     "start_date": None,   # YYYY-MM-DD，init 時填入
     "stage": 0,           # 目前所在階段 0–5
     "timeout_sec": 3.0,   # 本地判題每筆測資時限
+    "memory_mb": 1024,    # 單一程式的記憶體上限（POSIX 用 RLIMIT_AS；macOS 不一定強制）
     "provider": None,     # openai / anthropic；None 代表依環境變數自動偵測
     "model": None,
 }
@@ -21,10 +24,71 @@ class WorkspaceError(Exception):
     pass
 
 
+class _FileLock:
+    """跨程序鎖（CLI 與網頁介面同時寫同一個工作區時，序列化讀改寫）。
+    POSIX 用 flock；Windows 用 msvcrt.locking（尚未在真實 Windows 驗證，見 CI）。"""
+
+    def __init__(self, path: Path, timeout: float = 30.0):
+        self.path, self.timeout, self.fd = path, timeout, None
+
+    def acquire(self) -> None:
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self.fd = open(self.path, "a+")
+        deadline = time.time() + self.timeout
+        while True:
+            try:
+                if os.name == "posix":
+                    import fcntl
+                    fcntl.flock(self.fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                else:
+                    import msvcrt
+                    self.fd.seek(0)
+                    msvcrt.locking(self.fd.fileno(), msvcrt.LK_NBLCK, 1)
+                return
+            except OSError:
+                if time.time() > deadline:
+                    self.fd.close()
+                    self.fd = None
+                    raise WorkspaceError("另一個 cpe 程序（例如網頁介面）正在寫入這個工作區，等了 %d 秒仍未釋放。請稍後再試。" % self.timeout)
+                time.sleep(0.05)
+
+    def release(self) -> None:
+        if self.fd is None:
+            return
+        try:
+            if os.name == "posix":
+                import fcntl
+                fcntl.flock(self.fd, fcntl.LOCK_UN)
+            else:
+                import msvcrt
+                self.fd.seek(0)
+                msvcrt.locking(self.fd.fileno(), msvcrt.LK_UNLCK, 1)
+        finally:
+            self.fd.close()
+            self.fd = None
+
+
 class Workspace:
     def __init__(self, root: Path, clock: Callable[[], float] = time.time):
         self.root = Path(root)
         self.clock = clock
+
+    # ---- 鎖 ----
+    @contextlib.contextmanager
+    def lock(self, timeout: float = 30.0) -> Iterator[None]:
+        """可重入（同一執行緒巢狀不會死鎖）。"""
+        tl = self.__dict__.setdefault("_tl", threading.local())
+        depth = getattr(tl, "depth", 0)
+        if depth == 0:
+            tl.flock = _FileLock(self.meta / "lock", timeout)
+            tl.flock.acquire()
+        tl.depth = depth + 1
+        try:
+            yield
+        finally:
+            tl.depth -= 1
+            if tl.depth == 0:
+                tl.flock.release()
 
     # ---- 位置 ----
     @property
@@ -94,15 +158,49 @@ class Workspace:
 
     @staticmethod
     def _write(path: Path, data: Any) -> None:
+        """原子寫入；覆蓋前把舊檔留成 .bak，之後若檔案壞掉可以救回。"""
         tmp = path.with_suffix(path.suffix + ".tmp")
         tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+        if path.exists():
+            try:
+                bak = path.with_suffix(path.suffix + ".bak")
+                bak.write_bytes(path.read_bytes())
+            except OSError:
+                pass
         tmp.replace(path)
 
     @staticmethod
     def _read(path: Path, default: Any) -> Any:
         if not path.exists():
             return default
-        return json.loads(path.read_text(encoding="utf-8"))
+        try:
+            return json.loads(path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            bak = path.with_suffix(path.suffix + ".bak")
+            if bak.exists():
+                try:
+                    data = json.loads(bak.read_text(encoding="utf-8"))
+                    path.replace(path.with_suffix(path.suffix + ".corrupt-%d" % int(time.time())))
+                    path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+                    note = path.parent / "recovered.txt"
+                    with note.open("a", encoding="utf-8") as f:
+                        f.write("%s：%s 損壞，已用上一個版本（.bak）還原\n" % (time.strftime("%Y-%m-%d %H:%M:%S"), path.name))
+                    return data
+                except (json.JSONDecodeError, UnicodeDecodeError):
+                    pass
+            raise WorkspaceError("%s 損壞而且沒有可用的備份。可以用 cpe restore 還原備份檔，或把它改名後重新開始。" % path)
+
+    def snapshot_state(self, every: float = 3600.0, keep: int = 24) -> None:
+        """每小時最多一份、保留最近 24 份的 state.json 快照。"""
+        d = self.meta / "backups"
+        d.mkdir(exist_ok=True)
+        snaps = sorted(d.glob("state-*.json"))
+        if snaps and time.time() - snaps[-1].stat().st_mtime < every:
+            return
+        if self.state_path.exists():
+            (d / ("state-%s.json" % time.strftime("%Y%m%d-%H%M%S", time.localtime(self.now())))).write_bytes(self.state_path.read_bytes())
+        for old in sorted(d.glob("state-*.json"))[:-keep]:
+            old.unlink()
 
     # ---- 設定 / 狀態 ----
     def now(self) -> float:
@@ -126,6 +224,10 @@ class Workspace:
 
     def save_state(self, st: Dict[str, Any]) -> None:
         self._write(self.state_path, st)
+        try:
+            self.snapshot_state()
+        except OSError:
+            pass
 
     # ---- 考試 ----
     def exam(self) -> Optional[Dict[str, Any]]:
@@ -152,10 +254,14 @@ class Workspace:
         if not self.events_path.exists():
             return []
         out = []
-        for line in self.events_path.read_text(encoding="utf-8").splitlines():
+        for line in self.events_path.read_text(encoding="utf-8", errors="replace").splitlines():
             line = line.strip()
-            if line:
+            if not line:
+                continue
+            try:
                 out.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue                       # 寫到一半被中斷的最後一行，略過即可
         return out
 
     def problem(self, st: Dict[str, Any], pid: str) -> Dict[str, Any]:

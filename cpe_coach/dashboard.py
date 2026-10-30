@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 
 from . import bank as bank_mod
 from . import course as course_mod
-from . import mock, srs, stats
+from . import mock, pastexams, srs, stats
 from .judge import VERDICT_ZH
 from .store import Workspace
 
@@ -105,12 +105,16 @@ def dashboard(ws: Workspace, bank: Dict[str, dict], course: Dict[str, Any], ai: 
     }
 
 
-def exam_view(ws: Workspace, exam: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+def exam_view(ws: Workspace, exam: Optional[Dict[str, Any]], bank: Optional[Dict[str, dict]] = None) -> Optional[Dict[str, Any]]:
     if not exam:
         return None
+    bank = bank if bank is not None else bank_mod.load_bank(ws)
+    board = mock.scoreboard(exam, bank, pastexams.load_all(ws)["distribution"])
+    rows = {r["id"]: r for r in board["rows"]}
     return {"kind": exam["kind"], "minutes": exam["minutes"], "left": int(mock.remaining_seconds(exam, ws.now())),
-            "lang": exam.get("lang", "py"), "gate": exam.get("gate"),
-            "problems": [{"id": pid, "wrong": r["wrong"], "solved": r["ac_min"] is not None, "ac_min": r["ac_min"]}
+            "lang": exam.get("lang", "py"), "gate": exam.get("gate"), "past": exam.get("past"), "board": board,
+            "problems": [{"id": pid, "wrong": r["wrong"], "solved": r["ac_min"] is not None, "ac_min": r["ac_min"],
+                          "title": rows[pid]["title"], "stars": rows[pid]["stars"], "accuracy": rows[pid]["accuracy"]}
                          for pid, r in exam["results"].items()]}
 
 

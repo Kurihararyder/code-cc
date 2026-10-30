@@ -1,0 +1,24 @@
+{
+  "_note": "只收錄研究報告（docs/research-report.md §1.4）明確列出的資料。題號（uva）是我憑記憶對應的，未逐一核對，所以 uva_verified=false；請以官網為準，用 cpe past import 覆蓋。這個沙盒連不上 CPE 官網，所以沒有其他場次。",
+  "exams": [
+    {"date": "2020-10-20", "avg_solved": 1.09, "source": "report §1.4（CPE 官網 test_data/2020-10-20）",
+     "problems": [
+       {"order": 1, "title": "Hartals", "uva": 10050, "accuracy": 37.94, "uva_verified": false},
+       {"order": 2, "title": "The Decoder", "uva": 458, "accuracy": 44.95, "uva_verified": false},
+       {"order": 3, "title": "Basically Speaking", "uva": 389, "accuracy": 17.94, "uva_verified": false},
+       {"order": 4, "title": "Graphical Editor", "uva": 10267, "accuracy": 3.62, "uva_verified": false},
+       {"order": 5, "title": "Is It A Tree?", "uva": 615, "accuracy": 3.17, "uva_verified": false},
+       {"order": 6, "title": "Stamps", "uva": null, "accuracy": 0.96, "uva_verified": false},
+       {"order": 7, "title": "String Theory", "uva": null, "accuracy": 0.09, "uva_verified": false}
+     ]},
+    {"date": "2025-03-25", "avg_solved": 1.5, "source": "report §1.4", "problems": []},
+    {"date": "2025-09-30", "avg_solved": 1.31, "source": "report §1.4", "problems": []},
+    {"date": "2025-12-09", "avg_solved": 1.08, "source": "report §1.4", "problems": []},
+    {"date": "2026-03-24", "avg_solved": 0.65, "source": "report §1.4", "problems": []},
+    {"date": "2026-05-26", "avg_solved": 0.75, "source": "report §1.4", "problems": []}
+  ],
+  "distribution": {
+    "_note": "2015/03–2024/12 累計，答對題數 → 考生比例（%）。出處：研究報告 §1.4（yuihuang.com 彙整，非官方直接公布）。",
+    "0": 38.7, "1": 28.0, "2": 18.2, "3": 9.3, "4": 3.8, "5": 1.3, "6": 0.5, "7": 0.2
+  }
+}

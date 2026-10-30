@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from . import bank as bank_mod
-from . import mock
+from . import mock, pastexams
 from .store import Workspace
 
 DATA = Path(__file__).parent / "data" / "course.json"
@@ -122,11 +122,45 @@ def evaluate_gate(ws: Workspace, course: Dict[str, Any], summary: Dict[str, Any]
             "建議：用提示階梯檢討沒做出的題目，24 小時後再 cpe gate。")
 
 
-def start_mock(ws: Workspace, bank: Dict[str, dict], kind: str, lang: str = "py", every_stage: bool = False) -> Dict[str, Any]:
-    """模擬考／每週測驗。只會出已有測資的題目（內建練習題，或你匯入過的題）。"""
+def _english(ws: Workspace, pid: str) -> bool:
+    from .service import statement_is_english
+    for x in ("txt", "md"):
+        f = ws.root / "statements" / f"{pid}.{x}"
+        if f.exists():
+            return statement_is_english(f.read_text(encoding="utf-8", errors="replace"))
+    return False
+
+
+def start_mock(ws: Workspace, bank: Dict[str, dict], kind: str, lang: str = "py", every_stage: bool = False, real: bool = False) -> Dict[str, Any]:
+    """模擬考／每週測驗。只會出已有測資的題目（內建練習題，或你匯入過的題）。
+    real=True：比照考場，只出有英文題目文字的題（內建練習題是中文，所以會被排除）。"""
     cap = 9 if every_stage else max(int(ws.config()["stage"]), 1)
     avail = {pid: p for pid, p in bank.items() if bank_mod.is_drill(pid) or any((ws.tests / pid).glob("*.in"))}
+    if real:
+        avail = {pid: p for pid, p in avail.items() if not bank_mod.is_drill(pid) and _english(ws, pid)}
+        need = 7 if kind == "mock" else 3
+        if len(avail) < need:
+            raise ValueError(f"『比照考場』需要至少 {need} 題「有英文題目文字、也有測資」的題目，目前只有 {len(avail)} 題。"
+                             "請先匯入歷屆題目（cpe past statements <資料夾>），或取消『比照考場』。")
+        cap = 9
     exam = mock.start(ws, avail, kind, lang=lang, max_stage=cap)
     for pid in exam["problems"]:
         bank_mod.install_drill(ws, pid)
     return exam
+
+
+def start_past(ws: Workspace, bank: Dict[str, dict], date: str, lang: str = "py", partial: bool = False) -> Dict[str, Any]:
+    """歷屆整場：照原本的題序出同一場的題目，180 分鐘，ICPC 計分，AI／提示鎖定。"""
+    data = pastexams.load_all(ws)
+    e = next((x for x in data["exams"] if x["date"] == date), None)
+    if not e or not e["problems"]:
+        raise ValueError(f"沒有 {date} 這場的題目資料。用 cpe past import 匯入，或看 cpe past list。")
+    view = pastexams.exam_view(ws, bank, e)
+    missing = [p for p in view["problems"] if not p["has_tests"]]
+    if missing and not partial:
+        raise ValueError(f"{date} 有 {len(missing)} 題還沒有測資：" + "、".join(f"第 {p['order']} 題 {p['title']}" for p in missing)
+                         + "。先匯入題目（cpe past statements <資料夾>），或選『只出已有測資的題目』。")
+    ids = [p["id"] for p in view["problems"] if p["has_tests"]]
+    if not ids:
+        raise ValueError("這場一題都還沒有測資，無法開始。")
+    return mock.start(ws, bank, "past", ids=ids, minutes=180, lang=lang, past=date)

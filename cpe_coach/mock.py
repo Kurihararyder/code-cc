@@ -63,9 +63,10 @@ def pick_by_difficulty(bank: Dict[str, dict], difficulties: List[int], st: Dict[
     return chosen
 
 
-def pick_weekly(st: Dict[str, Any], n: int = WEEKLY_COUNT) -> List[str]:
-    """挑最久沒碰的已通過題目，從空白檔重寫。"""
-    solved = [(p["last_pass"] or 0, pid) for pid, p in st["problems"].items() if p["first_pass"] is not None]
+def pick_weekly(st: Dict[str, Any], n: int = WEEKLY_COUNT, allowed: Optional[Any] = None) -> List[str]:
+    """挑最久沒碰的已通過題目，從空白檔重寫。allowed：只從這些題號裡挑（例如比照考場時只留英文題）。"""
+    solved = [(p["last_pass"] or 0, pid) for pid, p in st["problems"].items()
+              if p["first_pass"] is not None and (allowed is None or pid in allowed)]
     solved.sort()
     return [pid for _, pid in solved[:n]]
 
@@ -76,17 +77,18 @@ def _stamp(ts: float) -> str:
 
 def start(ws: Workspace, bank: Dict[str, dict], kind: str, rng: Optional[random.Random] = None, *,
           ids: Optional[List[str]] = None, minutes: Optional[int] = None, lang: str = "py",
-          gate: Optional[Dict[str, Any]] = None, max_stage: int = 9) -> Dict[str, Any]:
-    """kind: mock（7 題 3 小時）／short（3 題 90 分）／weekly（重寫 3 題舊題）／gate（指定題目）。"""
+          gate: Optional[Dict[str, Any]] = None, max_stage: int = 9, past: Optional[str] = None) -> Dict[str, Any]:
+    """kind: mock（7 題 3 小時）／short（3 題 90 分）／weekly（重寫 3 題舊題）／gate（指定題目）／past（歷屆整場）。"""
     if ws.exam_active():
         raise ValueError("已有進行中的考試，先 cpe mock finish")
     st = ws.state()
     rng = rng or random.Random()
-    if kind == "gate":
+    if kind in ("gate", "past"):
         if not ids:
-            raise ValueError("gate 需要指定題目")
+            raise ValueError(f"{kind} 需要指定題目")
+        minutes = minutes or 180
     elif kind == "weekly":
-        ids, minutes = pick_weekly(st), WEEKLY_MINUTES
+        ids, minutes = pick_weekly(st, allowed=bank), WEEKLY_MINUTES
         if not ids:
             raise ValueError("還沒有通過的題目，無法出每週測驗。先解幾題吧")
     else:
@@ -101,7 +103,7 @@ def start(ws: Workspace, bank: Dict[str, dict], kind: str, rng: Optional[random.
         f.write_text(template(lang), encoding="utf-8")
         files[pid] = str(f.relative_to(ws.root))
     exam = {"kind": kind, "start": ws.now(), "minutes": minutes, "problems": ids, "files": files, "lang": lang,
-            "gate": gate, "results": {pid: {"wrong": 0, "ac_min": None} for pid in ids}}
+            "gate": gate, "past": past, "results": {pid: {"wrong": 0, "ac_min": None} for pid in ids}}
     ws.save_exam(exam)
     ws.log("exam_start", exam_kind=kind, problems=ids, minutes=minutes)
     return exam
@@ -137,6 +139,28 @@ def record(ws: Workspace, exam: Dict[str, Any], pid: str, verdict: str) -> str:
     return ""
 
 
+def scoreboard(exam: Dict[str, Any], bank: Optional[Dict[str, dict]] = None, dist: Optional[Dict[int, float]] = None) -> Dict[str, Any]:
+    """ICPC 計分板：先比題數，再比罰時（每題 = 通過的分鐘 + 20 × 通過前的錯誤次數；沒通過的題目不罰）。"""
+    from .pastexams import percentile, stars_from_accuracy
+    bank = bank or {}
+    rows, solved, penalty, wrong_total = [], 0, 0, 0
+    for i, pid in enumerate(exam["problems"], 1):
+        r = exam["results"][pid]
+        b = bank.get(pid, {})
+        acc = b.get("official_accuracy")
+        status = "ac" if r["ac_min"] is not None else ("wrong" if r["wrong"] else "open")
+        if r["ac_min"] is not None:
+            solved += 1
+            penalty += r["ac_min"] + PENALTY_MIN * r["wrong"]
+        wrong_total += r["wrong"]
+        rows.append({"order": i, "id": pid, "title": b.get("title", pid), "accuracy": acc, "stars": stars_from_accuracy(acc) or b.get("difficulty"),
+                     "status": status, "ac_min": r["ac_min"], "wrong": r["wrong"]})
+    out = {"solved": solved, "total": len(exam["problems"]), "penalty": penalty, "wrong": wrong_total, "rows": rows, "percentile": None}
+    if dist and len(exam["problems"]) == 7:
+        out["percentile"] = percentile(solved, dist)
+    return out
+
+
 def score(exam: Dict[str, Any]) -> Dict[str, Any]:
     solved = [(pid, r) for pid, r in exam["results"].items() if r["ac_min"] is not None]
     penalty = sum(r["ac_min"] + PENALTY_MIN * r["wrong"] for _, r in solved)
@@ -145,11 +169,14 @@ def score(exam: Dict[str, Any]) -> Dict[str, Any]:
             "detail": {pid: dict(r) for pid, r in exam["results"].items()}}
 
 
-def finish(ws: Workspace) -> Dict[str, Any]:
+def finish(ws: Workspace, dist: Optional[Dict[int, float]] = None) -> Dict[str, Any]:
+    from .pastexams import percentile
     exam = ws.exam()
     if exam is None:
         raise ValueError("目前沒有進行中的考試")
     summary = score(exam)
+    summary["past"] = exam.get("past")
+    summary["percentile"] = percentile(summary["solved"], dist) if dist and summary["total"] == 7 else None
     summary["date"] = _stamp(exam["start"])
     st = ws.state()
     st["exams"].append(summary)

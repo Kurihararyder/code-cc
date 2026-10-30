@@ -74,6 +74,7 @@ def static_hint(problem: Dict[str, Any], level: int, last_failure: Optional[Dict
             "TLE": "估算複雜度：n 多大？有沒有巢狀迴圈可用前綴和／排序／dict 取代？輸入有用 sys.stdin 嗎？",
             "RE": "看 traceback 的最後一行：IndexError → 邊界；ValueError → 輸入格式；RecursionError → 改迴圈或調高遞迴上限。",
             "CE": "語法錯誤：看錯誤訊息所指的那一行（以及它的上一行）。",
+            "MLE": "記憶體超過上限：檢查有沒有建立過大的 list／dict、遞迴太深、或把整個輸入重複存了很多份；估算 n × 每筆資料大小。",
         }
         return tips.get(v)
     return None

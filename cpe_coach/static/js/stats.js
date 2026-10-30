@@ -2,8 +2,8 @@ import { h, icon, clear, fmtDate } from "./dom.js";
 import { get } from "./api.js";
 import { kpi, heat, bars, skeleton, empty } from "./widgets.js";
 
-const VZ = { AC: "通過", WA: "答案錯誤", PE: "格式錯誤", TLE: "超過時間", RE: "執行錯誤", CE: "語法錯誤" };
-const VC = { AC: "var(--ok)", WA: "var(--bad)", PE: "var(--warn)", TLE: "var(--warn)", RE: "var(--bad)", CE: "var(--text-3)" };
+const VZ = { AC: "通過", WA: "答案錯誤", PE: "格式錯誤", TLE: "超過時間", RE: "執行錯誤", CE: "語法錯誤", MLE: "記憶體超過" };
+const VC = { AC: "var(--ok)", WA: "var(--bad)", PE: "var(--warn)", TLE: "var(--warn)", RE: "var(--bad)", CE: "var(--text-3)", MLE: "var(--bad)" };
 
 export async function mountStats(view) {
   view.append(h("div", { class: "page" }, h("div", { class: "card pad" }, skeleton(5))));

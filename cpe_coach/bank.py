@@ -6,6 +6,7 @@ import shutil
 from pathlib import Path
 from typing import Dict, Optional
 
+from . import pastexams
 from .store import Workspace
 
 DATA = Path(__file__).parent / "data"
@@ -21,6 +22,7 @@ def load_bank(ws: Optional[Workspace] = None) -> Dict[str, dict]:
     for f in (DATA / "problems.json", DATA / "problems_extra.json", DRILLS / "index.json"):
         for p in _load(f):
             bank[p["id"]] = p
+    pastexams.merge_into_bank(bank, ws)
     if ws is not None:
         for p in _load(ws.custom_bank_path):
             bank[p["id"]] = p

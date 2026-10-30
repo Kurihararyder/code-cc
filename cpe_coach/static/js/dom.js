@@ -45,7 +45,7 @@ export function fmtDur(sec) {
 }
 export function fmtDate(ts) { const d = new Date(ts * 1000); return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; }
 export function stars(n) { return "★".repeat(Math.max(1, Math.min(4, n || 1))); }
-export const VERDICT_ZH = { AC: "通過", WA: "答案錯誤", PE: "格式錯誤", TLE: "超過時間", RE: "執行錯誤", CE: "語法／編譯錯誤" };
+export const VERDICT_ZH = { AC: "通過", WA: "答案錯誤", PE: "格式錯誤", TLE: "超過時間", RE: "執行錯誤", CE: "語法／編譯錯誤", MLE: "記憶體超過上限" };
 
 // ---- toast ----
 export function toast(msg, kind = "", ms = 4500) {

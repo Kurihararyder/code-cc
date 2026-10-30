@@ -19,7 +19,8 @@ from urllib.parse import parse_qs, urlparse
 from . import ask as ask_mod
 from . import bank as bank_mod
 from . import course as course_mod
-from . import dashboard, hints, mock, service, srs
+from . import backup, calibrate, dashboard, eng, hints, mock, pastexams, service, srs, vocab
+from . import plan as plan_mod
 from .llm import detect_client
 from .store import Workspace, WorkspaceError
 
@@ -185,13 +186,65 @@ class App:
         kind = body.get("kind", "mock")
         if kind not in ("mock", "short", "weekly"):
             raise ValueError("kind 只能是 mock／short／weekly")
-        course_mod.start_mock(ws, bank_mod.load_bank(ws), kind, body.get("lang") or "py", bool(body.get("all")))
+        course_mod.start_mock(ws, bank_mod.load_bank(ws), kind, body.get("lang") or "py", bool(body.get("all")), bool(body.get("real")))
         return {"exam": dashboard.exam_view(ws, ws.exam())}
 
     def exam_finish(self, body: Dict[str, Any]) -> Dict[str, Any]:
         ws = self.ws()
-        s = mock.finish(ws)
+        s = mock.finish(ws, pastexams.load_all(ws)["distribution"])
         return {"summary": s, "message": course_mod.evaluate_gate(ws, course_mod.load(), s)}
+
+    # ---- 歷屆與考試擬真 ----
+    def past_list(self) -> Dict[str, Any]:
+        ws = self.ws()
+        return pastexams.list_exams(ws, bank_mod.load_bank(ws))
+
+    def past_import(self, body: Dict[str, Any]) -> Dict[str, Any]:
+        ws = self.ws()
+        try:
+            return pastexams.import_manifest(ws, body.get("text", ""))
+        except pastexams.ManifestError as e:
+            raise ValueError(str(e))
+
+    def past_statement(self, body: Dict[str, Any]) -> Dict[str, Any]:
+        """貼上單一題的題目文字：存下並把範例建成測資。"""
+        ws = self.ws()
+        pid = body["id"]
+        if not re.match(r"^[A-Za-z0-9_\-]{1,40}$", pid):
+            raise ValueError("題號格式不正確")
+        n = service.import_statement(ws, pid, body.get("text", ""))
+        return {"id": pid, "samples": n, "english": service.statement_is_english(body.get("text", ""))}
+
+    def past_start(self, body: Dict[str, Any]) -> Dict[str, Any]:
+        ws = self.ws()
+        course_mod.start_past(ws, bank_mod.load_bank(ws), body["date"], body.get("lang") or "py", bool(body.get("partial")))
+        return {"exam": dashboard.exam_view(ws, ws.exam())}
+
+    def vocab_list(self) -> Dict[str, Any]:
+        return {"words": vocab.items(self.ws())}
+
+    def vocab_add(self, body: Dict[str, Any]) -> Dict[str, Any]:
+        return vocab.add(self.ws(), body["word"], body.get("problem"), body.get("note", ""))
+
+    def vocab_remove(self, body: Dict[str, Any]) -> Dict[str, Any]:
+        return {"removed": vocab.remove(self.ws(), body["word"])}
+
+    # ---- 每日計畫、校準、工程任務 ----
+    def plan(self, minutes: int) -> Dict[str, Any]:
+        return plan_mod.build(self.ws(), max(10, min(480, minutes)))
+
+    def calibration(self) -> Dict[str, Any]:
+        ws = self.ws()
+        return calibrate.calibrate(ws, bank_mod.load_bank(ws))
+
+    def eng_list(self) -> Dict[str, Any]:
+        return {"tasks": eng.tasks(self.ws())}
+
+    def eng_start(self, body: Dict[str, Any]) -> Dict[str, Any]:
+        return {"created": eng.start(self.ws(), int(body["n"]))}
+
+    def eng_verify(self, body: Dict[str, Any]) -> Dict[str, Any]:
+        return eng.verify(self.ws(), int(body["n"]), (body.get("evidence") or "").strip() or None)
 
     def course_goto(self, body: Dict[str, Any]) -> Dict[str, Any]:
         ws = self.ws()
@@ -248,11 +301,16 @@ def make_handler(app: App):
            "/api/course": lambda q: app.course_map(), "/api/stats": lambda q: app.stats(),
            "/api/unit": lambda q: app.unit(int(q["n"]) if "n" in q else None),
            "/api/problem": lambda q: app.problem(q["id"]), "/api/chat": lambda q: app.chat(q["id"]),
-           "/api/search": lambda q: app.search(q.get("q", "")), "/api/settings": lambda q: app.settings()}
+           "/api/search": lambda q: app.search(q.get("q", "")), "/api/settings": lambda q: app.settings(),
+           "/api/past": lambda q: app.past_list(), "/api/vocab": lambda q: app.vocab_list(),
+           "/api/plan": lambda q: app.plan(int(q.get("minutes", "30"))), "/api/calibration": lambda q: app.calibration(),
+           "/api/eng": lambda q: app.eng_list()}
     POST = {"/api/new": app.new, "/api/save": app.save, "/api/test": app.test, "/api/trace": app.trace, "/api/ask": app.ask,
             "/api/hint": app.hint, "/api/giveup": app.giveup, "/api/solution": app.solution, "/api/gate": app.gate_start,
             "/api/mock": app.mock_start, "/api/exam/finish": app.exam_finish, "/api/course/goto": app.course_goto,
-            "/api/course/next": app.course_next, "/api/settings": app.set_settings, "/api/key": app.set_key, "/api/ai/test": app.ai_test}
+            "/api/course/next": app.course_next, "/api/settings": app.set_settings, "/api/past/import": app.past_import,
+            "/api/past/statement": app.past_statement, "/api/past/start": app.past_start, "/api/vocab/add": app.vocab_add,
+            "/api/vocab/remove": app.vocab_remove, "/api/eng/start": app.eng_start, "/api/eng/verify": app.eng_verify, "/api/key": app.set_key, "/api/ai/test": app.ai_test}
 
     class H(BaseHTTPRequestHandler):
         server_version = "cpe"
@@ -304,6 +362,10 @@ def make_handler(app: App):
                     return self._static(u.path)
                 if self.headers.get("X-CPE-Token") != app.token:
                     return self._fail(403, "bad token")
+                if u.path == "/api/backup":
+                    with app.ws().lock():
+                        data = backup.export_bytes(app.ws())
+                    return self._send(200, data, "application/zip")
                 fn = GET.get(u.path)
                 if fn is None:
                     return self._fail(404, "not found")
@@ -331,7 +393,7 @@ def make_handler(app: App):
             if fn is None:
                 return self._fail(404, "not found")
             try:
-                with app.lock:
+                with app.lock, app.ws().lock():
                     return self._json(200, fn(body))
             except (ask_mod.AskDenied, hints.HintDenied) as e:
                 return self._fail(409, str(e))

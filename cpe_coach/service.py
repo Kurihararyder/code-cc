@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import ast
 import builtins
+import html.parser
 import json
 import re
 import shutil
@@ -84,7 +85,8 @@ def error_line(res_message: str, stderr: str, solution_name: str) -> Optional[in
 
 def run_test(ws: Workspace, pid: str, lang: Optional[str] = None, predicted: Optional[str] = None) -> Dict[str, Any]:
     sol = solution_file(ws, pid, lang)
-    res = judge(sol, ws.tests / pid, float(ws.config()["timeout_sec"]))
+    cfg = ws.config()
+    res = judge(sol, ws.tests / pid, float(cfg["timeout_sec"]), int(cfg.get("memory_mb", 1024)))
     out: Dict[str, Any] = {"setup_error": res.setup_error, "message": res.message, "verdict": res.verdict,
                            "verdict_zh": VERDICT_ZH[res.verdict], "cases": [], "failing": None, "info": {},
                            "exam_note": "", "review": None, "lang": "cpp" if sol.suffix == ".cpp" else "py",
@@ -307,3 +309,107 @@ def problem_view(ws: Workspace, bank: Dict[str, dict], pid: str) -> Dict[str, An
             "unlock_at": (sp["giveup_at"] + 24 * 3600) if sp and sp["giveup_at"] else None,
             "now": ws.now(),
             "exam": ws.exam_active()}
+
+
+# ---------- 題目匯入（範例 → 測資）----------
+SAMPLE_IN = re.compile(r"^\s*(?:#+\s*)?(?:sample\s+input|範例\s*輸入|輸入\s*範例|測試\s*輸入)\b.*$", re.I)
+SAMPLE_OUT = re.compile(r"^\s*(?:#+\s*)?(?:sample\s+output|範例\s*輸出|輸出\s*範例|測試\s*輸出)\b.*$", re.I)
+
+
+def parse_samples(text: str) -> List[tuple]:
+    """從題目文字找出 (範例輸入, 範例輸出) 配對。支援 Sample Input/Output、範例輸入/輸出。"""
+    marks = []
+    lines_ = text.replace("\r\n", "\n").split("\n")
+    for i, ln in enumerate(lines_):
+        if SAMPLE_IN.match(ln):
+            marks.append((i, "in"))
+        elif SAMPLE_OUT.match(ln):
+            marks.append((i, "out"))
+    blocks = []
+    for k, (i, kind) in enumerate(marks):
+        end = marks[k + 1][0] if k + 1 < len(marks) else len(lines_)
+        body = lines_[i + 1:end]
+        while body and not body[0].strip():
+            body.pop(0)
+        while body and not body[-1].strip():
+            body.pop()
+        blocks.append((kind, "\n".join(body)))
+    out, pending = [], None
+    for kind, body in blocks:
+        if kind == "in":
+            pending = body
+        elif pending is not None:
+            out.append((pending, body))
+            pending = None
+    return out
+
+
+
+
+class _TextOnly(html.parser.HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.parts: List[str] = []
+        self.skip = 0
+
+    def handle_starttag(self, tag, attrs):
+        if tag in ("script", "style"):
+            self.skip += 1
+        if tag in ("br", "p", "div", "li", "tr", "h1", "h2", "h3", "h4", "pre"):
+            self.parts.append("\n")
+
+    def handle_endtag(self, tag):
+        if tag in ("script", "style") and self.skip:
+            self.skip -= 1
+        if tag in ("p", "div", "pre", "li", "tr"):
+            self.parts.append("\n")
+
+    def handle_data(self, data):
+        if not self.skip:
+            self.parts.append(data)
+
+
+def read_statement_file(path: Path) -> str:
+    """讀題目檔；.html 會先轉成純文字（保留 pre 內的換行）。"""
+    text = path.read_text(encoding="utf-8", errors="replace")
+    if path.suffix.lower() in (".html", ".htm"):
+        t = _TextOnly()
+        t.feed(text)
+        text = "".join(t.parts)
+        text = re.sub(r"\n{3,}", "\n\n", text)
+    return text
+
+
+def add_test(ws: Workspace, pid: str, inp: str, out: str) -> str:
+    d = ws.tests / pid
+    d.mkdir(parents=True, exist_ok=True)
+    n = len(list(d.glob("*.in"))) + 1
+    while (d / f"case{n:02d}.in").exists():
+        n += 1
+    name = f"case{n:02d}"
+    (d / f"{name}.in").write_text(inp if inp.endswith("\n") else inp + "\n", encoding="utf-8")
+    (d / f"{name}.out").write_text(out if out.endswith("\n") else out + "\n", encoding="utf-8")
+    return name
+
+
+def import_statement(ws: Workspace, pid: str, text: str) -> int:
+    """存下題目文字並把範例建成測資 sample01…（重新匯入會取代舊的 sample*，不會重複）。回傳範例組數。"""
+    (ws.root / "statements").mkdir(exist_ok=True)
+    (ws.root / "statements" / f"{pid}.txt").write_text(text, encoding="utf-8")
+    d = ws.tests / pid
+    for old in list(d.glob("sample*")) if d.is_dir() else []:
+        old.unlink()
+    samples = parse_samples(text)
+    if samples:
+        d.mkdir(parents=True, exist_ok=True)
+    for i, (inp, out) in enumerate(samples, 1):
+        (d / f"sample{i:02d}.in").write_text(inp if inp.endswith("\n") else inp + "\n", encoding="utf-8")
+        (d / f"sample{i:02d}.out").write_text(out if out.endswith("\n") else out + "\n", encoding="utf-8")
+    return len(samples)
+
+
+def statement_is_english(text: str) -> bool:
+    """題目文字是不是（主要）英文：中日韓字元少於 3%，且有足夠的英文字母。"""
+    cjk = len(re.findall(r"[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]", text))
+    latin = len(re.findall(r"[A-Za-z]", text))
+    return latin >= 80 and cjk / max(1, cjk + latin) < 0.03

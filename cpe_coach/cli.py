@@ -13,8 +13,9 @@ from typing import Any, Dict, List, Optional
 
 from . import bank as bank_mod
 from . import course as course_mod
-from . import hints, mock, roadmap, service, srs, stats
-from .service import fail_path, solution_file, trunc
+from . import backup, calibrate, eng, hints, mock, pastexams, roadmap, service, srs, stats, vocab
+from . import plan as plan_mod
+from .service import add_test, fail_path, parse_samples, solution_file, trunc
 from .judge import AC, VERDICT_ZH, find_cases, judge, stress
 from .llm import RULES, LLMError, detect_client
 from .store import Workspace, WorkspaceError
@@ -291,63 +292,15 @@ def cmd_statement(ws: Workspace, args) -> int:
     raise ValueError(f"沒有 {args.id} 的題目敘述。外部題目請用 cpe import {args.id} <檔案> 存入")
 
 
-SAMPLE_IN = re.compile(r"^\s*(?:#+\s*)?(?:sample\s+input|範例\s*輸入|輸入\s*範例|測試\s*輸入)\b.*$", re.I)
-SAMPLE_OUT = re.compile(r"^\s*(?:#+\s*)?(?:sample\s+output|範例\s*輸出|輸出\s*範例|測試\s*輸出)\b.*$", re.I)
-
-
-def parse_samples(text: str) -> List[tuple]:
-    """從題目文字找出 (範例輸入, 範例輸出) 配對。支援 Sample Input/Output、範例輸入/輸出。"""
-    marks = []
-    lines_ = text.replace("\r\n", "\n").split("\n")
-    for i, ln in enumerate(lines_):
-        if SAMPLE_IN.match(ln):
-            marks.append((i, "in"))
-        elif SAMPLE_OUT.match(ln):
-            marks.append((i, "out"))
-    blocks = []
-    for k, (i, kind) in enumerate(marks):
-        end = marks[k + 1][0] if k + 1 < len(marks) else len(lines_)
-        body = lines_[i + 1:end]
-        while body and not body[0].strip():
-            body.pop(0)
-        while body and not body[-1].strip():
-            body.pop()
-        blocks.append((kind, "\n".join(body)))
-    out, pending = [], None
-    for kind, body in blocks:
-        if kind == "in":
-            pending = body
-        elif pending is not None:
-            out.append((pending, body))
-            pending = None
-    return out
-
-
 def cmd_import(ws: Workspace, args) -> int:
-    text = Path(args.file).read_text(encoding="utf-8")
-    (ws.root / "statements").mkdir(exist_ok=True)
-    (ws.root / "statements" / f"{args.id}.txt").write_text(text, encoding="utf-8")
-    samples = parse_samples(text)
-    if not samples:
+    text = service.read_statement_file(Path(args.file))
+    n = service.import_statement(ws, args.id, text)
+    if not n:
         print(f"已存入 statements/{args.id}.txt，但找不到『Sample Input / 範例輸入』區塊。請改用 cpe addtest {args.id}")
         return 1
-    for inp, out in samples:
-        name = add_test(ws, args.id, inp, out)
-        print(f"  加入 tests/{args.id}/{name}（輸入 {len(inp.splitlines())} 行／輸出 {len(out.splitlines())} 行）")
+    print(f"已存入 statements/{args.id}.txt，並建立 {n} 組範例測資（tests/{args.id}/sample*）。")
     print("請對照原題確認輸出沒有被多切或少切；範例通常只是『最基本』的測資，通過後還要自己補邊界測資。")
     return 0
-
-
-def add_test(ws: Workspace, pid: str, inp: str, out: str) -> str:
-    d = ws.tests / pid
-    d.mkdir(parents=True, exist_ok=True)
-    n = len(list(d.glob("*.in"))) + 1
-    while (d / f"case{n:02d}.in").exists():
-        n += 1
-    name = f"case{n:02d}"
-    (d / f"{name}.in").write_text(inp if inp.endswith("\n") else inp + "\n", encoding="utf-8")
-    (d / f"{name}.out").write_text(out if out.endswith("\n") else out + "\n", encoding="utf-8")
-    return name
 
 
 def _read_block(prompt: str) -> str:
@@ -485,7 +438,7 @@ def cmd_mock(ws: Workspace, args) -> int:
     bank = bank_mod.load_bank(ws)
     now = ws.now()
     if args.action == "start":
-        exam = course_mod.start_mock(ws, bank, args.kind, args.lang or "py", args.all)
+        exam = course_mod.start_mock(ws, bank, args.kind, args.lang or "py", args.all, args.real)
         print(f"考試開始：{args.kind}，{exam['minutes']} 分鐘，{len(exam['problems'])} 題。提示與看解法已鎖定。")
         for pid in exam["problems"]:
             show_problem(bank_mod.resolve(bank, pid), hint_new=False)
@@ -498,16 +451,90 @@ def cmd_mock(ws: Workspace, args) -> int:
             return 0
         left = mock.remaining_seconds(exam, now)
         print(("剩餘 " + fmt_dur(left)) if left > 0 else "⏰ 時間到（之後的提交不計分）")
-        for pid, r in exam["results"].items():
-            state = f"✓ 第 {r['ac_min']} 分鐘" if r["ac_min"] is not None else "—"
-            print(f"  {pid:<10} 錯 {r['wrong']} 次　{state}")
+        print_board(mock.scoreboard(exam, bank, pastexams.load_all(ws)["distribution"]))
     else:
-        s = mock.finish(ws)
+        s = mock.finish(ws, pastexams.load_all(ws)["distribution"])
         print(f"交卷：{s['kind']} 答對 {s['solved']}/{s['total']} 題，總罰時 {s['penalty']} 分鐘")
+        if s.get("percentile"):
+            pc = s["percentile"]
+            print(f"參考：歷年（2015–2024）考生中，答對 ≥ {s['solved']} 題的約 {pc['top']}%，你超過約 {pc['beats']}% 的考生。")
+            print("（這只是粗略對照：資料是社群彙整的累計分布，你的條件與真實考場不同。）")
         msg = course_mod.evaluate_gate(ws, course_mod.load(), s)
         if msg:
             print(msg)
         print("考後檢討：沒解出的題目現在可以走提示階梯（cpe hint）。")
+    return 0
+
+
+def print_board(b) -> None:
+    print(f"\n計分板：{b['solved']}/{b['total']} 題　罰時 {b['penalty']} 分鐘（錯誤共 {b['wrong']} 次）")
+    for r in b["rows"]:
+        mark = {"ac": f"✓ 第 {r['ac_min']} 分鐘" + (f"（錯 {r['wrong']}）" if r["wrong"] else ""), "wrong": f"✗ 錯 {r['wrong']} 次", "open": "—"}[r["status"]]
+        acc = f"　全國 {r['accuracy']}%" if r["accuracy"] is not None else ""
+        print(f"  {r['order']}. {r['id']:<18} {r['title'][:28]:<28} {mark}{acc}")
+    if b.get("percentile"):
+        print(f"  以目前題數對照歷年分布：前 {b['percentile']['top']}%")
+
+
+def cmd_past(ws: Workspace, args) -> int:
+    bank = bank_mod.load_bank(ws)
+    data = pastexams.load_all(ws)
+    if args.action == "list":
+        for e in reversed(pastexams.list_exams(ws, bank)["exams"]):
+            avg = f"　平均答對 {e['avg_solved']}" if e["avg_solved"] is not None else ""
+            print(f"{e['date']}　{e['count']} 題（有測資 {e['ready']}／已通過 {e['solved']}）{avg}" + ("　✔可出整場" if e["complete"] else ""))
+        print("\n匯入格式：cpe past template；匯入題目：cpe past statements <資料夾>")
+    elif args.action == "template":
+        print(pastexams.FORMAT_HELP)
+    elif args.action == "import":
+        r = pastexams.import_manifest(ws, Path(args.arg).read_text(encoding="utf-8"))
+        print(f"已匯入 {r['exams']} 場、{r['problems']} 題。")
+        for e in r["errors"]:
+            print("  略過：" + e)
+    elif args.action == "show":
+        e = next((x for x in pastexams.list_exams(ws, bank)["exams"] if x["date"] == args.arg), None)
+        if not e:
+            raise ValueError(f"沒有 {args.arg} 這場。cpe past list 看全部。")
+        for p in e["problems"]:
+            flag = ("✓" if p["solved"] else " ") + ("T" if p["has_tests"] else "-") + ("S" if p["has_statement"] else "-")
+            print(f"{p['order']}. [{flag}] {p['id']:<18} {p['title']:<30} {'★' * (p['stars'] or 0):<5} {p['accuracy'] if p['accuracy'] is not None else '?'}%")
+        print("\n[已通過/有測資(T)/有題目文字(S)]；整場模擬：cpe past start " + e["date"])
+    elif args.action == "statements":
+        folder = Path(args.arg)
+        n_files = n_samples = 0
+        for f in sorted(folder.iterdir()):
+            m = re.match(r"^(?:uva)?[-_ ]?(\d+)\b.*\.(txt|md|html?)$", f.name, re.I)
+            if not m:
+                continue
+            pid = f"uva{int(m.group(1))}"
+            k = service.import_statement(ws, pid, service.read_statement_file(f))
+            n_files += 1
+            n_samples += k
+            print(f"  {pid:<10} {f.name}　範例 {k} 組" + ("" if k else "　⚠ 找不到 Sample Input／Output，請用 cpe addtest 補"))
+        print(f"\n處理 {n_files} 個檔案，共建立 {n_samples} 組範例測資。檔名格式：10050.txt、uva10050.html …")
+    elif args.action == "start":
+        exam = course_mod.start_past(ws, bank, args.arg, args.lang or "py", args.partial)
+        print(f"歷屆整場開始：{args.arg}，{exam['minutes']} 分鐘，{len(exam['problems'])} 題。AI 與提示已鎖定。")
+        for pid in exam["problems"]:
+            show_problem(bank_mod.resolve(bank, pid), hint_new=False)
+            print(f"             檔案：{exam['files'][pid]}　題目：cpe statement {pid}")
+        print("寫完用 cpe test <題號>；cpe mock status 看計分板；cpe mock finish 交卷。")
+    return 0
+
+
+def cmd_vocab(ws: Workspace, args) -> int:
+    if args.action == "export":
+        print(vocab.to_csv(ws), end="")
+        return 0
+    if args.action == "add":
+        r = vocab.add(ws, args.word)
+        print(f"已加入：{r['word']}（第 {r['count']} 次查）　{r['url']}")
+        return 0
+    its = vocab.items(ws)
+    if not its:
+        print("生字本是空的。在網頁介面讀英文題目時選一個單字 → 查字典，就會自動記下來。")
+    for it in its:
+        print(f"{it['word']:<18} ×{it['count']}  {' '.join(it['problems'])}")
     return 0
 
 
@@ -556,26 +583,77 @@ def cmd_bank(ws: Workspace, args) -> int:
 
 
 def cmd_eng(ws: Workspace, args) -> int:
-    st = ws.state()
-    if args.done is not None:
-        if args.done not in {t["n"] for t in roadmap.ENGINEERING}:
-            raise ValueError("沒有這個編號")
-        if args.done not in st["eng_done"]:
-            st["eng_done"].append(args.done)
-            ws.save_state(st)
-        print(f"已標記完成 #{args.done}")
+    action = args.action
+    if action in ("start", "verify") and args.n is None:
+        raise ValueError(f"請指定任務編號：cpe eng {action} N")
+    if action == "start":
+        made = eng.start(ws, args.n)
+        t = next(x for x in eng.tasks(ws) if x["n"] == args.n)
+        print(f"#{t['n']} {t['title']}　[{t['kind_zh']}]")
+        for rel in made:
+            print(f"  建立 {rel}")
+        if not made and t["has_scaffold"]:
+            print("  範本檔已存在，沒有覆蓋。")
+        print(f"\n做完後驗收：cpe eng verify {t['n']}" + ("  --evidence <網址>" if t["kind"] == "manual" else ""))
         return 0
+    if action == "verify":
+        r = eng.verify(ws, args.n, args.evidence)
+        for x in r["results"]:
+            print(f"  {'✓' if x['ok'] else '✗'} {x['label']}" + (f"\n      {x['msg']}" if x["msg"] and not x["ok"] else ""))
+        print("\n" + (f"✅ 任務 #{args.n} 通過驗收" if r["ok"] else f"還沒過。修好後再 cpe eng verify {args.n}"))
+        return 0 if r["ok"] else 1
     stage = int(ws.config()["stage"])
-    for t in roadmap.ENGINEERING:
-        mark = "✓" if t["n"] in st["eng_done"] else ("·" if t["min_stage"] <= stage else " ")
-        print(f"{mark} #{t['n']:<2} （階段 {t['min_stage']}+）{t['task']}")
-    print("\n完成後：cpe eng --done N")
+    for t in eng.tasks(ws):
+        mark = "✓" if t["done"] else ("·" if t["min_stage"] <= stage else " ")
+        print(f"{mark} #{t['n']:<2} （階段 {t['min_stage']}+）{t['title']}　[{t['kind_zh']}]")
+    print("\n開始：cpe eng start N　　驗收：cpe eng verify N（通過才會標記完成）")
+    return 0
+
+
+def cmd_plan(ws: Workspace, args) -> int:
+    p = plan_mod.build(ws, args.minutes)
+    print(f"📋 {p['date']} 今天 {p['minutes']} 分鐘" + ("" if p.get("calibrated", True) else "（預估時間用預設值；解完 3 題後會依你的速度調整）"))
+    if not p["items"]:
+        print("  今天沒有必做的事。可以自由挑一題，或複習已解過的題。")
+    for i, it in enumerate(p["items"], 1):
+        ref = f" {it['id']}" if it["id"] else ""
+        print(f"  {'✓' if it['done'] else str(i) + '.'} [{plan_mod.KIND_ZH[it['kind']]}]{ref} {it['title']}　~{it['est']} 分　{it['why']}")
+    print(f"\n合計約 {p['total_est']} 分鐘。")
+    for it in p["later"]:
+        print(f"  另外安排：{it['title']}（{it['est']} 分）— {it['why']}")
+    return 0
+
+
+def cmd_calibrate(ws: Workspace, args) -> int:
+    c = calibrate.calibrate(ws, bank_mod.load_bank(ws))
+    if not c["rows"]:
+        print("還沒有解出的題目。每解出一題，我會記下你花的時間、嘗試次數與提示次數。")
+        return 0
+    print(f"已解 {c['solved']} 題；你的速度係數 ×{c['factor']}（1.0 = 和預設時間一樣快；小於 1 表示比預設快）。{c['note']}")
+    for s, v in c["by_star"].items():
+        print(f"  標示 ★{s}：{v['n']} 題，中位數 {v['median']} 分鐘（預設 {v['prior']}）")
+    print("\n和標示差最多的題：")
+    for r in c["rows"][:10]:
+        print(f"  {r['id']:<18} 標示 ★{r['listed']}（{r['source']}） → 對你 ★{r['mine']}　{r['label']}　{r['effort_min']} 分／{r['attempts']} 次／{r['hints']} 提示　{r['title']}")
     return 0
 
 
 def cmd_external(ws: Workspace, args) -> int:
     ws.log("external_ai", problem=args.id)
     print("已記錄你用了外部 AI（誠實記錄比不用更重要）。這題建議之後無提示重寫。")
+    return 0
+
+
+def cmd_export(ws: Workspace, args) -> int:
+    dest = backup.export_workspace(ws, Path(args.out) if args.out else None)
+    print(f"已匯出：{dest}（{dest.stat().st_size // 1024} KB）")
+    print("包含進度、解答、你匯入的題目與測資；內建練習題的測資不包含（會自動重新安裝）。")
+    return 0
+
+
+def cmd_restore(args) -> int:
+    n = backup.restore_workspace(Path(args.file), Path(args.dir), args.force)
+    print(f"已還原 {n} 個檔案到 {Path(args.dir).resolve()}。在那個資料夾裡執行 cpe today 繼續。")
     return 0
 
 
@@ -647,6 +725,15 @@ def build_parser() -> argparse.ArgumentParser:
                    help="mock=7 題 3 小時；short=3 題 90 分；weekly=重寫 3 題舊題 60 分")
     s.add_argument("--lang", choices=["py", "cpp"], help="考試檔語言")
     s.add_argument("--all", action="store_true", help="不限制階段（預設只出你學過階段的題目）")
+    s.add_argument("--real", action="store_true", help="比照考場：只出有英文題目文字的題（需先匯入歷屆題目）")
+    s = sub.add_parser("past", help="歷屆題庫：list／show 日期／import 檔案／statements 資料夾／start 日期／template")
+    s.add_argument("action", choices=["list", "show", "import", "statements", "start", "template"])
+    s.add_argument("arg", nargs="?", help="日期、檔案或資料夾")
+    s.add_argument("--partial", action="store_true", help="start：只出已有測資的題目")
+    s.add_argument("--lang", choices=["py", "cpp"])
+    s = sub.add_parser("vocab", help="生字本")
+    s.add_argument("action", nargs="?", default="list", choices=["list", "export", "add"])
+    s.add_argument("word", nargs="?")
     sub.add_parser("stats", help="學習統計")
 
     s = sub.add_parser("add", help="加入／更新自訂題目")
@@ -661,10 +748,21 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--accuracy", type=float, help="官方全體答對率（%%），當難度標籤")
     s = sub.add_parser("bank", help="列出題庫")
     s.add_argument("--stage", type=int)
-    s = sub.add_parser("eng", help="工程能力清單")
-    s.add_argument("--done", type=int)
+    s = sub.add_parser("eng", help="工程能力任務（有自動驗收）")
+    s.add_argument("action", nargs="?", choices=["list", "start", "verify"], default="list")
+    s.add_argument("n", nargs="?", type=int)
+    s.add_argument("--evidence", help="需要證據的任務：提供網址")
+    s = sub.add_parser("plan", help="今天 N 分鐘的自動排程")
+    s.add_argument("-m", "--minutes", type=int, default=30)
+    sub.add_parser("calibrate", help="用你的實際解題紀錄看題目對你多難")
     s = sub.add_parser("external", help="記錄你用了外部 AI（如 ChatGPT 網頁）")
     s.add_argument("id")
+    s = sub.add_parser("export", help="匯出備份（zip）")
+    s.add_argument("-o", "--out", help="輸出檔名（預設在工作區內 cpe-backup-時間.zip）")
+    s = sub.add_parser("restore", help="從備份還原")
+    s.add_argument("file")
+    s.add_argument("--dir", default=".", help="還原到哪個資料夾（預設目前資料夾）")
+    s.add_argument("--force", action="store_true", help="目標已有工作區時覆蓋（舊的 .cpe 會先改名保留）")
     s = sub.add_parser("web", help="啟動本機網頁介面（選取文字 → 問 AI）")
     s.add_argument("--port", type=int, default=8765)
     s.add_argument("--no-open", action="store_true", help="不要自動開瀏覽器")
@@ -684,15 +782,20 @@ def main(argv: Optional[List[str]] = None) -> int:
             return cmd_init(args)
         if args.cmd == "gpt-prompt":
             return cmd_gpt_prompt(args)
+        if args.cmd == "restore":
+            return cmd_restore(args)
         ws = Workspace.find()
         handler = {
             "course": cmd_course, "gate": cmd_gate, "statement": cmd_statement, "import": cmd_import,
             "roadmap": cmd_roadmap, "stage": cmd_stage, "today": cmd_today, "next": cmd_next, "new": cmd_new,
             "addtest": cmd_addtest, "test": cmd_test, "stress": cmd_stress, "hint": cmd_hint,
             "giveup": cmd_giveup, "solution": cmd_solution, "review": cmd_review, "mock": cmd_mock,
-            "stats": cmd_stats, "add": cmd_add, "bank": cmd_bank, "eng": cmd_eng, "external": cmd_external, "web": cmd_web,
+            "stats": cmd_stats, "add": cmd_add, "bank": cmd_bank, "eng": cmd_eng, "external": cmd_external, "web": cmd_web, "export": cmd_export, "past": cmd_past, "vocab": cmd_vocab, "plan": cmd_plan, "calibrate": cmd_calibrate,
         }[args.cmd]
-        return handler(ws, args)
+        if args.cmd == "web":                       # 長時間執行：不要整個程序持有鎖，由每個請求自己加鎖
+            return handler(ws, args)
+        with ws.lock():
+            return handler(ws, args)
     except (WorkspaceError, hints.HintDenied, ValueError, RuntimeError) as e:
         print(f"✗ {e}", file=sys.stderr)
         return 2

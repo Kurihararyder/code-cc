@@ -478,7 +478,7 @@ class CliSmokeTests(unittest.TestCase):
                 # import 抓範例
                 Path("p.txt").write_text("題目\nSample Input\n1 2\nSample Output\n3\n")
                 self.assertEqual(self.run_cli("import", "uva99999", "p.txt")[0], 0)
-                self.assertTrue(Path("tests/uva99999/case01.in").exists())
+                self.assertTrue(Path("tests/uva99999/sample01.in").exists())
                 # 跳關
                 self.assertEqual(self.run_cli("course", "goto", "30")[0], 0)
                 self.assertIn("單元 30", self.run_cli("course")[1])
