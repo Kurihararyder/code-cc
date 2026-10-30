@@ -118,10 +118,10 @@ class PastStartTests(unittest.TestCase):
     def add_tests(self, pid, english=True):
         d = self.ws.tests / pid
         d.mkdir(parents=True, exist_ok=True)
-        (d / "s1.in").write_text("1\n")
-        (d / "s1.out").write_text("2\n")
+        (d / "s1.in").write_text("1\n", encoding="utf-8")
+        (d / "s1.out").write_text("2\n", encoding="utf-8")
         (self.ws.root / "statements").mkdir(exist_ok=True)
-        (self.ws.root / "statements" / f"{pid}.txt").write_text(("Read an integer from the standard input and print twice the value of that integer on a single line. " * 2) if english else "讀入一個整數並輸出兩倍。" * 10)
+        (self.ws.root / "statements" / f"{pid}.txt").write_text(("Read an integer from the standard input and print twice the value of that integer on a single line. " * 2) if english else "讀入一個整數並輸出兩倍。" * 10, encoding="utf-8")
 
     def test_refuses_when_tests_missing_then_partial(self):
         b = bank_mod.load_bank(self.ws)
@@ -204,8 +204,8 @@ class UnitPoolTests(unittest.TestCase):
             pastexams.import_manifest(ws, "2022-05-01,1,30001,Easy,45")
             d = ws.tests / "uva30001"
             d.mkdir(parents=True)
-            (d / "s.in").write_text("1\n")
-            (d / "s.out").write_text("1\n")
+            (d / "s.in").write_text("1\n", encoding="utf-8")
+            (d / "s.out").write_text("1\n", encoding="utf-8")
             c = course.load()
             st = ws.state()
             st["course"]["unit"] = 15
@@ -363,7 +363,7 @@ class EngTests(unittest.TestCase):
         self.tmp, self.ws, self.clock = make_ws()
         (self.ws.root / "solutions").mkdir(exist_ok=True)
         for pid, code in SOL.items():
-            (self.ws.root / "solutions" / f"{pid}.py").write_text(code)
+            (self.ws.root / "solutions" / f"{pid}.py").write_text(code, encoding="utf-8")
 
     def tearDown(self):
         self.tmp.cleanup()
@@ -381,9 +381,9 @@ class EngTests(unittest.TestCase):
     def test_scaffold_is_created_once_and_never_overwrites(self):
         made = eng.start(self.ws, 3)
         self.assertEqual(sorted(made), ["eng/solhelp.py", "eng/test_solutions.py"])
-        (self.ws.root / "eng" / "test_solutions.py").write_text("# mine\n")
+        (self.ws.root / "eng" / "test_solutions.py").write_text("# mine\n", encoding="utf-8")
         self.assertEqual(eng.start(self.ws, 3), [])
-        self.assertEqual((self.ws.root / "eng" / "test_solutions.py").read_text(), "# mine\n")
+        self.assertEqual((self.ws.root / "eng" / "test_solutions.py").read_text(encoding="utf-8"), "# mine\n")
         with self.assertRaises(ValueError):
             eng.start(self.ws, 99)
 
@@ -392,7 +392,7 @@ class EngTests(unittest.TestCase):
         r = eng.verify(self.ws, 3)
         self.assertFalse(r["ok"])
         self.assertNotIn(3, self.ws.state()["eng_done"])
-        (self.ws.root / "eng" / "test_solutions.py").write_text(GOOD_TESTS)
+        (self.ws.root / "eng" / "test_solutions.py").write_text(GOOD_TESTS, encoding="utf-8")
         r = eng.verify(self.ws, 3)
         self.assertTrue(r["ok"], r["results"])
         self.assertIn(3, self.ws.state()["eng_done"])
@@ -402,18 +402,18 @@ class EngTests(unittest.TestCase):
         eng.start(self.ws, 3)
         lazy = "from solhelp import run\n\n\ndef test_a():\n    run('uva100', '1\\n')\n    assert True\n\n\ndef test_b():\n    run('uva101', '1 1\\n')\n    assert 1\n\n\n" \
                "def test_c():\n    run('uva102', '1\\n')\n    assert 2 > 1\n    assert 'uva100'\n    assert 'uva101'\n    assert 'uva102'\n"
-        (self.ws.root / "eng" / "test_solutions.py").write_text(lazy)
+        (self.ws.root / "eng" / "test_solutions.py").write_text(lazy, encoding="utf-8")
         r = eng.verify(self.ws, 3)
         lab = self.labels(r["results"])
         self.assertTrue(lab["測試全部通過"])
         self.assertFalse(lab["測試抓得到錯誤（把解答改壞，測試要變紅）"])
         self.assertFalse(r["ok"])
         self.assertEqual(self.ws.state()["eng_done"], [])
-        self.assertEqual((self.ws.root / "solutions" / "uva100.py").read_text(), SOL["uva100"])     # 驗收不能弄壞你的解答
+        self.assertEqual((self.ws.root / "solutions" / "uva100.py").read_text(encoding="utf-8"), SOL["uva100"])     # 驗收不能弄壞你的解答
 
     def test_failing_test_is_reported_not_marked_done(self):
         eng.start(self.ws, 3)
-        (self.ws.root / "eng" / "test_solutions.py").write_text(GOOD_TESTS.replace('== "5\\n"', '== "6\\n"'))
+        (self.ws.root / "eng" / "test_solutions.py").write_text(GOOD_TESTS.replace('== "5\\n"', '== "6\\n"'), encoding="utf-8")
         r = eng.verify(self.ws, 3)
         self.assertFalse(self.labels(r["results"])["測試全部通過"])
         self.assertFalse(r["ok"])
@@ -430,7 +430,7 @@ class EngTests(unittest.TestCase):
     def test_sqlite_task(self):
         eng.start(self.ws, 6)
         self.assertFalse(eng.verify(self.ws, 6)["ok"])
-        (self.ws.root / ".cpe" / "events.jsonl").write_text('{"ts":1,"kind":"test","problem":"a","verdict":"AC"}\n{"ts":2,"kind":"test","problem":"a","verdict":"WA"}\n')
+        (self.ws.root / ".cpe" / "events.jsonl").write_text('{"ts":1,"kind":"test","problem":"a","verdict":"AC"}\n{"ts":2,"kind":"test","problem":"a","verdict":"WA"}\n', encoding="utf-8")
         (self.ws.root / "eng" / "progress_db.py").write_text('''import json, sqlite3
 from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
@@ -444,8 +444,8 @@ for line in (ROOT / ".cpe" / "events.jsonl").read_text().splitlines():
     e = json.loads(line)
     con.execute("insert into events values (?,?,?,?)", (e["ts"], e["kind"], e["problem"], e["verdict"]))
 con.commit()
-''')
-        (self.ws.root / "eng" / "queries.sql").write_text("select verdict, count(*) from events group by verdict;\nselect p.id from events e join problems p on p.id = e.problem;\n")
+''', encoding="utf-8")
+        (self.ws.root / "eng" / "queries.sql").write_text("select verdict, count(*) from events group by verdict;\nselect p.id from events e join problems p on p.id = e.problem;\n", encoding="utf-8")
         r = eng.verify(self.ws, 6)
         self.assertTrue(r["ok"], r["results"])
 
@@ -454,12 +454,12 @@ con.commit()
         self.assertFalse(eng.verify(self.ws, 4)["ok"])
         d = self.ws.root / "eng" / "stress" / "uva101"
         d.mkdir(parents=True)
-        (d / "gen.py").write_text("import random, sys\nrandom.seed(int(sys.argv[1]))\nprint(random.randint(-9, 9), random.randint(-9, 9))\n")
-        (d / "brute.py").write_text("a, b = map(int, input().split())\ns = 0\nfor _ in range(abs(b)):\n    s += a\nprint(s if b >= 0 else -s)\n")
+        (d / "gen.py").write_text("import random, sys\nrandom.seed(int(sys.argv[1]))\nprint(random.randint(-9, 9), random.randint(-9, 9))\n", encoding="utf-8")
+        (d / "brute.py").write_text("a, b = map(int, input().split())\ns = 0\nfor _ in range(abs(b)):\n    s += a\nprint(s if b >= 0 else -s)\n", encoding="utf-8")
         r = eng.verify(self.ws, 4)
         self.assertTrue(r["ok"], r["results"])
-        (self.ws.root / "solutions" / "uva101.py").write_text("a, b = map(int, input().split())\nprint(a * b + (1 if a == 5 and b == 5 else 0))\n")
-        (d / "gen.py").write_text("import random, sys\nrandom.seed(int(sys.argv[1]))\nprint(random.randint(4, 6), random.randint(4, 6))\n")
+        (self.ws.root / "solutions" / "uva101.py").write_text("a, b = map(int, input().split())\nprint(a * b + (1 if a == 5 and b == 5 else 0))\n", encoding="utf-8")
+        (d / "gen.py").write_text("import random, sys\nrandom.seed(int(sys.argv[1]))\nprint(random.randint(4, 6), random.randint(4, 6))\n", encoding="utf-8")
         r = eng.verify(self.ws, 4)
         self.assertFalse(r["ok"])                                               # 正解有 bug，對拍要抓到
 

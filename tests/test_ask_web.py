@@ -46,7 +46,7 @@ class AskBase(unittest.TestCase):
         self.ws = Workspace.create(Path(self.tmp.name), "2026-11-01", Clock())
         self.bank = bank.load_bank(self.ws)
         service.create_solution(self.ws, self.bank, "d001")
-        (self.ws.solutions / "d001.py").write_text('name = input()\nprint("Hello " + name)\n')
+        (self.ws.solutions / "d001.py").write_text('name = input()\nprint("Hello " + name)\n', encoding="utf-8")
 
     def tearDown(self):
         self.tmp.cleanup()
@@ -115,7 +115,7 @@ class AskFlowTests(AskBase):
         self.assertEqual(self.ws.state()["problems"]["d001"]["hint_level"], -1)
 
     def test_mismatch_needs_failing_verdict(self):
-        (self.ws.solutions / "d001.py").write_text('print(f"Hello, {input().strip()}!")\n')
+        (self.ws.solutions / "d001.py").write_text('print(f"Hello, {input().strip()}!")\n', encoding="utf-8")
         self.attempt()                           # 通過
         with self.assertRaises(ask.AskDenied):
             self.q(fake_llm([good()]), kind="mismatch")
@@ -162,7 +162,7 @@ class AskFlowTests(AskBase):
         r2 = ask.ask(self.ws, self.bank, "d001", llm, thread=tid, reply="我覺得少逗號")
         self.assertEqual(r2["reply"]["type"], "feedback")
         # 程式改過 → 回覆時會附上最新程式
-        (self.ws.solutions / "d001.py").write_text('print("Hello, " + input())\n')
+        (self.ws.solutions / "d001.py").write_text('print("Hello, " + input())\n', encoding="utf-8")
         ask.ask(self.ws, self.bank, "d001", llm, thread=tid, reply="改好了")
         self.assertIn("已修改程式", llm.calls[-1][-1]["content"])
         with self.assertRaises(ask.AskDenied):
@@ -264,7 +264,7 @@ class WebTests(WebBase):
         self.assertIn("API 金鑰", json.loads(body)["error"])
         code, body = self.req("/api/key", {"key": "sk-test", "model": "gpt-4o"})
         self.assertTrue(json.loads(body)["available"])
-        self.assertFalse((Path(self.tmp.name) / ".cpe" / "config.json").read_text().count("sk-test"))   # 金鑰不落地
+        self.assertFalse((Path(self.tmp.name) / ".cpe" / "config.json").read_text(encoding="utf-8").count("sk-test"))   # 金鑰不落地
         self.app.key = None
 
     def test_unknown_route_and_bad_json(self):

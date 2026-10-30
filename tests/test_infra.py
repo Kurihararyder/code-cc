@@ -1,4 +1,5 @@
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -27,7 +28,7 @@ class LimitTests(unittest.TestCase):
 
     def run_code(self, code, timeout=3.0, mem=256, inp=""):
         f = self.d / "p.py"
-        f.write_text(code)
+        f.write_text(code, encoding="utf-8")
         return judge.run_program(f, inp, timeout, None, mem)
 
     def test_normal_program(self):
@@ -38,6 +39,25 @@ class LimitTests(unittest.TestCase):
     def test_memory_limit(self):
         r = self.run_code("x = [0] * (10**9)\nprint(len(x))")
         self.assertTrue(r.mle)
+
+    @unittest.skipUnless(POSIX and shutil.which("ps"), "RSS 輪詢需要 ps")
+    def test_rss_probe_and_watchdog_path(self):
+        """macOS 沒有 RLIMIT_AS，改用 ps 輪詢常駐記憶體。這裡驗證探測值，並在 Linux 強制走這條路徑確認不會誤殺正常程式。"""
+        p = subprocess.Popen([sys.executable, "-c", "import time\nb = bytearray(120 * 1024 * 1024)\nfor i in range(0, len(b), 4096):\n    b[i] = 1\ntime.sleep(5)"])
+        try:
+            time.sleep(1.0)
+            self.assertGreater(judge._rss_mb(p.pid), 100)
+            self.assertEqual(judge._rss_mb(2 ** 22 + 12345), 0.0)           # 不存在的 pid
+        finally:
+            p.kill()
+            p.wait()
+        old = judge.WATCH_RSS
+        judge.WATCH_RSS = True
+        try:
+            r = self.run_code("print(sum(range(10)))", timeout=5, mem=256)
+        finally:
+            judge.WATCH_RSS = old
+        self.assertEqual((r.rc, r.out.strip(), r.mle), (0, "45", False))
 
     @unittest.skipUnless(POSIX, "輸出上限的核心行為在 POSIX 上驗證")
     def test_output_limit_stops_runaway_output(self):
@@ -59,13 +79,13 @@ class LimitTests(unittest.TestCase):
     def test_judge_reports_tle_and_mle(self):
         t = self.d / "t"
         t.mkdir()
-        (t / "a.in").write_text("1\n")
-        (t / "a.out").write_text("1\n")
+        (t / "a.in").write_text("1\n", encoding="utf-8")
+        (t / "a.out").write_text("1\n", encoding="utf-8")
         f = self.d / "s.py"
-        f.write_text("while True: pass")
+        f.write_text("while True: pass", encoding="utf-8")
         self.assertEqual(judge.judge(f, t, timeout=0.5).verdict, judge.TLE)
         if POSIX:
-            f.write_text("x = bytearray(2 * 1024**3)")
+            f.write_text("x = bytearray(b'x') * (2 * 1024**3)", encoding="utf-8")
             self.assertEqual(judge.judge(f, t, timeout=3.0, mem_mb=256).verdict, judge.MLE)
 
 
@@ -108,13 +128,13 @@ class LockAndRecoveryTests(unittest.TestCase):
         st = self.ws.state()
         self.ws.problem(st, "a")["attempts"] = 8
         self.ws.save_state(st)                             # 此時 .bak 是 7
-        self.ws.state_path.write_text("{ 壞掉的 json")
+        self.ws.state_path.write_text("{ 壞掉的 json", encoding="utf-8")
         self.assertEqual(self.ws.state()["problems"]["a"]["attempts"], 7)
         self.assertTrue((self.ws.meta / "recovered.txt").exists())
         self.assertEqual(self.ws.state()["problems"]["a"]["attempts"], 7)    # 修復後檔案有效
 
     def test_corrupt_without_backup_gives_clear_error(self):
-        self.ws.config_path.write_text("not json")
+        self.ws.config_path.write_text("not json", encoding="utf-8")
         bak = self.ws.config_path.with_suffix(".json.bak")
         if bak.exists():
             bak.unlink()
@@ -148,10 +168,10 @@ class BackupTests(unittest.TestCase):
 
     def test_roundtrip_and_what_is_included(self):
         service.create_solution(self.ws, self.bank, "d001")          # 內建練習題：測資不備份
-        (self.ws.solutions / "d001.py").write_text("print('mine')\n")
+        (self.ws.solutions / "d001.py").write_text("print('mine')\n", encoding="utf-8")
         (self.ws.tests / "uva9999").mkdir()
-        (self.ws.tests / "uva9999" / "case01.in").write_text("1\n")
-        (self.ws.tests / "uva9999" / "case01.out").write_text("2\n")
+        (self.ws.tests / "uva9999" / "case01.in").write_text("1\n", encoding="utf-8")
+        (self.ws.tests / "uva9999" / "case01.out").write_text("2\n", encoding="utf-8")
         st = self.ws.state()
         self.ws.problem(st, "d001")["attempts"] = 3
         self.ws.save_state(st)
@@ -167,7 +187,7 @@ class BackupTests(unittest.TestCase):
             self.assertGreater(n, 3)
             ws2 = Workspace(Path(other))
             self.assertEqual(ws2.state()["problems"]["d001"]["attempts"], 3)
-            self.assertEqual((ws2.solutions / "d001.py").read_text(), "print('mine')\n")
+            self.assertEqual((ws2.solutions / "d001.py").read_text(encoding="utf-8"), "print('mine')\n")
             with self.assertRaises(WorkspaceError):                    # 已有工作區要 --force
                 backup.restore_workspace(z, Path(other))
             backup.restore_workspace(z, Path(other), force=True)

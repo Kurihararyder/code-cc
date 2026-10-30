@@ -38,8 +38,8 @@ class JudgeTests(unittest.TestCase):
         with tmp:
             td = ws.tests / "p"
             td.mkdir()
-            (td / "a.in").write_text("3\n")
-            (td / "a.out").write_text("6\n")
+            (td / "a.in").write_text("3\n", encoding="utf-8")
+            (td / "a.out").write_text("6\n", encoding="utf-8")
             cases = {
                 "ac": ("print(int(input())*2)", judge.AC),
                 "wa": ("print(7)", judge.WA),
@@ -49,14 +49,14 @@ class JudgeTests(unittest.TestCase):
             }
             for name, (code, want) in cases.items():
                 f = ws.root / f"{name}.py"
-                f.write_text(code)
+                f.write_text(code, encoding="utf-8")
                 self.assertEqual(judge.judge(f, td, timeout=1.0).verdict, want, name)
 
     def test_missing_tests_is_setup_error(self):
         tmp, ws, _ = make_ws()
         with tmp:
             f = ws.root / "s.py"
-            f.write_text("print(1)")
+            f.write_text("print(1)", encoding="utf-8")
             r = judge.judge(f, ws.tests / "none")
             self.assertTrue(r.setup_error)
 
@@ -64,13 +64,13 @@ class JudgeTests(unittest.TestCase):
         tmp, ws, _ = make_ws()
         with tmp:
             gen = ws.root / "gen.py"
-            gen.write_text("import sys,random\nrandom.seed(int(sys.argv[1]))\nprint(random.randint(1,100))\n")
+            gen.write_text("import sys,random\nrandom.seed(int(sys.argv[1]))\nprint(random.randint(1,100))\n", encoding="utf-8")
             brute = ws.root / "brute.py"
-            brute.write_text("print(int(input())*2)\n")
+            brute.write_text("print(int(input())*2)\n", encoding="utf-8")
             good = ws.root / "good.py"
-            good.write_text("n=int(input())\nprint(n*2)\n")
+            good.write_text("n=int(input())\nprint(n*2)\n", encoding="utf-8")
             bad = ws.root / "bad.py"
-            bad.write_text("n=int(input())\nprint(n*2 if n < 50 else n*2+1)\n")
+            bad.write_text("n=int(input())\nprint(n*2 if n < 50 else n*2+1)\n", encoding="utf-8")
             self.assertIsNone(judge.stress(good, brute, gen, 20))
             r = judge.stress(bad, brute, gen, 50)
             self.assertIsNotNone(r)
@@ -363,7 +363,7 @@ class CourseTests(unittest.TestCase):
         tmp, ws, _ = make_ws()
         with tmp:
             self.assertTrue(bank.install_drill(ws, "d001"))
-            (ws.tests / "d001" / "mine.in").write_text("x\n")
+            (ws.tests / "d001" / "mine.in").write_text("x\n", encoding="utf-8")
             self.assertFalse(bank.install_drill(ws, "d001"))
             self.assertTrue((ws.tests / "d001" / "mine.in").exists())
             self.assertFalse(bank.install_drill(ws, "uva100"))
@@ -422,8 +422,8 @@ class CppTests(unittest.TestCase):
         with tmp:
             td = ws.tests / "p"
             td.mkdir()
-            (td / "a.in").write_text("3\n")
-            (td / "a.out").write_text("6\n")
+            (td / "a.in").write_text("3\n", encoding="utf-8")
+            (td / "a.out").write_text("6\n", encoding="utf-8")
             src = {
                 "ok": ('#include <iostream>\nint main(){int n;std::cin>>n;std::cout<<n*2<<"\\n";}', judge.AC),
                 "wa": ('#include <iostream>\nint main(){std::cout<<7<<"\\n";}', judge.WA),
@@ -433,7 +433,7 @@ class CppTests(unittest.TestCase):
             }
             for name, (code, want) in src.items():
                 f = ws.root / f"{name}.cpp"
-                f.write_text(code)
+                f.write_text(code, encoding="utf-8")
                 self.assertEqual(judge.judge(f, td, timeout=2.0).verdict, want, name)
 
 
@@ -466,7 +466,7 @@ class CliSmokeTests(unittest.TestCase):
                 self.assertEqual(len(list(Path("tests/d001").glob("*.in"))), 3)
                 # 空白模板應失敗；L1 在還沒嘗試前被擋；試過一次後可以
                 self.assertNotEqual(self.run_cli("test", "d001")[0], 0)
-                Path("solutions/d001.py").write_text("print(f\"Hello, {input().strip()}!\")\n")
+                Path("solutions/d001.py").write_text("print(f\"Hello, {input().strip()}!\")\n", encoding="utf-8")
                 self.assertEqual(self.run_cli("test", "d001")[0], 0)
                 rc, out = self.run_cli("today")
                 self.assertEqual(rc, 0)
@@ -476,7 +476,7 @@ class CliSmokeTests(unittest.TestCase):
                 self.assertEqual(rc, 2)
                 self.assertIn("d002", out)
                 # import 抓範例
-                Path("p.txt").write_text("題目\nSample Input\n1 2\nSample Output\n3\n")
+                Path("p.txt").write_text("題目\nSample Input\n1 2\nSample Output\n3\n", encoding="utf-8")
                 self.assertEqual(self.run_cli("import", "uva99999", "p.txt")[0], 0)
                 self.assertTrue(Path("tests/uva99999/sample01.in").exists())
                 # 跳關

@@ -148,6 +148,18 @@ def _kill(proc) -> None:
         pass
 
 
+WATCH_RSS = sys.platform == "darwin"                  # macOS 不會執行 RLIMIT_AS：改用輪詢常駐記憶體
+
+
+def _rss_mb(pid: int) -> float:
+    """行程目前的常駐記憶體（MB）。macOS 沒有可用的 RLIMIT_AS，改用 ps 輪詢；失敗就當作 0。"""
+    try:
+        out = subprocess.run(["ps", "-o", "rss=", "-p", str(pid)], capture_output=True, text=True, timeout=2).stdout.strip()
+        return int(out) / 1024.0 if out else 0.0
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return 0.0
+
+
 def run_program(path: Path, stdin_text: str, timeout: float, cmd=None, mem_mb: int = DEFAULT_MEM_MB) -> RunResult:
     """在資源上限下執行：時間、記憶體（POSIX 用 RLIMIT_AS、Windows 用 Job Object）、輸出大小。
     輸出走暫存檔而不是管線，所以無窮輸出不會撐爆記憶體；超過上限就強制結束。"""
@@ -162,7 +174,9 @@ def run_program(path: Path, stdin_text: str, timeout: float, cmd=None, mem_mb: i
             kw["start_new_session"] = True
         else:
             kw["creationflags"] = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
-        timed_out = ole = False
+        timed_out = ole = rss_kill = False
+        watch_rss = WATCH_RSS
+        next_rss = 0.0
         with open(fin, "rb") as si, open(fout, "wb") as so, open(ferr, "wb") as se:
             start = time.perf_counter()
             proc = subprocess.Popen(cmd, stdin=si, stdout=so, stderr=se, **kw)
@@ -184,6 +198,13 @@ def run_program(path: Path, stdin_text: str, timeout: float, cmd=None, mem_mb: i
                     _kill(proc)
                     proc.wait()
                     break
+                if watch_rss and time.perf_counter() >= next_rss:
+                    next_rss = time.perf_counter() + 0.1
+                    if _rss_mb(proc.pid) > mem_mb:
+                        rss_kill = True
+                        _kill(proc)
+                        proc.wait()
+                        break
             elapsed = time.perf_counter() - start
         rc = proc.returncode
         if fout.stat().st_size >= cap:                    # 寫到上限就被作業系統擋下（Python 會得到 OSError）
@@ -194,7 +215,7 @@ def run_program(path: Path, stdin_text: str, timeout: float, cmd=None, mem_mb: i
             err = f.read(65536).decode("utf-8", "replace")
     if os.name == "posix" and rc == -signal.SIGXFSZ:
         ole = True
-    mle = (not timed_out) and rc not in (0, None) and ("MemoryError" in err or "bad_alloc" in err or "std::bad_alloc" in err)
+    mle = rss_kill or (not timed_out) and rc not in (0, None) and ("MemoryError" in err or "bad_alloc" in err or "std::bad_alloc" in err)
     if ole:
         err = (err + "\n輸出超過 %d MB，已強制結束。" % OUT_LIMIT_MB).strip()
     return RunResult(None if timed_out else rc, out, err, timeout if timed_out else elapsed, timed_out, mle, ole)
