@@ -838,6 +838,7 @@ class Panel:
         self.refreshing = False
         self.alive = True
         self.after_id: Optional[str] = None
+        self.check_id: Optional[str] = None
         self.tab = "home"
         self.nav: Dict[str, tk.Label] = {}
         self.update_info: Optional[Dict[str, Any]] = None
@@ -846,6 +847,8 @@ class Panel:
         self.refresh()
         if cfg.opt("autostart_server"):
             self.app.root.after(300, self.start_server)
+        if cfg.opt("check_update_on_open"):
+            self.check_id = self.app.root.after(1200, self.auto_check)
 
     # ---- 版面 ----
     def build(self) -> None:
@@ -915,6 +918,22 @@ class Panel:
         if self.update_info and self.update_info.get("status") == "available":
             self.show_update_banner()
 
+    def auto_check(self) -> None:
+        """像遊戲的啟動器：開啟控制台時在背景悄悄檢查一次有沒有新版本（沒網路或查不到就什麼都不顯示）。"""
+        self.check_id = None
+        if not self.alive:
+            return
+        cfg = self.cfg
+        self.app.runner.submit(lambda rep: engine.check_update(cfg), self.auto_checked)
+
+    def auto_checked(self, res: Any, err: Optional[BaseException]) -> None:
+        if not self.alive or err is not None or not isinstance(res, dict):
+            return
+        self.update_info = res
+        if res.get("status") == "available":
+            self.say("有新版本可以更新")
+            self.show_update_banner()
+
     def show_update_banner(self) -> None:
         if self.tab != "home" or not hasattr(self, "upd_card"):
             return
@@ -931,11 +950,14 @@ class Panel:
 
     def dispose(self) -> None:
         self.alive = False
-        if self.after_id is not None:
-            try:
-                self.app.root.after_cancel(self.after_id)
-            except tk.TclError:
-                pass
+        for name in ("after_id", "check_id"):
+            token = getattr(self, name)
+            if token is not None:
+                try:
+                    self.app.root.after_cancel(token)
+                except tk.TclError:
+                    pass
+                setattr(self, name, None)
 
     def refresh_done(self, res: Any, err: Optional[BaseException]) -> None:
         self.refreshing = False
@@ -1055,6 +1077,7 @@ class Panel:
         check("open_browser", "按「開啟」後自動開啟學習畫面")
         check("app_window", "用獨立的應用程式視窗開啟（需要 Edge 或 Chrome）")
         check("autostart_server", "開啟控制台時自動啟動服務")
+        check("check_update_on_open", "開啟控制台時自動檢查有沒有新版本（需要網路；沒有就不顯示）")
         r = tk.Frame(inner, bg=PAL["surface"])
         r.pack(fill="x", pady=(8, 0))
         tk.Label(r, text="關閉控制台時：", bg=PAL["surface"], fg=PAL["text"], font=th.f(10)).pack(side="left")

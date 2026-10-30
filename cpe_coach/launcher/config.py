@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional
 from .constants import DEFAULT_PORT, LAUNCHER_FILE
 
 SCHEMA = 1
-DEFAULT_OPTIONS = {"open_browser": True, "app_window": True, "autostart_server": False, "stop_on_exit": "ask",
+DEFAULT_OPTIONS = {"open_browser": True, "app_window": True, "autostart_server": False, "stop_on_exit": "ask", "check_update_on_open": True,
                    "desktop_shortcut": True, "menu_shortcut": True, "add_path": True}
 
 

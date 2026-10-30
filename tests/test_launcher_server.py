@@ -189,7 +189,7 @@ class StartStop(ServerBase):
 
     def test_a_service_that_dies_immediately_reports_why(self):
         stub = self.t.path / ("fake-python.cmd" if WINDOWS else "fake-python")
-        stub.write_text("@echo off\r\necho boom: cannot start 1>&2\r\nexit /b 3\r\n" if WINDOWS else "#!/bin/sh\necho 'boom: cannot start' >&2\nexit 3\n", encoding="utf-8")
+        stub.write_bytes(b"@echo off\r\necho boom: cannot start 1>&2\r\nexit /b 3\r\n" if WINDOWS else b"#!/bin/sh\necho 'boom: cannot start' >&2\nexit 3\n")
         stub.chmod(0o755)
         cfg = cfgmod.load(self.plat.launcher_home)
         cfg.python = str(stub)

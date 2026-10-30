@@ -177,6 +177,13 @@ def server_env(cfg: LauncherConfig) -> Dict[str, str]:
     return env
 
 
+def _same_dir(a: Any, b: Path) -> bool:
+    try:
+        return bool(a) and Path(str(a)).resolve() == Path(b).resolve()
+    except OSError:
+        return False
+
+
 def _log_tail(path: Path, n: int = 600) -> str:
     try:
         return path.read_text(encoding="utf-8", errors="replace")[-n:].strip()
@@ -223,7 +230,9 @@ def start(cfg: LauncherConfig, plat: Plat, wait: float = 25.0, log: Callable[[st
     deadline = time.time() + wait
     while time.time() < deadline:
         data = probe(port, 1.0)
-        if data and data["pid"] == p.pid:
+        if data and (data["pid"] == p.pid or (p.poll() is None and _same_dir(data.get("workspace"), ws))):
+            if data["pid"] != p.pid:                      # 啟動器（例如虛擬環境的 python.exe）另外開了真正的服務程序：以服務自己回報的為準
+                _write_run(plat, {"pid": data["pid"], "port": port, "started": time.time()})
             log(f"服務已啟動：http://127.0.0.1:{port}/")
             return _status_from(data, port, False)
         if p.poll() is not None:

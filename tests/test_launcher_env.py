@@ -130,7 +130,7 @@ class Checks(unittest.TestCase):
         self.assertEqual(rc, 127)
         rc, out = envcheck.run_cmd([sys.executable, "-c", "import time; time.sleep(30)"], 1)
         self.assertEqual(rc, 124)
-        rc, out = envcheck.run_cmd([sys.executable, "-c", "print('你好')"], 20)
+        rc, out = envcheck.run_cmd([sys.executable, "-c", "print('你好')"], 20, dict(os.environ, PYTHONIOENCODING="utf-8"))          # Windows 的管線預設不是 UTF-8
         self.assertEqual((rc, out), (0, "你好"))
 
     def test_port_probe_sees_a_real_listener(self):

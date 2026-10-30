@@ -9,7 +9,7 @@ from pathlib import Path
 from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).parent))
-from launcher_helpers import HAVE_GIT, TempDir, bump_version, clean_registry, copy_app_tree, free_port, isolated_env, make_origin  # noqa: E402
+from launcher_helpers import HAVE_GIT, TempDir, bump_version, clean_registry, copy_app_tree, free_port, git, isolated_env, make_origin  # noqa: E402
 
 from cpe_coach import __version__  # noqa: E402
 from cpe_coach.launcher import config as cfgmod  # noqa: E402
@@ -133,7 +133,10 @@ class GuiBase(unittest.TestCase):
                                   desktop=False, menu=False, add_path=False)
         for k, v in kw.items():
             setattr(o, k, v)
-        return engine.install(o, self.plat, self.ctx, engine.Reporter())
+        cfg = engine.install(o, self.plat, self.ctx, engine.Reporter())
+        cfg.options["check_update_on_open"] = False                                  # 測試預設不在背景連網；要測的測試自己打開
+        cfgmod.save(self.plat.launcher_home, cfg)
+        return cfg
 
     def run_wizard_to_options(self, app):
         w = app.view
@@ -426,6 +429,8 @@ class PanelTests(GuiBase):
         saved = cfgmod.load(self.plat.launcher_home)
         self.assertEqual((saved.opt("open_browser"), saved.opt("app_window"), saved.opt("autostart_server"), saved.opt("stop_on_exit"), saved.port),
                          (False, False, True, "stop", int(newp)))
+        p.vars["check_update_on_open"].set(True)
+        self.assertTrue(cfgmod.load(self.plat.launcher_home).opt("check_update_on_open"))
         p.vars["port"].set("12")                                                    # 不合法的埠不會存
         self.assertEqual(cfgmod.load(self.plat.launcher_home).port, int(newp))
 
@@ -521,6 +526,48 @@ class PanelUpdate(GuiBase):
         self.assertEqual(cfgmod.load(self.plat.launcher_home).version, "9.9.9")
         self.assertIn("控制台更新測試", " ".join(w.get("1.0", "end") for w in walk(app.root) if isinstance(w, tk.Text)))
         self.assertTrue(self.boxes["showinfo"])
+
+    def test_opening_the_panel_quietly_checks_for_a_new_version_and_shows_a_banner(self):
+        self.cfg.options["check_update_on_open"] = True
+        cfgmod.save(self.plat.launcher_home, self.cfg)
+        bump_version(self.origin, "9.9.9")
+        app = self.open()
+        p = app.view
+        self.assertTrue(app.pump(lambda: p.update_info is not None, 60))
+        self.assertEqual(p.update_info["status"], "available")
+        app.root.update()
+        self.assertTrue(p.upd_card.winfo_ismapped())
+        self.assertIn("立即更新", texts(p.upd_card))
+        self.assertEqual(self.boxes["showerror"], [])                               # 悄悄的：沒有任何跳出視窗
+        self.assertEqual(self.boxes["askyesno"], [])
+        self.assertEqual(cfgmod.load(self.plat.launcher_home).version, __version__)   # 只是提示，不會自己更新
+
+    def test_the_quiet_check_shows_nothing_when_up_to_date_or_offline(self):
+        self.cfg.options["check_update_on_open"] = True
+        cfgmod.save(self.plat.launcher_home, self.cfg)
+        app = self.open()
+        p = app.view
+        self.assertTrue(app.pump(lambda: p.update_info is not None, 60))
+        self.assertEqual(p.update_info["status"], "up_to_date")
+        app.root.update()
+        self.assertFalse(p.upd_card.winfo_ismapped())
+        self.close()
+        git(self.app_dir, "remote", "set-url", "origin", str(self.t.path / "gone"))     # 連不上
+        app = self.open()
+        p = app.view
+        self.assertTrue(app.pump(lambda: p.update_info is not None, 60))
+        self.assertEqual(p.update_info["status"], "unavailable")
+        app.root.update()
+        self.assertFalse(p.upd_card.winfo_ismapped())
+        self.assertEqual(self.boxes["showerror"], [])
+
+    def test_the_quiet_check_can_be_turned_off(self):
+        bump_version(self.origin, "9.9.9")
+        app = self.open()
+        p = app.view
+        self.assertIsNone(p.check_id)
+        app.pump(lambda: False, 2.5)
+        self.assertIsNone(p.update_info)
 
     def test_declining_the_update_prompt_changes_nothing(self):
         bump_version(self.origin, "9.9.9")
