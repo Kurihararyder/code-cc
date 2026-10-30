@@ -1,361 +1,61 @@
 <!doctype html>
-<html lang="zh-Hant">
+<html lang="zh-Hant" data-theme="auto">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="cpe-token" content="__TOKEN__">
 <title>CPE 教練</title>
-<style>
-:root{--bg:#f6f7f9;--panel:#fff;--ink:#1d2430;--muted:#667085;--line:#e3e7ee;--accent:#2f6fed;--accent-ink:#fff;--ok:#17803d;--bad:#c4321c;--warn:#a15c00;--code-bg:#fbfcfe;--sel:#ffe9a8;--chip:#eef2fb}
-@media (prefers-color-scheme:dark){:root{--bg:#10141b;--panel:#171c25;--ink:#e6e9ef;--muted:#9aa4b2;--line:#283040;--accent:#6b9bff;--accent-ink:#0b1220;--bad:#ff7a66;--warn:#f0b455;--code-bg:#131820;--sel:#5a4a10;--chip:#202a3d}}
-@media (prefers-color-scheme:dark){:root{--ok:#4cc38a}}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif}
-header{display:flex;gap:12px;align-items:center;padding:8px 16px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
-header h1{font-size:16px;margin:0}
-header .grow{flex:1}
-.dot{width:9px;height:9px;border-radius:50%;display:inline-block;background:var(--bad)}
-.dot.on{background:var(--ok)}
-main{display:grid;grid-template-columns:minmax(260px,1fr) minmax(380px,1.5fr) minmax(300px,1.1fr);gap:12px;padding:12px;height:calc(100vh - 54px)}
-@media (max-width:1000px){main{grid-template-columns:1fr;height:auto}}
-section{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:auto;min-height:0}
-section>h2{font-size:13px;letter-spacing:.04em;color:var(--muted);margin:0;padding:10px 14px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);z-index:2}
-.pad{padding:12px 14px}
-button,select,input{font:inherit;color:inherit}
-button{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:5px 12px;cursor:pointer}
-button:hover{border-color:var(--accent)}
-button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
-button:disabled{opacity:.5;cursor:not-allowed}
-input,select{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:4px 8px}
-.muted{color:var(--muted)}
-.small{font-size:13px}
-.unit h3{margin:0 0 2px;font-size:16px}
-.plist{list-style:none;margin:8px 0 0;padding:0}
-.plist li{display:flex;gap:8px;align-items:center;padding:5px 8px;border-radius:8px;cursor:pointer}
-.plist li:hover,.plist li.cur{background:var(--chip)}
-.tag{font-size:11px;border:1px solid var(--line);border-radius:999px;padding:0 7px;color:var(--muted)}
-.ok{color:var(--ok)}.bad{color:var(--bad)}.warn{color:var(--warn)}
-.stmt h1{font-size:18px;margin:.2em 0}.stmt h2{font-size:15px;margin:1em 0 .2em;position:static;border:0;padding:0;color:var(--ink);background:none}
-.stmt pre,pre{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;overflow:auto;margin:.4em 0;font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-all}
-.stmt code{background:var(--chip);padding:0 4px;border-radius:4px;font:13px ui-monospace,Menlo,Consolas,monospace}
-.editor{position:relative;display:flex;border:1px solid var(--line);border-radius:8px;background:var(--code-bg);height:340px;overflow:hidden}
-.gutter{padding:10px 8px 10px 10px;text-align:right;color:var(--muted);font:13px/20px ui-monospace,Menlo,Consolas,monospace;user-select:none;overflow:hidden;white-space:pre;border-right:1px solid var(--line)}
-#code{flex:1;border:0;outline:0;resize:none;background:transparent;padding:10px;font:13px/20px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre;overflow:auto;tab-size:4}
-#code::selection,.stmt ::selection,#result ::selection,#trace ::selection{background:var(--sel)}
-.toolbar{display:flex;gap:8px;margin:8px 0;align-items:center;flex-wrap:wrap}
-.verdict{display:inline-block;font-weight:700;padding:2px 10px;border-radius:999px;border:1px solid currentColor}
-.cases{display:flex;gap:4px;flex-wrap:wrap;margin:6px 0}
-.case{font-size:12px;border-radius:6px;padding:0 7px;border:1px solid var(--line)}
-.case.AC{color:var(--ok)}.case:not(.AC){color:var(--bad)}
-table.trace{border-collapse:collapse;width:100%;font:12.5px/1.4 ui-monospace,Menlo,Consolas,monospace}
-table.trace td,table.trace th{border-bottom:1px solid var(--line);padding:3px 6px;text-align:left;vertical-align:top}
-.hint{border-left:3px solid var(--warn);padding:2px 10px;margin:6px 0}
-#pop{position:fixed;z-index:50;display:none;background:var(--panel);border:1px solid var(--accent);border-radius:10px;padding:8px;box-shadow:0 8px 28px rgba(0,0,0,.22);width:280px}
-#pop .row{display:flex;gap:6px;flex-wrap:wrap}
-#pop input{width:100%;margin-top:6px}
-#pop .q{font-size:12px;color:var(--muted);max-height:3.2em;overflow:hidden;margin-bottom:6px}
-.thread{border:1px solid var(--line);border-radius:10px;margin:10px 0;overflow:hidden}
-.thread>.head{background:var(--chip);padding:6px 10px;font-size:13px}
-.msg{padding:8px 12px;border-top:1px solid var(--line)}
-.msg.user{background:transparent;color:var(--muted)}
-.msg .who{font-size:12px;color:var(--muted)}
-.chip{display:inline-block;font-size:12px;border:1px solid var(--line);background:var(--chip);border-radius:6px;padding:0 6px;margin:2px 4px 2px 0;cursor:pointer}
-.chip.bad{border-color:var(--bad);text-decoration:line-through;cursor:default}
-.reply{display:flex;gap:6px;padding:8px 10px;border-top:1px solid var(--line)}
-.reply textarea{flex:1;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;padding:6px;font:inherit;resize:vertical;min-height:38px}
-.banner{background:#7a1f12;color:#fff;padding:6px 14px;font-size:13px}
-.ladder{display:flex;gap:4px;margin:4px 0 8px}
-.ladder span{flex:1;height:6px;border-radius:3px;background:var(--line)}
-.ladder span.on{background:var(--warn)}
-</style>
+<link rel="icon" href="/static/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/static/css/app.css">
 </head>
 <body>
-<header>
-  <h1>🎓 CPE 教練</h1>
-  <span id="unitLine" class="muted small"></span>
-  <span class="grow"></span>
-  <span class="small"><span id="aiDot" class="dot"></span> <span id="aiText">AI 未設定</span></span>
-  <input id="keyIn" type="password" placeholder="貼上 OpenAI API 金鑰" size="22" autocomplete="off">
-  <input id="modelIn" placeholder="模型" size="12" title="例如 gpt-4o；你帳號可用的任何聊天模型">
-  <button id="keyBtn">儲存</button>
-</header>
-<div id="examBanner" class="banner" style="display:none"></div>
-<main>
-  <section id="left">
-    <h2>單元與題目</h2>
-    <div class="pad unit" id="unitCard"></div>
-    <h2>題目敘述（選取文字可以問 AI）</h2>
-    <div class="pad stmt" id="stmt" data-src="statement"><span class="muted">從上面選一題開始。</span></div>
-  </section>
-  <section id="mid">
-    <h2 id="midTitle">程式</h2>
-    <div class="pad">
-      <div id="startBox" style="display:none"><p class="muted">還沒有這題的解答檔。</p><button class="primary" id="startBtn">開始這題</button></div>
-      <div id="editBox" style="display:none">
-        <div class="editor"><div class="gutter" id="gutter">1</div><textarea id="code" spellcheck="false" autocapitalize="off"></textarea></div>
-        <div class="toolbar">
-          <button class="primary" id="runBtn" title="Ctrl+Enter">▶ 執行測試</button>
-          <label class="small muted">先預測：
-            <select id="predict"><option value="">（不預測）</option><option value="AC">通過</option><option value="WA">答案錯</option><option value="TLE">超時</option><option value="RE">執行錯誤</option></select></label>
-          <button id="traceBtn" title="逐行看變數怎麼變">🔍 逐行追蹤</button>
-          <button id="saveBtn" title="Ctrl+S">儲存</button>
-          <span id="saved" class="small muted"></span>
-        </div>
-        <div class="ladder" id="ladder" title="提示使用程度（越多越像用了提示，通過後會安排無提示重寫）"><span></span><span></span><span></span><span></span><span></span></div>
-        <div id="result"></div>
-        <div id="lint"></div>
-        <div id="trace"></div>
-      </div>
-    </div>
-  </section>
-  <section id="right">
-    <h2>AI 詢問</h2>
-    <div class="pad">
-      <p class="small muted" id="askTip">在題目、程式、測試結果或追蹤表上<b>用滑鼠選一段文字</b>，旁邊會跳出選單。問題會釘在你選的那一段；AI 必須逐字引用，系統會驗證。對錯永遠由測試決定。</p>
-      <div id="threads"></div>
-    </div>
-  </section>
-</main>
+<svg class="sprite" width="0" height="0" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></symbol>
+    <symbol id="i-code" viewBox="0 0 24 24"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></symbol>
+    <symbol id="i-map" viewBox="0 0 24 24"><path d="M5 21V4M5 4h12l-2.5 4L17 12H5"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V11M10 20V4M16 20v-7M22 20H2"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 6h9M19 6h1M4 12h3M13 12h7M4 18h11M21 18h-1"/><circle cx="16" cy="6" r="2.2"/><circle cx="10" cy="12" r="2.2"/><circle cx="17.5" cy="18" r="2.2"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5l12 7.5-12 7.5z" fill="currentColor"/></symbol>
+    <symbol id="i-save" viewBox="0 0 24 24"><path d="M5 3h11l3 3v15H5zM8 3v6h8V3M8 21v-7h8v7"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M4 6h16M4 12h11M4 18h7"/></symbol>
+    <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3l2.2 5.8L20 11l-5.8 2.2L12 19l-2.2-5.8L4 11l5.8-2.2zM19 17l.8 2.2L22 20l-2.2.8L19 23l-.8-2.2L16 20l2.2-.8z"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.2a2.6 2.6 0 1 1 3.6 2.4c-.8.4-1.1 1-1.1 1.7M12 17h.01"/></symbol>
+    <symbol id="i-neq" viewBox="0 0 24 24"><path d="M6 9h12M6 15h12M9.5 20L14.5 4"/></symbol>
+    <symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.8 10.6c.7.6 1 1.4 1 2.4h5.6c0-1 .3-1.8 1-2.4A6 6 0 0 0 12 3z"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3.5l10 17.5H2zM12 10v5M12 18h.01"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 3c.8 3.6 5 5 5 10a5 5 0 0 1-10 0c0-2 .9-3.2 2-4.2.1 1.8.9 3 2 3-.4-3 .2-5.4 1-8.8z"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><path d="M4 12l16-8-6 16-3-6.5z"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v15H6.5A2.5 2.5 0 0 0 4 20.5zM4 20.5A2.5 2.5 0 0 0 6.5 23H19v-5"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></symbol>
+    <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></symbol>
+    <symbol id="i-external" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v6H4V6h6"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-cmd" viewBox="0 0 24 24"><path d="M9 9h6v6H9zM9 9V6a3 3 0 1 0-3 3h3M15 9h3a3 3 0 1 0-3-3v3M9 15H6a3 3 0 1 0 3 3v-3M15 15h3a3 3 0 1 1-3 3v-3"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+  </defs>
+</svg>
 
-<div id="pop">
-  <div class="q" id="popQ"></div>
-  <div class="row">
-    <button data-kind="explain" title="只解釋詞彙／語法，不算提示">這是什麼意思？</button>
-    <button data-kind="question" class="primary" title="AI 針對這一段考你；算 L2 提示">考我這一段</button>
-    <button data-kind="mismatch" id="popMis" title="預期和實際輸出的差異；算 L4 提示">預期和實際不同</button>
-  </div>
-  <input id="popNote" placeholder="（選填）你的猜測或疑問，先寫比較有效">
+<a class="skip" href="#view">跳到主要內容</a>
+<div id="app" class="app">
+  <nav id="rail" class="rail" aria-label="主要導覽"></nav>
+  <header id="topbar" class="topbar"></header>
+  <div id="offline" class="offline" role="alert" hidden>連線中斷：本機伺服器沒有回應，請確認終端機的 <code>cpe web</code> 還在執行，然後重新整理。</div>
+  <main id="view" class="view" tabindex="-1" aria-live="polite"></main>
 </div>
-
-<script>
-const TOKEN="__TOKEN__";
-const $=s=>document.querySelector(s);
-const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-let cur=null, last=null, traceText="", busy=false, examActive=false, pending=null;
-
-async function api(path, body){
-  const r=await fetch(path,{method:body?"POST":"GET",headers:{"X-CPE-Token":TOKEN,"Content-Type":"application/json"},body:body?JSON.stringify(body):undefined});
-  const j=await r.json().catch(()=>({error:"伺服器回應異常"}));
-  if(!r.ok) throw new Error(j.error||("HTTP "+r.status));
-  return j;
-}
-function toast(msg){const el=document.createElement("div");el.textContent=msg;el.style.cssText="position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#222;color:#fff;padding:8px 16px;border-radius:8px;z-index:99;max-width:80vw";document.body.appendChild(el);setTimeout(()=>el.remove(),3800)}
-
-/* ---------- 簡易 Markdown ---------- */
-function md(src){
-  const L=src.replace(/\r/g,"").split("\n"), out=[]; let fence=false, buf=[], list=false;
-  const inline=t=>esc(t).replace(/`([^`]+)`/g,"<code>$1</code>").replace(/\*\*([^*]+)\*\*/g,"<b>$1</b>");
-  const closeList=()=>{if(list){out.push("</ul>");list=false}};
-  for(const ln of L){
-    if(ln.startsWith("```")){ if(fence){out.push("<pre>"+esc(buf.join("\n"))+"</pre>");buf=[];fence=false}else{closeList();fence=true} continue}
-    if(fence){buf.push(ln);continue}
-    let m;
-    if((m=ln.match(/^(#{1,3})\s+(.*)/))){closeList();out.push(`<h${m[1].length}>${inline(m[2])}</h${m[1].length}>`)}
-    else if((m=ln.match(/^[-*]\s+(.*)/))){if(!list){out.push("<ul>");list=true}out.push("<li>"+inline(m[1])+"</li>")}
-    else if(!ln.trim()){closeList()}
-    else{closeList();out.push("<p>"+inline(ln)+"</p>")}
-  }
-  closeList(); return out.join("\n");
-}
-
-/* ---------- 單元與題目清單 ---------- */
-async function loadState(){
-  const s=await api("/api/state");
-  examActive=!!s.exam;
-  const ex=$("#examBanner");
-  if(s.exam){ex.style.display="block";ex.textContent=`⏱ 考試進行中（${s.exam.kind}）：AI 詢問與提示已鎖定。題目：${s.exam.problems.join("、")}`}else ex.style.display="none";
-  $("#aiDot").classList.toggle("on",s.ai.available);
-  $("#aiText").textContent=s.ai.available?("AI 就緒 · "+s.ai.model):"AI 未設定";
-  if(!$("#modelIn").value) $("#modelIn").value=s.ai.model||"";
-  const u=s.unit, card=$("#unitCard");
-  if(!u){card.innerHTML="<b>課程已完成 🎓</b>";return s}
-  $("#unitLine").textContent=`單元 ${u.n}/${u.total} · ${u.title} · 第 ${u.weeks[0]}${u.weeks[1]>u.weeks[0]?"–"+u.weeks[1]:""} 週`;
-  let h=`<h3>${esc(u.title)}</h3><div class="small muted">${esc(u.goal)}</div>`;
-  if(s.due.length) h+=`<div class="hint small">🔁 到期重練：${s.due.map(d=>`<a href="#" data-open="${d.id}">${d.id}</a>`).join("、")}</div>`;
-  h+=`<ul class="plist">`+s.problems.map(p=>`<li data-open="${p.id}"><span>${p.done_in_lang||p.solved?"✅":"⬜"}</span><span>${p.id}</span><span class="small muted" style="flex:1">${esc(p.title)}</span><span class="tag">${p.role}</span></li>`).join("")+`</ul>`;
-  h+=`<div class="toolbar"><input id="openId" placeholder="輸入題號，例如 e101" size="16"><button id="openBtn">開啟</button></div>`;
-  h+=`<details class="small" style="margin-top:6px"><summary>本單元要學的／陷阱／自我檢查</summary><ul>${u.learn.map(x=>`<li>${esc(x)}</li>`).join("")}</ul><b>陷阱</b><ul>${u.pitfalls.map(x=>`<li>${esc(x)}</li>`).join("")}</ul><b>自我檢查</b><ul>${u.check.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></details>`;
-  card.innerHTML=h;
-  if(cur) document.querySelectorAll(".plist li").forEach(li=>li.classList.toggle("cur",li.dataset.open===cur.id));
-  return s;
-}
-document.addEventListener("click",e=>{
-  const a=e.target.closest("[data-open]"); if(a){e.preventDefault();openProblem(a.dataset.open)}
-  if(e.target.id==="openBtn"){const v=$("#openId").value.trim(); if(v) openProblem(v)}
-});
-
-async function openProblem(id){
-  try{
-    cur=await api("/api/problem?id="+encodeURIComponent(id));
-  }catch(e){toast(e.message);return}
-  last=null; traceText=""; $("#result").innerHTML=""; $("#trace").innerHTML=""; $("#lint").innerHTML="";
-  $("#midTitle").textContent=`${cur.id} · ${cur.title}`;
-  $("#stmt").innerHTML=cur.statement?md(cur.statement):`<p class="muted">沒有內建的題目敘述。${cur.url?`請到 <a href="${esc(cur.url)}" target="_blank" rel="noopener">題目頁</a> 閱讀，把文字存成檔案後用 <code>cpe import ${esc(cur.id)} 檔案</code> 匯入。`:""}</p>`;
-  renderEditor();
-  document.querySelectorAll(".plist li").forEach(li=>li.classList.toggle("cur",li.dataset.open===cur.id));
-  loadThreads();
-}
-function renderEditor(){
-  const has=cur.code!==null;
-  $("#startBox").style.display=has?"none":"block";
-  $("#editBox").style.display=has?"block":"none";
-  if(has){$("#code").value=cur.code;syncGutter();setLadder()}
-}
-function setLadder(){
-  const lv=cur.hint_level; document.querySelectorAll("#ladder span").forEach((s,i)=>s.classList.toggle("on",i<=lv&&lv>=0));
-}
-$("#startBtn").onclick=async()=>{
-  try{cur=await api("/api/new",{id:cur.id});renderEditor();loadState()}catch(e){toast(e.message)}
-};
-
-/* ---------- 編輯器 ---------- */
-const ta=$("#code");
-function syncGutter(){const n=ta.value.split("\n").length;$("#gutter").textContent=Array.from({length:n},(_,i)=>i+1).join("\n");$("#gutter").scrollTop=ta.scrollTop}
-ta.addEventListener("input",()=>{syncGutter();$("#saved").textContent="未儲存"});
-ta.addEventListener("scroll",()=>{$("#gutter").scrollTop=ta.scrollTop});
-ta.addEventListener("keydown",e=>{
-  if(e.key==="Tab"){e.preventDefault();const s=ta.selectionStart;ta.setRangeText("    ",s,ta.selectionEnd,"end");syncGutter()}
-  if((e.ctrlKey||e.metaKey)&&e.key==="Enter"){e.preventDefault();runTest()}
-  if((e.ctrlKey||e.metaKey)&&e.key==="s"){e.preventDefault();save()}
-});
-async function save(){ if(!cur||cur.code===null) return; await api("/api/save",{id:cur.id,code:ta.value}); $("#saved").textContent="已儲存 "+new Date().toLocaleTimeString() }
-$("#saveBtn").onclick=()=>save().catch(e=>toast(e.message));
-
-function selectLine(a,b){
-  const lines=ta.value.split("\n"); let s=0; for(let i=0;i<a-1;i++) s+=lines[i].length+1;
-  let e=s; for(let i=a-1;i<(b||a);i++) e+=lines[i].length+1; e=Math.max(s,e-1);
-  ta.focus(); ta.setSelectionRange(s,e); ta.scrollTop=Math.max(0,(a-3)*20);
-}
-
-/* ---------- 執行測試 ---------- */
-async function runTest(){
-  if(busy||!cur||cur.code===null) return; busy=true; $("#runBtn").disabled=true; $("#result").innerHTML='<span class="muted">判題中…</span>';
-  try{
-    const r=await api("/api/test",{id:cur.id,code:ta.value,predicted:$("#predict").value||undefined});
-    last=r; $("#saved").textContent="已儲存";
-    renderResult(r, $("#predict").value);
-    cur=await api("/api/problem?id="+encodeURIComponent(cur.id)); setLadder();
-    loadState();
-  }catch(e){$("#result").innerHTML=`<span class="bad">${esc(e.message)}</span>`}
-  finally{busy=false;$("#runBtn").disabled=false}
-}
-$("#runBtn").onclick=runTest;
-function renderResult(r, predicted){
-  if(r.setup_error){$("#result").innerHTML=`<span class="bad">${esc(r.message)}</span>`;$("#lint").innerHTML="";return}
-  const ok=r.verdict==="AC";
-  let h=`<div><span class="verdict ${ok?"ok":"bad"}">${r.verdict} ${esc(r.verdict_zh)}</span>`;
-  if(predicted) h+=` <span class="small ${predicted===r.verdict?"ok":"warn"}">你預測 ${predicted}，${predicted===r.verdict?"猜對了":"實際是 "+r.verdict}</span>`;
-  h+=`</div>`;
-  if(r.message) h+=`<div class="small bad" data-src="output">${esc(r.message)}</div>`;
-  h+=`<div class="cases">`+r.cases.map(c=>`<span class="case ${c.verdict}">${esc(c.name)} ${c.verdict} ${c.seconds}s</span>`).join("")+`</div>`;
-  if(r.failing){const f=r.failing;
-    h+=`<div data-src="output"><div class="small muted">第一個失敗的測資 ${esc(f.name)}（選取下面的文字可以問）</div>
-      <div class="small muted">輸入</div><pre>${esc(f.input.slice(0,600))}</pre>
-      <div class="small muted">預期輸出</div><pre>${esc(f.expected.slice(0,600))}</pre>
-      <div class="small muted">你的輸出</div><pre>${esc(f.actual.slice(0,600)||"（空）")}</pre>
-      ${f.stderr.trim()?`<div class="small muted">錯誤訊息</div><pre>${esc(f.stderr.trim().slice(-400))}</pre>`:""}</div>`;}
-  if(r.exam_note) h+=`<div class="small">${esc(r.exam_note)}</div>`;
-  if(ok&&r.info.mastered) h+=`<div class="ok">🎉 精熟（無提示通過）</div>`;
-  else if(ok&&r.review&&r.review.stage!==null&&r.review.stage<3) h+=`<div class="warn small">通過，但用過提示——之後要無提示重寫。</div>`;
-  $("#result").innerHTML=h;
-  $("#lint").innerHTML=(r.lint&&r.lint.length)?`<div class="hint"><b class="small">常見陷阱提醒</b>${r.lint.map(x=>`<div class="small"><a href="#" data-line="${x.line}">第 ${x.line} 行</a> ${esc(x.message)}</div>`).join("")}</div>`:"";
-}
-document.addEventListener("click",e=>{const a=e.target.closest("[data-line]");if(a){e.preventDefault();selectLine(+a.dataset.line)}});
-
-/* ---------- 逐行追蹤 ---------- */
-$("#traceBtn").onclick=async()=>{
-  if(!cur||cur.code===null) return; $("#trace").innerHTML='<span class="muted">追蹤中…</span>';
-  try{
-    const t=await api("/api/trace",{id:cur.id,code:ta.value});
-    traceText=t.steps.map(s=>`第${s.line}行 ${s.text} | ${Object.entries(s.vars).map(([k,v])=>k+"="+v).join(", ")}`).join("\n");
-    $("#trace").innerHTML=`<div class="small muted" style="margin-top:8px">逐行追蹤（輸入：<code>${esc(t.input.slice(0,60).replace(/\n/g," ⏎ "))}</code>${t.truncated?"，只顯示前 "+t.steps.length+" 步":""}${t.error&&!t.truncated?"，結束於 "+esc(t.error):""}）。先在心裡猜變數，再看；選取任一列可以問 AI。</div>
-      <div data-src="trace"><table class="trace"><tr><th>行</th><th>程式</th><th>變數</th></tr>${t.steps.map(s=>`<tr><td>${s.line}</td><td>${esc(s.text)}</td><td>${esc(Object.entries(s.vars).map(([k,v])=>k+"="+v).join(", "))}</td></tr>`).join("")}</table></div>`;
-  }catch(e){$("#trace").innerHTML=`<span class="bad">${esc(e.message)}</span>`}
-};
-
-/* ---------- 選取 → 彈出選單 ---------- */
-function getSelectionInfo(){
-  if(document.activeElement===ta&&ta.selectionStart!==ta.selectionEnd){
-    const text=ta.value.slice(ta.selectionStart,ta.selectionEnd), before=ta.value.slice(0,ta.selectionStart);
-    const a=before.split("\n").length, b=a+text.replace(/\n$/,"").split("\n").length-1;
-    return {source:"code",text,line_start:a,line_end:b};
-  }
-  const sel=window.getSelection(); if(!sel||sel.isCollapsed) return null;
-  const text=sel.toString(); let n=sel.anchorNode; if(!n) return null; if(n.nodeType===3) n=n.parentElement;
-  const host=n&&n.closest("[data-src]"); if(!host) return null;
-  return {source:host.dataset.src,text,line_start:null,line_end:null};
-}
-function showPop(x,y){
-  const info=getSelectionInfo(); if(!info||info.text.trim().length<2||!cur){hidePop();return}
-  pending=info;
-  $("#popQ").textContent="要問這一段嗎？「"+info.text.trim().slice(0,70)+(info.text.trim().length>70?"…":"")+"」";
-  $("#popMis").style.display=(last&&last.failing)?"":"none";
-  $("#popNote").value="";
-  const p=$("#pop"); p.style.display="block";
-  const w=280,h=p.offsetHeight; p.style.left=Math.min(x+8,innerWidth-w-12)+"px"; p.style.top=Math.min(y+12,innerHeight-h-12)+"px";
-}
-function hidePop(){ $("#pop").style.display="none" }
-document.addEventListener("mouseup",e=>{ if(e.target.closest("#pop")) return; const x=e.clientX,y=e.clientY; setTimeout(()=>showPop(x,y),10) });
-document.addEventListener("keyup",e=>{ if(e.shiftKey&&document.activeElement===ta){const r=ta.getBoundingClientRect();setTimeout(()=>showPop(r.left+40,r.top+40),10)} if(e.key==="Escape") hidePop() });
-$("#pop").addEventListener("mousedown",e=>{ if(e.target.tagName!=="INPUT") e.preventDefault() });
-document.querySelectorAll("#pop button").forEach(b=>b.addEventListener("click",()=>askNew(b.dataset.kind)));
-
-/* ---------- AI 詢問 ---------- */
-async function askNew(kind){
-  if(!pending||!cur) return; const info=pending, note=$("#popNote").value; hidePop();
-  if(examActive){toast("考試進行中，AI 詢問已鎖定");return}
-  placeholderThread(kind,info);
-  try{
-    const r=await api("/api/ask",{id:cur.id,code:cur.code!==null?ta.value:undefined,kind,source:info.source,selection:info.text,line_start:info.line_start,line_end:info.line_end,note,trace_text:traceText});
-    await loadThreads(r.thread); cur=await api("/api/problem?id="+encodeURIComponent(cur.id)); setLadder();
-  }catch(e){ document.querySelector("#threads .pending")?.remove(); toast(e.message) }
-}
-function placeholderThread(kind,info){
-  const d=document.createElement("div"); d.className="thread pending";
-  d.innerHTML=`<div class="head">${esc(kindLabel(kind))} · ${esc(info.source)}</div><div class="msg user">${esc(info.text.slice(0,200))}</div><div class="msg muted">AI 思考中…</div>`;
-  $("#threads").prepend(d);
-}
-const KL={explain:"這是什麼意思？",question:"考我這一段",mismatch:"預期和實際不同"};
-const kindLabel=k=>KL[k]||k;
-async function loadThreads(focus){
-  if(!cur) return; const c=await api("/api/chat?id="+encodeURIComponent(cur.id));
-  const T=[...c.threads].reverse();
-  $("#threads").innerHTML=T.length?T.map((t,i)=>threadHtml(t,i===0)).join(""):'<p class="muted small">這題還沒有提問。</p>';
-}
-function msgHtml(m){
-  if(m.role==="user") return `<div class="msg user"><div class="who">你</div>${esc(m.display)}</div>`;
-  const ev=(m.evidence||[]).map(e=>e.ok?`<span class="chip" data-src-ref="${esc(e.source)}" data-quote="${esc(e.quote)}" data-line="${e.line??""}">✓ ${e.source==="code"&&e.line?"第 "+e.line+" 行：":esc(e.source)+"："}${esc(e.quote.slice(0,40))}</span>`:`<span class="chip bad" title="系統找不到這段引用，已標為無效">✗ ${esc(e.quote.slice(0,40))}</span>`).join("");
-  return `<div class="msg"><div class="who">AI${m.type?" · "+esc(m.type):""}</div><div>${esc(m.display).replace(/\n/g,"<br>")}</div><div>${ev}</div>${m.warning?`<div class="small warn">${esc(m.warning)}</div>`:""}</div>`;
-}
-function threadHtml(t,isLast){
-  const q=t.line_start?` · 第 ${t.line_start}${t.line_end&&t.line_end!==t.line_start?"–"+t.line_end:""} 行`:"";
-  const replies=t.messages.filter(m=>m.role==="user").length-1;
-  const canReply=isLast&&t.messages.length&&t.messages[t.messages.length-1].role==="assistant"&&t.kind!=="explain"||(isLast&&t.kind==="explain");
-  return `<div class="thread" data-th="${t.id}"><div class="head"><b>${esc(kindLabel(t.kind))}</b> · ${esc(t.source)}${q}</div>
-    <div class="msg user"><div class="who">你選的</div><code>${esc(t.selection.slice(0,200))}</code></div>
-    ${t.messages.map((m,i)=>i===0?"":msgHtml(m)).join("").replace(/^/,"")}
-    ${t.messages[0]&&t.messages.length>1?"":""}
-    ${canReply?`<div class="reply"><textarea placeholder="用你自己的話回答（對方只評論你的推理，不評論程式對錯）"></textarea><button class="primary" data-send="${t.id}">送出</button></div>`:""}</div>`;
-}
-document.addEventListener("click",async e=>{
-  const chip=e.target.closest(".chip[data-src-ref]");
-  if(chip){const s=chip.dataset.srcRef,q=chip.dataset.quote,ln=+chip.dataset.line;
-    if(s==="code"&&ln) selectLine(ln); else{const host=document.querySelector(`[data-src="${s}"]`); if(host) highlightIn(host,q)}}
-  const send=e.target.closest("[data-send]");
-  if(send){const box=send.parentElement.querySelector("textarea"),text=box.value.trim(); if(!text) return; send.disabled=true;
-    try{await api("/api/ask",{id:cur.id,code:ta.value,thread:send.dataset.send,reply:text,trace_text:traceText});await loadThreads()}
-    catch(err){toast(err.message);send.disabled=false}}
-});
-function highlightIn(host,quote){
-  const walker=document.createTreeWalker(host,NodeFilter.SHOW_TEXT); const q=quote.trim();
-  while(walker.nextNode()){const n=walker.currentNode,i=n.nodeValue.indexOf(q);
-    if(i>=0){const r=document.createRange();r.setStart(n,i);r.setEnd(n,i+q.length);const s=getSelection();s.removeAllRanges();s.addRange(r);n.parentElement.scrollIntoView({block:"center"});return}}
-}
-
-/* ---------- 金鑰 ---------- */
-$("#keyBtn").onclick=async()=>{
-  try{const r=await api("/api/key",{key:$("#keyIn").value,model:$("#modelIn").value}); $("#keyIn").value=""; toast(r.available?"AI 已就緒（金鑰只存在這個程序的記憶體）":"還沒有可用的金鑰"); loadState()}catch(e){toast(e.message)}
-};
-loadState().then(s=>{const first=s&&s.problems.find(p=>!p.solved&&!p.done_in_lang)||(s&&s.problems[0]); if(first) openProblem(first.id)}).catch(e=>toast(e.message));
-</script>
+<div id="layer" class="layer"></div>
+<div id="toasts" class="toasts" role="status" aria-live="polite"></div>
+<noscript><p class="noscript">這個介面需要 JavaScript。</p></noscript>
+<script type="module" src="/static/js/main.js"></script>
 </body>
 </html>

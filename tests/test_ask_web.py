@@ -74,6 +74,15 @@ class VerifyTests(unittest.TestCase):
                                   {"code": "b = a+2", "statement": "請輸出答案"})
         self.assertEqual([o["ok"] for o in out], [True, False, True, False, False])   # 空白差異會被正規化；捏造的、未知來源的、太短的都不行
 
+    def test_mislabelled_source_is_corrected_not_rejected(self):
+        out = ask.verify_evidence([{"source": "code", "quote": "輸出一行問候"}], {"code": "print(1)", "statement": "請輸出一行問候語", "output": "", "trace": ""})
+        self.assertTrue(out[0]["ok"])
+        self.assertEqual(out[0]["source"], "statement")
+        self.assertTrue(out[0]["relabeled"])
+        # 兩個來源都有 → 無法判斷，維持拒絕
+        out = ask.verify_evidence([{"source": "output", "quote": "Hello"}], {"code": "print('Hello')", "statement": "Hello", "output": "", "trace": ""})
+        self.assertFalse(out[0]["ok"])
+
     def test_parse_reply(self):
         self.assertTrue(ask.parse_reply('前言 {"message": "hi", "evidence": []} 後記')["parsed"])
         self.assertFalse(ask.parse_reply("純文字")["parsed"])
@@ -178,7 +187,7 @@ class AskFlowTests(AskBase):
         self.assertIn("預期輸出", user)
 
 
-class WebTests(unittest.TestCase):
+class WebBase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.tmp = tempfile.TemporaryDirectory()
@@ -209,6 +218,8 @@ class WebTests(unittest.TestCase):
         except urllib.error.HTTPError as e:
             return e.code, e.read().decode()
 
+
+class WebTests(WebBase):
     def test_index_has_token_and_security_headers(self):
         code, html = self.req("/", token=False)
         self.assertEqual(code, 200)
@@ -264,6 +275,116 @@ class WebTests(unittest.TestCase):
         with self.assertRaises(urllib.error.HTTPError) as cm:
             urllib.request.urlopen(r)
         self.assertEqual(cm.exception.code, 400)
+
+
+class WebApiTests(WebBase):
+    """沿用 WebTests 的伺服器，測新增的端點。"""
+
+    def post(self, path, body=None):
+        code, text = self.req(path, body if body is not None else {})
+        return code, json.loads(text)
+
+    def get(self, path):
+        code, text = self.req(path)
+        return code, json.loads(text)
+
+    def test_static_files_safe(self):
+        code, _ = self.req("/static/css/app.css", token=False)
+        self.assertEqual(code, 200)
+        code, _ = self.req("/static/js/main.js", token=False)
+        self.assertEqual(code, 200)
+        for bad in ("/static/../store.py", "/static/%2e%2e/store.py", "/static/js/../../web.py", "/static/js/nope.js", "/static/index.html.bak"):
+            self.assertEqual(self.req(bad, token=False)[0], 404, bad)
+
+    def test_security_headers(self):
+        r = urllib.request.Request(f"http://127.0.0.1:{self.port}/", headers={"Host": f"127.0.0.1:{self.port}"})
+        with urllib.request.urlopen(r) as resp:
+            csp = resp.headers["Content-Security-Policy"]
+        self.assertIn("script-src 'self'", csp)
+        self.assertNotIn("unsafe-inline", csp)
+        self.assertIn("frame-ancestors 'none'", csp)
+
+    def test_index_has_no_inline_script_or_style(self):
+        _, html = self.req("/", token=False)
+        import re
+        self.assertFalse(re.search(r"<script(?![^>]*\bsrc=)", html))
+        self.assertNotIn(" style=", html)
+
+    def test_dashboard_course_stats_settings(self):
+        code, d = self.get("/api/dashboard")
+        self.assertEqual(code, 200)
+        self.assertEqual(d["unit"]["n"], 1)
+        self.assertIn("heatmap", d)
+        self.assertEqual(len(d["heatmap"]), 84)
+        code, c = self.get("/api/course")
+        self.assertEqual(sum(len(s["units"]) for s in c["stages"]), 52)
+        code, u = self.get("/api/unit?n=5")
+        self.assertEqual(u["n"], 5)
+        self.assertEqual(self.get("/api/unit?n=999")[0], 400)
+        code, st = self.get("/api/stats")
+        self.assertIn("verdicts_total", st)
+        code, se = self.get("/api/settings")
+        self.assertIn("timeout_sec", se)
+        code, r = self.get("/api/search?q=d00")
+        self.assertTrue(any(x["id"] == "d001" for x in r["results"]))
+
+    def test_settings_validation(self):
+        self.assertEqual(self.post("/api/settings", {"timeout_sec": 9999})[0], 400)
+        self.assertEqual(self.post("/api/settings", {"start_date": "不是日期"})[0], 400)
+        code, r = self.post("/api/settings", {"timeout_sec": 4})
+        self.assertEqual(code, 200)
+        self.assertEqual(r["timeout_sec"], 4)
+        self.post("/api/settings", {"timeout_sec": 3})
+
+    def test_hint_giveup_and_gates(self):
+        self.post("/api/new", {"id": "d005"})
+        code, r = self.post("/api/hint", {"id": "d005", "level": 2})                 # 還沒嘗試、也跳級
+        self.assertEqual(code, 409)
+        code, r = self.post("/api/hint", {"id": "d005", "level": 0})
+        self.assertEqual(code, 200)
+        self.assertIn("題意檢查清單", r["text"])
+        self.assertEqual(self.post("/api/solution", {"id": "d005"})[0], 409)           # 還沒放棄
+        self.assertEqual(self.post("/api/giveup", {"id": "d005"})[0], 200)
+        code, r = self.post("/api/solution", {"id": "d005"})
+        self.assertEqual(code, 409)
+        self.assertIn("冷卻", r["error"])
+
+    def test_gate_requires_drills_then_exam_lifecycle(self):
+        code, r = self.post("/api/gate")
+        self.assertEqual(code, 400)                                                  # 必做練習還沒完成
+        self.assertEqual(self.post("/api/mock", {"kind": "bogus"})[0], 400)
+        code, r = self.post("/api/mock", {"kind": "short"})
+        self.assertEqual(code, 200)
+        self.assertEqual(len(r["exam"]["problems"]), 3)
+        self.assertEqual(self.post("/api/mock", {"kind": "short"})[0], 400)          # 已有進行中的考試
+        code, a = self.post("/api/ask", {"id": "d001", "kind": "explain", "source": "statement", "selection": "輸出"})
+        self.assertEqual(code, 409)
+        code, fin = self.post("/api/exam/finish")
+        self.assertEqual(code, 200)
+        self.assertEqual(fin["summary"]["solved"], 0)
+
+    def test_course_goto_and_next(self):
+        self.assertEqual(self.post("/api/course/goto", {"n": 999})[0], 400)
+        code, r = self.post("/api/course/goto", {"n": 15})
+        self.assertEqual(code, 200)
+        self.assertEqual(self.post("/api/course/next")[0], 400)                      # 有檢核的單元不能直接前進
+        self.post("/api/course/goto", {"n": 1})
+
+    def test_ai_test_without_key(self):
+        self.app.key = None
+        code, r = self.post("/api/ai/test")
+        self.assertEqual(code, 200)
+        self.assertFalse(r["ok"])
+
+    def test_test_endpoint_reports_error_line(self):
+        self.post("/api/new", {"id": "d006"})
+        code, r = self.post("/api/test", {"id": "d006", "code": "x = [][1]\n"})
+        self.assertEqual(code, 200)
+        self.assertEqual(r["verdict"], "RE")
+        self.assertEqual(r["error_line"], 1)
+        code, r = self.post("/api/test", {"id": "d006", "code": "def f(:\n"})
+        self.assertEqual(r["verdict"], "CE")
+        self.assertEqual(r["error_line"], 1)
 
 
 class ServiceTests(unittest.TestCase):

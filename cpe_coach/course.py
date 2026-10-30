@@ -120,3 +120,13 @@ def evaluate_gate(ws: Workspace, course: Dict[str, Any], summary: Dict[str, Any]
         return f"🎓 單元 {n} 檢核通過——整個課程完成！"
     return (f"❌ 單元 {n} 檢核未通過（{summary['solved']}/{summary['total']}，需 {need}）。"
             "建議：用提示階梯檢討沒做出的題目，24 小時後再 cpe gate。")
+
+
+def start_mock(ws: Workspace, bank: Dict[str, dict], kind: str, lang: str = "py", every_stage: bool = False) -> Dict[str, Any]:
+    """模擬考／每週測驗。只會出已有測資的題目（內建練習題，或你匯入過的題）。"""
+    cap = 9 if every_stage else max(int(ws.config()["stage"]), 1)
+    avail = {pid: p for pid, p in bank.items() if bank_mod.is_drill(pid) or any((ws.tests / pid).glob("*.in"))}
+    exam = mock.start(ws, avail, kind, lang=lang, max_stage=cap)
+    for pid in exam["problems"]:
+        bank_mod.install_drill(ws, pid)
+    return exam

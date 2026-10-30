@@ -453,29 +453,11 @@ def cmd_giveup(ws: Workspace, args) -> int:
 
 
 def cmd_solution(ws: Workspace, args) -> int:
-    st = ws.state()
-    p = ws.problem(st, args.id)
-    unlock = hints.solution_unlocked_at(p)
-    if ws.exam_active():
-        raise hints.HintDenied("考試進行中不能看解法")
-    if unlock is None:
-        raise hints.HintDenied(f"還沒放棄。真的卡住請先 cpe giveup {args.id}（冷卻 24 小時）")
-    if ws.now() < unlock:
-        raise hints.HintDenied(f"冷卻中，還要等 {fmt_dur(unlock - ws.now())}（{fmt_ts(unlock)} 解鎖）")
     bank = bank_mod.load_bank(ws)
-    problem = bank_mod.resolve(bank, args.id)
-    llm = get_llm(ws)
     sol = solution_file(ws, args.id)
     code = sol.read_text(encoding="utf-8") if sol.exists() else ""
-    if llm is None:
-        print("沒有設定 AI 金鑰。可以看這題的關鍵觀察，再去查社群題解：")
-        print(f"  {problem.get('hint_insight') or '（此題沒有內建解說）'}")
-    else:
-        try:
-            print(hints.explain_solution(problem, code, hints._statement(ws, args.id), llm))
-        except LLMError as e:
-            raise ValueError(f"AI 講解失敗：{e}")
-    ws.log("solution_viewed", problem=args.id)
+    r = hints.solution_text(ws, args.id, bank_mod.resolve(bank, args.id), code, get_llm(ws))
+    print(r["text"])
     print(f"\n接著：cpe new {args.id} --fresh，關掉解法，從空白檔重寫並通過 cpe test。")
     return 0
 
@@ -503,11 +485,7 @@ def cmd_mock(ws: Workspace, args) -> int:
     bank = bank_mod.load_bank(ws)
     now = ws.now()
     if args.action == "start":
-        cap = max(int(ws.config()["stage"]), 1) if not args.all else 9
-        avail = {pid: p for pid, p in bank.items() if bank_mod.is_drill(pid) or any((ws.tests / pid).glob("*.in"))}
-        exam = mock.start(ws, avail, args.kind, lang=args.lang or "py", max_stage=cap)
-        for pid in exam["problems"]:
-            bank_mod.install_drill(ws, pid)
+        exam = course_mod.start_mock(ws, bank, args.kind, args.lang or "py", args.all)
         print(f"考試開始：{args.kind}，{exam['minutes']} 分鐘，{len(exam['problems'])} 題。提示與看解法已鎖定。")
         for pid in exam["problems"]:
             show_problem(bank_mod.resolve(bank, pid), hint_new=False)

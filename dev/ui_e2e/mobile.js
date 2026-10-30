@@ -1,0 +1,34 @@
+const { chromium, devices } = require('playwright');
+const log = (ok, msg) => console.log((ok ? 'PASS ' : 'FAIL ') + msg);
+(async () => {
+  const b = await chromium.launch(); const ctx = await b.newContext({ ...devices['iPhone 13'] });
+  await ctx.addInitScript(() => localStorage.setItem('cpe.onboarded', 'true'));
+  const p = await ctx.newPage(); const errs = [];
+  p.on('pageerror', e => errs.push('PAGEERR ' + e.message)); p.on('console', m => { if (m.type() === 'error' && !/409|400/.test(m.text())) errs.push('CONSOLE ' + m.text()); });
+  await p.goto('http://127.0.0.1:8793/#/home'); await p.waitForTimeout(1000);
+  const overflow = async (name) => { const o = await p.evaluate(() => ({ sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth })); log(o.sw <= o.cw + 1, `${name}：沒有橫向捲動（${o.sw}/${o.cw}）`); };
+  await overflow('首頁'); await p.screenshot({ path: 'shots/m1-home.png' });
+  log(await p.locator('#rail').isVisible(), '底部導覽列可見');
+  await p.goto('http://127.0.0.1:8793/#/practice/d001'); await p.waitForSelector('.startcta'); await p.waitForTimeout(300);
+  await p.screenshot({ path: 'shots/m2-start.png' }); await overflow('練習（開始）');
+  await p.tap('.startcta .primary'); await p.waitForSelector('.editor');
+  await p.fill('.ta', 'name = input()\nprint("Hello " + name + "!")\n'); await p.tap('text=執行測試'); await p.waitForSelector('.verdict .badge');
+  await p.screenshot({ path: 'shots/m3-code.png' }); await overflow('練習（程式）');
+  await p.tap('.mtabs button[data-t="stmt"]'); await p.waitForTimeout(200); await p.screenshot({ path: 'shots/m4-stmt.png' });
+  log(await p.locator('#p1').isVisible() && !(await p.locator('#p2').isVisible()), '切到「題目」分頁，只顯示題目');
+  await p.tap('.mtabs button[data-t="ai"]'); await p.waitForTimeout(200); await p.screenshot({ path: 'shots/m5-ai.png' });
+  await p.tap('.mtabs button[data-t="code"]'); await p.waitForTimeout(200);
+  // 觸控選取：用程式設定選取後觸發 selectionchange
+  await p.evaluate(() => { const t = document.querySelector('.ta'); t.focus(); t.setSelectionRange(24, 29); document.dispatchEvent(new Event('selectionchange')); });
+  await p.waitForSelector('.pop', { timeout: 4000 }); await p.screenshot({ path: 'shots/m6-pop.png' });
+  const pb = await p.locator('.pop').boundingBox(); log(pb.x >= 0 && pb.x + pb.width <= 390 && pb.y + pb.height <= 844, `手機版選單在畫面內（${Math.round(pb.x)},${Math.round(pb.y)} ${Math.round(pb.width)}×${Math.round(pb.height)}）`);
+  await p.keyboard.press('Escape');
+  await p.goto('http://127.0.0.1:8793/#/course'); await p.waitForTimeout(700); await overflow('課程'); await p.screenshot({ path: 'shots/m7-course.png' });
+  await p.tap('.unit.current'); await p.waitForTimeout(500); await p.screenshot({ path: 'shots/m8-drawer.png' });
+  log(await p.locator('.drawer').isVisible(), '單元抽屜可開啟');
+  await p.keyboard.press('Escape');
+  await p.goto('http://127.0.0.1:8793/#/settings'); await p.waitForTimeout(600); await overflow('設定');
+  await p.goto('http://127.0.0.1:8793/#/stats'); await p.waitForTimeout(600); await overflow('統計');
+  log(errs.length === 0, '沒有 JS／CSP 錯誤' + (errs.length ? '：' + errs.slice(0, 3).join(' | ') : ''));
+  await b.close();
+})().catch(e => { console.log('FAIL 例外：' + e.message.split('\n')[0]); process.exit(1); });

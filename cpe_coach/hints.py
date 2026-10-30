@@ -156,3 +156,29 @@ def explain_solution(problem: Dict[str, Any], code: str, statement: str, llm: LL
         user += "學生目前的程式：\n```python\n" + code.rstrip() + "\n```\n"
     user += "請完整講解這題的解法。"
     return strip_long_code(llm.complete(system, user), 15)
+
+
+def solution_text(ws: Workspace, pid: str, problem: Dict[str, Any], code: str, llm: Optional[LLMClient]) -> Dict[str, Any]:
+    """放棄並冷卻 24 小時後才能看解法講解。回傳 {text, source}。"""
+    st = ws.state()
+    p = ws.problem(st, pid)
+    unlock = solution_unlocked_at(p)
+    if ws.exam_active():
+        raise HintDenied("考試進行中不能看解法")
+    if unlock is None:
+        raise HintDenied("還沒放棄。真的卡住請先按『放棄這題』（冷卻 24 小時）")
+    if ws.now() < unlock:
+        left = int((unlock - ws.now()) // 60)
+        raise HintDenied(f"冷卻中，還要等 {left // 60} 小時 {left % 60} 分")
+    if llm is None:
+        text = ("沒有設定 AI 金鑰。可以看這題的關鍵觀察，再去查社群題解：\n"
+                + (problem.get("hint_insight") or "（此題沒有內建解說）"))
+        source = "static"
+    else:
+        try:
+            text = explain_solution(problem, code, _statement(ws, pid), llm)
+            source = "llm"
+        except LLMError as e:
+            raise HintDenied(f"AI 講解失敗：{e}")
+    ws.log("solution_viewed", problem=pid)
+    return {"text": text, "source": source}

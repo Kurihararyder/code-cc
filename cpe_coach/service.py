@@ -4,6 +4,7 @@ from __future__ import annotations
 import ast
 import builtins
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -69,14 +70,30 @@ def create_solution(ws: Workspace, bank: Dict[str, dict], pid: str, lang: str = 
 
 
 # ---------- 判題 ----------
+def error_line(res_message: str, stderr: str, solution_name: str) -> Optional[int]:
+    """從語法錯誤訊息、Python traceback、g++ 錯誤中抓出出事的行號。"""
+    m = re.match(r"第 (\d+) 行", res_message or "")
+    if m:
+        return int(m.group(1))
+    hits = re.findall(r'File "[^"]*%s", line (\d+)' % re.escape(solution_name), stderr or "")
+    if hits:
+        return int(hits[-1])
+    m = re.search(r"%s:(\d+):\d+: error" % re.escape(solution_name), (res_message or "") + "\n" + (stderr or ""))
+    return int(m.group(1)) if m else None
+
+
 def run_test(ws: Workspace, pid: str, lang: Optional[str] = None, predicted: Optional[str] = None) -> Dict[str, Any]:
     sol = solution_file(ws, pid, lang)
     res = judge(sol, ws.tests / pid, float(ws.config()["timeout_sec"]))
     out: Dict[str, Any] = {"setup_error": res.setup_error, "message": res.message, "verdict": res.verdict,
                            "verdict_zh": VERDICT_ZH[res.verdict], "cases": [], "failing": None, "info": {},
-                           "exam_note": "", "review": None, "lang": "cpp" if sol.suffix == ".cpp" else "py"}
+                           "exam_note": "", "review": None, "lang": "cpp" if sol.suffix == ".cpp" else "py",
+                           "error_line": None}
     if res.setup_error:
         return out
+    if res.verdict != AC:
+        stderr_first = res.failing.stderr if res.failing else ""
+        out["error_line"] = error_line(res.message, stderr_first, sol.name)
     out["cases"] = [{"name": c.name, "verdict": c.verdict, "seconds": round(c.seconds, 3)} for c in res.cases]
     f = res.failing
     if f:
@@ -286,4 +303,7 @@ def problem_view(ws: Workspace, bank: Dict[str, dict], pid: str) -> Dict[str, An
             "last_verdict": sp["last_verdict"] if sp else None,
             "solved": bool(sp and sp["first_pass"] is not None),
             "review_stage": sp["review_stage"] if sp else None,
+            "giveup_at": sp["giveup_at"] if sp else None,
+            "unlock_at": (sp["giveup_at"] + 24 * 3600) if sp and sp["giveup_at"] else None,
+            "now": ws.now(),
             "exam": ws.exam_active()}

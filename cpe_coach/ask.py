@@ -150,24 +150,40 @@ def _norm(s: str) -> str:
     return " ".join(s.split())
 
 
+def _find(src: str, quote: str, sources: Dict[str, str]):
+    """在指定來源找引用；回傳 (ok, 行號或 None)。"""
+    text, q = sources.get(src, ""), _norm(quote)
+    if len(q) < 2 or not text:
+        return False, None
+    if src == "code":
+        hits = [i for i, ln in enumerate(text.splitlines(), 1) if q in _norm(ln)]
+        if hits:
+            return True, hits
+        return (q in _norm(text)), None            # 跨行引用
+    return (q in _norm(text)), None
+
+
 def verify_evidence(evidence: List[Dict[str, Any]], sources: Dict[str, str]) -> List[Dict[str, Any]]:
-    """每筆引用都要逐字出現在對應來源。程式碼會把行號修正成實際所在行。"""
+    """每筆引用都要逐字出現在提供的內容裡。
+    - 程式碼的行號會修正成實際所在行。
+    - 模型常把來源標錯（例如把題目文字標成 code）：若在別的來源唯一找到，就更正來源而不是丟掉。"""
     out = []
     for e in evidence:
         src, quote = str(e.get("source", "")), str(e.get("quote", ""))
         item = {"source": src, "quote": quote[:200], "line": e.get("line"), "ok": False}
-        text = sources.get(src, "")
-        q = _norm(quote)
-        if len(q) >= 2 and text:
-            if src == "code":
-                hits = [i for i, ln in enumerate(text.splitlines(), 1) if q in _norm(ln)]
-                if hits:
-                    item["ok"] = True
-                    item["line"] = e.get("line") if e.get("line") in hits else hits[0]
-                elif q in _norm(text):                    # 跨行引用
-                    item["ok"] = True
-            elif q in _norm(text):
-                item["ok"] = True
+        ok, hits = _find(src, quote, sources)
+        if not ok:
+            alts = [(k, _find(k, quote, sources)) for k in sources if k != src]
+            alts = [(k, r) for k, r in alts if r[0]]
+            if len(alts) == 1:
+                src, (ok, hits) = alts[0]
+                item["source"], item["relabeled"] = src, True
+        if ok:
+            item["ok"] = True
+            if src == "code" and hits:
+                item["line"] = e.get("line") if e.get("line") in hits else hits[0]
+            elif src != "code":
+                item["line"] = None
         out.append(item)
     return out
 
