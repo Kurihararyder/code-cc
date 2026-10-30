@@ -28,9 +28,20 @@ def git(cwd, *args) -> str:
     return p.stdout.decode("utf-8", "replace").strip()
 
 
-def copy_app_tree(dest: Path) -> Path:
-    """複製目前這份程式（不含 .git 與暫存檔）：當作『GitHub 上的程式』。"""
-    shutil.copytree(REPO / "cpe_coach", dest / "cpe_coach", ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+LIGHT_DRILLS = 6
+
+
+def _skip_most_drills(src, names):
+    """內建練習題有 1000 多個檔案：Windows 上 git 與複製光是處理它們就要好幾秒，而安裝精靈的測試用不到那麼多題（完整的程式由端對端的 CI 工作安裝）。"""
+    skip = set(shutil.ignore_patterns("__pycache__", "*.pyc")(src, names))
+    if Path(src).name == "drills" and Path(src).parent.name == "data":
+        skip |= set(sorted(n for n in names if n.startswith("d"))[LIGHT_DRILLS:])
+    return skip
+
+
+def copy_app_tree(dest: Path, full: bool = False) -> Path:
+    """複製目前這份程式（不含 .git 與暫存檔）：當作『GitHub 上的程式』。預設只留前幾題練習題（見 _skip_most_drills）；full=True 全部複製。"""
+    shutil.copytree(REPO / "cpe_coach", dest / "cpe_coach", ignore=(shutil.ignore_patterns("__pycache__", "*.pyc") if full else _skip_most_drills))
     for f in COPY_ROOT_FILES:
         shutil.copy2(REPO / f, dest / f)
     return dest
