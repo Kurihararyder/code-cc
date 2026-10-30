@@ -16,4 +16,4 @@ cpe = "cpe_coach.cli:main"
 packages = ["cpe_coach"]
 
 [tool.setuptools.package-data]
-cpe_coach = ["data/*.json", "data/*.md", "data/drills/index.json", "data/drills/*/statement.md", "data/drills/*/tests/*"]
+cpe_coach = ["data/*.json", "data/*.md", "static/*.html", "data/drills/index.json", "data/drills/*/statement.md", "data/drills/*/tests/*"]

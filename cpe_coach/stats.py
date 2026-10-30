@@ -27,7 +27,13 @@ def summarize(st: Dict[str, Any], events: List[Dict[str, Any]], now: float) -> D
     while _day(t) in day_set:
         streak += 1
         t -= DAY
+    preds = [e for e in tests if e.get("predicted")]
+    asks = [e for e in events if e["kind"] == "ask"]
     return {
+        "predict_total": len(preds),
+        "predict_correct": sum(1 for e in preds if e["predicted"] == e["verdict"]),
+        "asks": len(asks),
+        "asks_verified": sum(1 for e in asks if e.get("verified")),
         "counts": srs.counts(st),
         "attempts_total": len(tests),
         "attempts_week": len(week),

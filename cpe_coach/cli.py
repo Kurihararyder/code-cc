@@ -13,7 +13,8 @@ from typing import Any, Dict, List, Optional
 
 from . import bank as bank_mod
 from . import course as course_mod
-from . import hints, mock, roadmap, srs, stats
+from . import hints, mock, roadmap, service, srs, stats
+from .service import fail_path, solution_file, trunc
 from .judge import AC, VERDICT_ZH, find_cases, judge, stress
 from .llm import RULES, LLMError, detect_client
 from .store import Workspace, WorkspaceError
@@ -38,29 +39,6 @@ def start_date(ws: Workspace) -> dt.date:
 
 def today_date(ws: Workspace) -> dt.date:
     return dt.date.fromtimestamp(ws.now())
-
-
-def solution_file(ws: Workspace, pid: str, lang: Optional[str] = None) -> Path:
-    """考試中的題目用考試檔；否則依 --lang 或最近修改的 .py/.cpp。"""
-    exam = ws.exam()
-    if exam and not lang:
-        p = mock.solution_path(ws, exam, pid)
-        if p:
-            return p
-    py, cpp = ws.solutions / f"{pid}.py", ws.solutions / f"{pid}.cpp"
-    if lang:
-        return cpp if lang == "cpp" else py
-    existing = [f for f in (py, cpp) if f.exists()]
-    return max(existing, key=lambda f: f.stat().st_mtime) if existing else py
-
-
-def fail_path(ws: Workspace, pid: str) -> Path:
-    return ws.meta / "last_fail" / f"{pid}.json"
-
-
-def trunc(text: str, n: int = 400) -> str:
-    text = text.rstrip()
-    return text if len(text) <= n else text[:n] + f"\n…（共 {len(text)} 字元，已截斷）"
 
 
 def effective_stage(ws: Workspace) -> int:
@@ -290,24 +268,13 @@ def cmd_gate(ws: Workspace, args) -> int:
 
 def cmd_new(ws: Workspace, args) -> int:
     bank = bank_mod.load_bank(ws)
-    f = solution_file(ws, args.id, args.lang or "py")
-    if bank_mod.is_drill(args.id):
-        bank_mod.install_drill(ws, args.id)
+    r = service.create_solution(ws, bank, args.id, args.lang or "py", args.fresh)
+    if r["drill"]:
         print(f"題目：statements/{args.id}.md　（cpe statement {args.id} 可直接顯示）")
-    elif args.id not in bank:
-        print(f"（{args.id} 不在題庫，當作自訂題目。範例測資請用 cpe import 或 cpe addtest 加入）")
-    ws.solutions.mkdir(exist_ok=True)
-    if f.exists():
-        if not args.fresh:
-            raise ValueError(f"{f.name} 已存在。要從空白重寫請加 --fresh（舊檔會備份到 solutions/archive/）")
-        arc = ws.solutions / "archive"
-        arc.mkdir(exist_ok=True)
-        shutil.move(str(f), str(arc / f"{f.stem}-{time.strftime('%Y%m%d%H%M%S', time.localtime(ws.now()))}{f.suffix}"))
-    f.write_text(mock.template(args.lang or "py"), encoding="utf-8")
-    (ws.tests / args.id).mkdir(parents=True, exist_ok=True)
-    n = len(find_cases(ws.tests / args.id))
-    print(f"已建立 {f.relative_to(ws.root)}（{n} 組測資）")
-    if not n:
+    if r["note"]:
+        print(f"（{r['note']}）")
+    print(f"已建立 {r['path'].relative_to(ws.root)}（{r['tests']} 組測資）")
+    if not r["tests"]:
         print(f"請先加入題目的範例測資：cpe import {args.id} <題目文字檔>　或　cpe addtest {args.id}")
     return 0
 
@@ -412,51 +379,33 @@ def cmd_addtest(ws: Workspace, args) -> int:
 
 def cmd_test(ws: Workspace, args) -> int:
     pid = args.id
-    sol = solution_file(ws, pid, args.lang)
-    cfg = ws.config()
-    res = judge(sol, ws.tests / pid, float(cfg["timeout_sec"]))
-    if res.setup_error:
-        print(f"✗ {res.message}")
+    r = service.run_test(ws, pid, args.lang)
+    if r["setup_error"]:
+        print(f"✗ {r['message']}")
         return 1
-
-    for c in res.cases:
-        mark = "✓" if c.verdict == AC else "✗"
-        print(f"  {mark} {c.name:<12} {c.verdict:<4} {c.seconds:.2f}s")
-    print(f"\n結果：{res.verdict} {VERDICT_ZH[res.verdict]}" + (f"（{res.message}）" if res.message else ""))
-    f = res.failing
+    for c in r["cases"]:
+        mark = "✓" if c["verdict"] == AC else "✗"
+        print(f"  {mark} {c['name']:<12} {c['verdict']:<4} {c['seconds']:.2f}s")
+    print(f"\n結果：{r['verdict']} {r['verdict_zh']}" + (f"（{r['message']}）" if r["message"] else ""))
+    f = r["failing"]
     if f:
-        print(f"\n— 第一個失敗的測資 {f.name} —")
-        print("輸入：\n" + trunc(f.input_text) + "\n預期輸出：\n" + trunc(f.expected) + "\n你的輸出：\n" + (trunc(f.actual) or "（空）"))
-        if f.stderr.strip():
-            print("錯誤訊息：\n" + trunc(f.stderr.strip().splitlines()[-1] if f.verdict == "RE" else f.stderr, 300))
-        fp = fail_path(ws, pid)
-        fp.parent.mkdir(exist_ok=True)
-        fp.write_text(json.dumps({"verdict": f.verdict, "input": f.input_text, "expected": f.expected,
-                                  "actual": f.actual, "stderr": f.stderr}, ensure_ascii=False), encoding="utf-8")
-    elif fail_path(ws, pid).exists():
-        fail_path(ws, pid).unlink()
-
-    st = ws.state()
-    p = ws.problem(st, pid)
-    info = srs.record_result(p, res.verdict, ws.now())
-    ws.save_state(st)
-    ws.log("test", problem=pid, verdict=res.verdict, lang="cpp" if sol.suffix == ".cpp" else "py", **info)
-
-    exam = ws.exam()
-    if exam:
-        note = mock.record(ws, exam, pid, res.verdict)
-        if note:
-            print("\n" + note)
-    if res.verdict == AC:
+        print(f"\n— 第一個失敗的測資 {f['name']} —")
+        print("輸入：\n" + trunc(f["input"]) + "\n預期輸出：\n" + trunc(f["expected"]) + "\n你的輸出：\n" + (trunc(f["actual"]) or "（空）"))
+        if f["stderr"].strip():
+            print("錯誤訊息：\n" + trunc(f["stderr"].strip().splitlines()[-1] if f["verdict"] == "RE" else f["stderr"], 300))
+    if r["exam_note"]:
+        print("\n" + r["exam_note"])
+    info, rev = r["info"], r["review"]
+    if r["verdict"] == AC:
         if info["mastered"]:
             print("\n🎉 精熟！這題已完成（無提示通過）。")
         elif info["advanced"]:
-            print(f"\n🔁 重練通過！下次重練：{fmt_ts(p['review_due'])}")
-        elif p["review_stage"] is not None and p["review_stage"] < srs.MASTERED:
-            print(f"\n✔ 通過，但這題用了提示／看了解法，需要無提示重寫：{fmt_ts(p['review_due'])} 起")
+            print(f"\n🔁 重練通過！下次重練：{fmt_ts(rev['due'])}")
+        elif rev["stage"] is not None and rev["stage"] < srs.MASTERED:
+            print(f"\n✔ 通過，但這題用了提示／看了解法，需要無提示重寫：{fmt_ts(rev['due'])} 起")
     elif info["review_attempt"]:
         print("\n↩ 到期重寫沒通過，重練週期重新從 1 天後開始。")
-    return 0 if res.verdict == AC else 1
+    return 0 if r["verdict"] == AC else 1
 
 
 def cmd_stress(ws: Workspace, args) -> int:
@@ -595,6 +544,10 @@ def cmd_stats(ws: Workspace, args) -> int:
     ra = s["review_attempts"]
     rate = f"{s['review_clean_passes']}/{ra}（{100 * s['review_clean_passes'] // ra}%）" if ra else "—"
     print(f"無提示重寫通過率：{rate}　← 最重要的指標，比自我感覺可靠")
+    if s["predict_total"]:
+        print(f"提交前預測準確度：{s['predict_correct']}/{s['predict_total']}（{100 * s['predict_correct'] // s['predict_total']}%）← 越準，代表你越懂自己的程式")
+    if s["asks"]:
+        print(f"網頁 AI 詢問：{s['asks']} 次（引用全數通過驗證 {s['asks_verified']} 次）")
     print(f"提示使用：{s['hints_by_level'] or '—'}　放棄 {s['giveups']} 次　用外部 AI {s['external_ai']} 次")
     if s["exams"]:
         print("考試紀錄：")
@@ -645,6 +598,12 @@ def cmd_eng(ws: Workspace, args) -> int:
 def cmd_external(ws: Workspace, args) -> int:
     ws.log("external_ai", problem=args.id)
     print("已記錄你用了外部 AI（誠實記錄比不用更重要）。這題建議之後無提示重寫。")
+    return 0
+
+
+def cmd_web(ws: Workspace, args) -> int:
+    from . import web
+    web.serve(ws.root, args.port, not args.no_open)
     return 0
 
 
@@ -728,6 +687,9 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--done", type=int)
     s = sub.add_parser("external", help="記錄你用了外部 AI（如 ChatGPT 網頁）")
     s.add_argument("id")
+    s = sub.add_parser("web", help="啟動本機網頁介面（選取文字 → 問 AI）")
+    s.add_argument("--port", type=int, default=8765)
+    s.add_argument("--no-open", action="store_true", help="不要自動開瀏覽器")
     sub.add_parser("gpt-prompt", help="印出可貼進 ChatGPT 自訂 GPT 的助教規則")
     return ap
 
@@ -750,7 +712,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             "roadmap": cmd_roadmap, "stage": cmd_stage, "today": cmd_today, "next": cmd_next, "new": cmd_new,
             "addtest": cmd_addtest, "test": cmd_test, "stress": cmd_stress, "hint": cmd_hint,
             "giveup": cmd_giveup, "solution": cmd_solution, "review": cmd_review, "mock": cmd_mock,
-            "stats": cmd_stats, "add": cmd_add, "bank": cmd_bank, "eng": cmd_eng, "external": cmd_external,
+            "stats": cmd_stats, "add": cmd_add, "bank": cmd_bank, "eng": cmd_eng, "external": cmd_external, "web": cmd_web,
         }[args.cmd]
         return handler(ws, args)
     except (WorkspaceError, hints.HintDenied, ValueError, RuntimeError) as e:
