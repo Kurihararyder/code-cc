@@ -92,7 +92,7 @@ class LimitTests(unittest.TestCase):
         (t / "a.in").write_text("1\n", encoding="utf-8")
         (t / "a.out").write_text("1\n", encoding="utf-8")
         f = self.d / "m.cpp"
-        f.write_text("#include <vector>\n#include <cstdio>\nint main(){ std::vector<char> v(2000000000); for (size_t i = 0; i < v.size(); i += 4096) v[i] = 1; printf(\"1\\n\"); }\n", encoding="utf-8")
+        f.write_text("#include <vector>\n#include <cstdio>\nint main(){ std::vector<char> v(2000000000, 1); long s = 0; for (size_t i = 0; i < v.size(); i += 4096) s += v[i]; printf(\"%ld\\n\", s); }\n", encoding="utf-8")   # 結果有被用到，編譯器不能把配置整個省掉
         self.assertEqual(judge.judge(f, t, timeout=10.0, mem_mb=256).verdict, judge.MLE)
         f.write_text("int main(){ for(;;); }\n", encoding="utf-8")
         self.assertEqual(judge.judge(f, t, timeout=0.7).verdict, judge.TLE)
@@ -238,3 +238,68 @@ class BackupTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class EventCacheTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.ws = mkws(self.tmp.name)
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_incremental_reads_only_new_bytes(self):
+        from cpe_coach import store
+        for i in range(500):
+            self.ws.log("test", problem="p", n=i)
+        self.assertEqual(len(self.ws.events()), 500)
+        seen = []
+        orig = store._parse_events
+        store._parse_events = lambda data, out: (seen.append(len(data)), orig(data, out))[1]
+        try:
+            self.ws.log("test", problem="p", n=500)
+            evs = Workspace(self.ws.root).events()                       # 另一個 Workspace 物件（網頁每個請求都會建一個）
+        finally:
+            store._parse_events = orig
+        self.assertEqual(len(evs), 501)
+        self.assertLess(sum(seen), 400)                                  # 只解析新增的那一行，不是整份 5 萬多位元組
+
+    def test_returned_list_is_a_copy(self):
+        self.ws.log("a")
+        first = self.ws.events()
+        first.clear()
+        self.assertEqual(len(self.ws.events()), 1)
+
+    def test_replaced_or_shrunk_file_is_reloaded(self):
+        for i in range(5):
+            self.ws.log("x", n=i)
+        self.assertEqual(len(self.ws.events()), 5)
+        self.ws.events_path.write_text('{"ts": 1, "kind": "only"}\n', encoding="utf-8")        # 被還原／手動改過
+        self.assertEqual([e["kind"] for e in self.ws.events()], ["only"])
+
+    def test_same_size_rewrite_is_detected(self):
+        self.ws.events_path.write_text('{"ts": 1, "kind": "aaaa"}\n{"ts": 2, "kind": "bbbb"}\n', encoding="utf-8")
+        self.assertEqual([e["kind"] for e in self.ws.events()], ["aaaa", "bbbb"])
+        self.ws.events_path.write_text('{"ts": 1, "kind": "cccc"}\n{"ts": 2, "kind": "dddd"}\n', encoding="utf-8")
+        self.assertEqual([e["kind"] for e in self.ws.events()], ["cccc", "dddd"])
+
+    def test_partial_last_line_is_not_cached_until_complete(self):
+        self.ws.log("one")
+        with self.ws.events_path.open("a", encoding="utf-8") as f:
+            f.write('{"ts": 5, "kind": "tw')
+        self.assertEqual([e["kind"] for e in self.ws.events()], ["one"])
+        with self.ws.events_path.open("a", encoding="utf-8") as f:
+            f.write('o"}\n')
+        self.assertEqual([e["kind"] for e in self.ws.events()], ["one", "two"])
+
+    def test_complete_last_line_without_newline_is_returned(self):
+        self.ws.events_path.write_text('{"ts": 1, "kind": "a"}\n{"ts": 2, "kind": "b"}', encoding="utf-8")
+        self.assertEqual([e["kind"] for e in self.ws.events()], ["a", "b"])
+        with self.ws.events_path.open("a", encoding="utf-8") as f:
+            f.write("\n")
+        self.assertEqual([e["kind"] for e in self.ws.events()], ["a", "b"])
+
+    def test_missing_file_and_garbage_lines(self):
+        self.assertEqual(self.ws.events(), [])
+        self.ws.events_path.write_text('garbage\n{"ts": 1, "kind": "ok"}\n\n[1,2]\n', encoding="utf-8")
+        self.assertEqual([e["kind"] for e in self.ws.events() if isinstance(e, dict)], ["ok"])

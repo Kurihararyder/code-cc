@@ -1,11 +1,9 @@
 """提示階梯：L0 理解題意 → L1 方向 → L2 關鍵觀察 → L3 骨架 → L4 錯誤定位，並用規則擋住『一路按到底』。"""
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any, Dict, Optional
 
-from . import srs
-from .judge import AC, FAILS, VERDICT_ZH
+from .judge import AC, VERDICT_ZH
 from .llm import RULES, LLMClient, LLMError, strip_long_code
 from .store import Workspace
 

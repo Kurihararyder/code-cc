@@ -5,7 +5,7 @@ from pathlib import Path
 
 import shutil
 
-from cpe_coach import bank, cli, course, hints, judge, llm, mock, srs, stats
+from cpe_coach import bank, cli, course, hints, judge, llm, mock, service, srs, stats
 from cpe_coach.store import Workspace, new_problem_state
 
 DAY = 86400.0
@@ -393,7 +393,7 @@ class CourseTests(unittest.TestCase):
             u = self.c["units"][0]
             for d in u["drills"]:
                 ws.log("test", problem=d, verdict="AC", lang="py")
-            exam = course.start_gate(ws, self.bank, self.c, u)
+            course.start_gate(ws, self.bank, self.c, u)
             msg = course.evaluate_gate(ws, self.c, mock.finish(ws))
             self.assertIn("未通過", msg)
             self.assertEqual(ws.state()["course"]["unit"], 1)
@@ -409,10 +409,10 @@ class CourseTests(unittest.TestCase):
 class ImportTests(unittest.TestCase):
     def test_parse_samples_english_and_chinese(self):
         t = "Problem\nSample Input\n3 4\n5 6\n\nSample Output\n7\n11\n"
-        self.assertEqual(cli.parse_samples(t), [("3 4\n5 6", "7\n11")])
+        self.assertEqual(service.parse_samples(t), [("3 4\n5 6", "7\n11")])
         t2 = "## 範例輸入 #1\n1\n## 範例輸出 #1\n2\n## 範例輸入 #2\n3\n## 範例輸出 #2\n4\n"
-        self.assertEqual(cli.parse_samples(t2), [("1", "2"), ("3", "4")])
-        self.assertEqual(cli.parse_samples("沒有範例"), [])
+        self.assertEqual(service.parse_samples(t2), [("1", "2"), ("3", "4")])
+        self.assertEqual(service.parse_samples("沒有範例"), [])
 
 
 @unittest.skipUnless(shutil.which("g++"), "需要 g++")

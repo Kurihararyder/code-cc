@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import csv
 import datetime as dt
-import io
 import json
 import re
 from pathlib import Path

@@ -19,9 +19,11 @@ from urllib.parse import parse_qs, urlparse
 from . import ask as ask_mod
 from . import bank as bank_mod
 from . import course as course_mod
-from . import backup, calibrate, dashboard, eng, fuzz as fuzz_mod, hints, mock, pastexams, service, srs, vocab, weakness
-from . import plan as plan_mod
+from . import backup, dashboard, hints, service, srs
 from .llm import detect_client
+from .web_exam import ExamMixin
+from .web_learn import LearnMixin
+from .web_practice import PracticeMixin
 from .store import Workspace, WorkspaceError
 
 STATIC = Path(__file__).parent / "static"
@@ -33,7 +35,7 @@ CSP = ("default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' 
        "connect-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'")
 
 
-class App:
+class App(PracticeMixin, ExamMixin, LearnMixin):
     def __init__(self, root: Path, port: int):
         self.root, self.port = Path(root), port
         self.token = secrets.token_urlsafe(24)
@@ -107,177 +109,6 @@ class App:
                 "model": cfg.get("model"), "ai": self.ai_info(ws), "g++": bool(shutil.which("g++")),
                 "workspace": str(ws.root)}
 
-    # ---------- 寫入 ----------
-    def new(self, body: Dict[str, Any]) -> Dict[str, Any]:
-        ws = self.ws()
-        bank = bank_mod.load_bank(ws)
-        pid = body["id"]
-        if service.solution_file(ws, pid, body.get("lang")).exists() and not body.get("fresh"):
-            return {"created": False, **service.problem_view(ws, bank, pid)}
-        service.create_solution(ws, bank, pid, body.get("lang") or "py", bool(body.get("fresh")))
-        return {"created": True, **service.problem_view(ws, bank, pid)}
-
-    def save(self, body: Dict[str, Any]) -> Dict[str, Any]:
-        ws = self.ws()
-        f = service.solution_file(ws, body["id"], body.get("lang"))
-        if not f.parent.exists():
-            raise ValueError("還沒有解答檔")
-        f.write_text(body["code"], encoding="utf-8")
-        return {"saved": True, "file": str(f.relative_to(ws.root))}
-
-    def test(self, body: Dict[str, Any]) -> Dict[str, Any]:
-        ws = self.ws()
-        if "code" in body:
-            self.save(body)
-        r = service.run_test(ws, body["id"], body.get("lang"), body.get("predicted"))
-        r["lint"] = []
-        if r["failing"] and r["lang"] == "py":
-            r["lint"] = service.lint(service.solution_file(ws, body["id"], body.get("lang")).read_text(encoding="utf-8"))
-        return r
-
-    def trace(self, body: Dict[str, Any]) -> Dict[str, Any]:
-        ws = self.ws()
-        if "code" in body:
-            self.save(body)
-        return service.trace_program(ws, body["id"])
-
-    def fuzz(self, body: Dict[str, Any]) -> Dict[str, Any]:
-        """範例變異對拍：用你寫的暴力解當標準答案，找出你的解答的錯，可選擇存成測資。"""
-        ws = self.ws()
-        pid = body["id"]
-        if ws.exam():
-            raise ValueError("考試中不能對拍。")
-        if "code" in body:
-            self.save(body)
-        brute = (body.get("brute") or "").strip()
-        if not brute:
-            raise ValueError("請貼上你的暴力解程式碼")
-        d = ws.meta / "fuzz"
-        d.mkdir(exist_ok=True)
-        bf = d / f"{pid}_brute.py"
-        bf.write_text(brute + "\n", encoding="utf-8")
-        sol = service.solution_file(ws, pid)
-        if not sol.exists():
-            raise ValueError("還沒有你的解答檔")
-        rounds = max(20, min(2000, int(body.get("rounds") or 300)))
-        cfg = ws.config()
-        try:
-            r = fuzz_mod.fuzz(sol, bf, ws.tests / pid, rounds, int(body.get("seed") or 1), 3, float(cfg["timeout_sec"]), int(cfg.get("memory_mb", 1024)))
-        except fuzz_mod.FuzzError as e:
-            raise ValueError(str(e))
-        saved = fuzz_mod.save(ws, pid, r["found"]) if r["found"] and body.get("save") else []
-        return dict(r, saved=saved, tests=len(service.find_cases(ws.tests / pid)))
-
-    def ask(self, body: Dict[str, Any]) -> Dict[str, Any]:
-        ws = self.ws()
-        bank = bank_mod.load_bank(ws)
-        pid = body["id"]
-        stmt = service.problem_view(ws, bank, pid)["statement"]
-        if "code" in body:
-            self.save(body)
-        return ask_mod.ask(ws, bank, pid, self.llm(ws), kind=body.get("kind", "question"), source=body.get("source", "code"),
-                           selection=body.get("selection", ""), line_start=body.get("line_start"), line_end=body.get("line_end"),
-                           note=body.get("note", ""), trace_text=body.get("trace_text", ""), thread=body.get("thread"),
-                           reply=body.get("reply", ""), statement=stmt)
-
-    def hint(self, body: Dict[str, Any]) -> Dict[str, Any]:
-        ws = self.ws()
-        bank = bank_mod.load_bank(ws)
-        pid, level = body["id"], int(body["level"])
-        sol = service.solution_file(ws, pid)
-        code = sol.read_text(encoding="utf-8") if sol.exists() else ""
-        out = hints.request_hint(ws, pid, level, bank_mod.resolve(bank, pid), code, service.load_failure(ws, pid), self.llm(ws))
-        return {**out, "level": level, "name": hints.LEVEL_NAMES[level]}
-
-    def giveup(self, body: Dict[str, Any]) -> Dict[str, Any]:
-        return {"unlock_at": hints.giveup(self.ws(), body["id"])}
-
-    def solution(self, body: Dict[str, Any]) -> Dict[str, Any]:
-        ws = self.ws()
-        bank = bank_mod.load_bank(ws)
-        pid = body["id"]
-        sol = service.solution_file(ws, pid)
-        return hints.solution_text(ws, pid, bank_mod.resolve(bank, pid), sol.read_text(encoding="utf-8") if sol.exists() else "", self.llm(ws))
-
-    def gate_start(self, body: Dict[str, Any]) -> Dict[str, Any]:
-        ws = self.ws()
-        c = course_mod.load()
-        u = course_mod.current_unit(ws, c)
-        if not u:
-            raise ValueError("課程已經全部完成")
-        course_mod.start_gate(ws, bank_mod.load_bank(ws), c, u)
-        return {"exam": dashboard.exam_view(ws, ws.exam())}
-
-    def mock_start(self, body: Dict[str, Any]) -> Dict[str, Any]:
-        ws = self.ws()
-        kind = body.get("kind", "mock")
-        if kind not in ("mock", "short", "weekly"):
-            raise ValueError("kind 只能是 mock／short／weekly")
-        course_mod.start_mock(ws, bank_mod.load_bank(ws), kind, body.get("lang") or "py", bool(body.get("all")), bool(body.get("real")))
-        return {"exam": dashboard.exam_view(ws, ws.exam())}
-
-    def exam_finish(self, body: Dict[str, Any]) -> Dict[str, Any]:
-        ws = self.ws()
-        s = mock.finish(ws, pastexams.load_all(ws)["distribution"])
-        return {"summary": s, "message": course_mod.evaluate_gate(ws, course_mod.load(), s)}
-
-    # ---- 歷屆與考試擬真 ----
-    def past_list(self) -> Dict[str, Any]:
-        ws = self.ws()
-        return pastexams.list_exams(ws, bank_mod.load_bank(ws))
-
-    def past_import(self, body: Dict[str, Any]) -> Dict[str, Any]:
-        ws = self.ws()
-        try:
-            return pastexams.import_manifest(ws, body.get("text", ""))
-        except pastexams.ManifestError as e:
-            raise ValueError(str(e))
-
-    def past_statement(self, body: Dict[str, Any]) -> Dict[str, Any]:
-        """貼上單一題的題目文字：存下並把範例建成測資。"""
-        ws = self.ws()
-        pid = body["id"]
-        if not re.match(r"^[A-Za-z0-9_\-]{1,40}$", pid):
-            raise ValueError("題號格式不正確")
-        n = service.import_statement(ws, pid, body.get("text", ""))
-        return {"id": pid, "samples": n, "english": service.statement_is_english(body.get("text", ""))}
-
-    def past_start(self, body: Dict[str, Any]) -> Dict[str, Any]:
-        ws = self.ws()
-        course_mod.start_past(ws, bank_mod.load_bank(ws), body["date"], body.get("lang") or "py", bool(body.get("partial")))
-        return {"exam": dashboard.exam_view(ws, ws.exam())}
-
-    def vocab_list(self) -> Dict[str, Any]:
-        return {"words": vocab.items(self.ws())}
-
-    def vocab_add(self, body: Dict[str, Any]) -> Dict[str, Any]:
-        return vocab.add(self.ws(), body["word"], body.get("problem"), body.get("note", ""))
-
-    def vocab_remove(self, body: Dict[str, Any]) -> Dict[str, Any]:
-        return {"removed": vocab.remove(self.ws(), body["word"])}
-
-    # ---- 每日計畫、校準、工程任務 ----
-    def plan(self, minutes: int) -> Dict[str, Any]:
-        return plan_mod.build(self.ws(), max(10, min(480, minutes)))
-
-    def calibration(self) -> Dict[str, Any]:
-        ws = self.ws()
-        return calibrate.calibrate(ws, bank_mod.load_bank(ws))
-
-    def weakness(self) -> Dict[str, Any]:
-        ws = self.ws()
-        bank, c = bank_mod.load_bank(ws), course_mod.load()
-        a = weakness.analyze(ws, bank, c)
-        return dict(a, suggestions=weakness.suggestions(ws, bank, c, a, per_family=3))
-
-    def eng_list(self) -> Dict[str, Any]:
-        return {"tasks": eng.tasks(self.ws())}
-
-    def eng_start(self, body: Dict[str, Any]) -> Dict[str, Any]:
-        return {"created": eng.start(self.ws(), int(body["n"]))}
-
-    def eng_verify(self, body: Dict[str, Any]) -> Dict[str, Any]:
-        return eng.verify(self.ws(), int(body["n"]), (body.get("evidence") or "").strip() or None)
 
     def course_goto(self, body: Dict[str, Any]) -> Dict[str, Any]:
         ws = self.ws()

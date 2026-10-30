@@ -332,7 +332,6 @@ class WebApiTests(WebBase):
         self.assertEqual(r["summary"]["past"], "2024-02-02")
 
     def test_fuzz_endpoint(self):
-        from cpe_coach import service
         ws = self.app.ws()
         d = ws.tests / "fz1"
         d.mkdir(parents=True, exist_ok=True)

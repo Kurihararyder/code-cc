@@ -9,7 +9,6 @@ explain／question／mismatch，question 與 mismatch 之後再用一個故意�
 """
 from __future__ import annotations
 
-import json
 import re
 import statistics
 import tempfile

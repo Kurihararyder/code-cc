@@ -252,21 +252,63 @@ class Workspace:
         return ev
 
     def events(self) -> list:
-        if not self.events_path.exists():
+        """讀取事件紀錄。用『已讀到哪個位元組』做增量快取：紀錄只會往後附加，所以每次只讀新增的部分。
+        檔案被換掉、縮短或前後內容對不上（例如被還原／手動改過）就整份重讀。回傳的是新串列（事件字典本身共用，請勿修改）。"""
+        p = self.events_path
+        try:
+            f = p.open("rb")
+        except FileNotFoundError:
             return []
-        out = []
-        for line in self.events_path.read_text(encoding="utf-8", errors="replace").splitlines():
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                out.append(json.loads(line))
-            except json.JSONDecodeError:
-                continue                       # 寫到一半被中斷的最後一行，略過即可
-        return out
+        with f:
+            st = os.fstat(f.fileno())
+            key = str(p)
+            with _EVENT_LOCK:
+                c = _EVENT_CACHE.get(key)
+                if c is not None:
+                    ok = c["id"] == (st.st_dev, st.st_ino) and st.st_size >= c["off"]
+                    if ok and c["off"] > 0:
+                        f.seek(0)
+                        head = f.read(64)
+                        f.seek(max(0, c["off"] - 64))
+                        ok = head == c["head"] and f.read(min(64, c["off"])) == c["tail"]
+                    if not ok:
+                        c = None
+                if c is None:
+                    c = {"id": (st.st_dev, st.st_ino), "off": 0, "events": [], "head": b"", "tail": b""}
+                f.seek(c["off"])
+                data = f.read()
+                end = data.rfind(b"\n")
+                if end >= 0:
+                    _parse_events(data[: end + 1], c["events"])
+                    c["off"] += end + 1
+                    f.seek(0)
+                    c["head"] = f.read(64)
+                    f.seek(max(0, c["off"] - 64))
+                    c["tail"] = f.read(min(64, c["off"]))
+                _EVENT_CACHE[key] = c
+                out = list(c["events"])
+                _parse_events(data[end + 1:], out)          # 還沒有換行結尾的最後一行：能解析就算，但不放進快取
+                return out
 
     def problem(self, st: Dict[str, Any], pid: str) -> Dict[str, Any]:
         return st["problems"].setdefault(pid, new_problem_state())
+
+
+_EVENT_CACHE: Dict[str, Dict[str, Any]] = {}
+_EVENT_LOCK = threading.Lock()
+
+
+def _parse_events(data: bytes, out: list) -> None:
+    for line in data.decode("utf-8", errors="replace").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            obj = json.loads(line)
+        except json.JSONDecodeError:
+            continue                       # 寫到一半被中斷的行，略過即可
+        if isinstance(obj, dict):
+            out.append(obj)
 
 
 def new_problem_state() -> Dict[str, Any]:

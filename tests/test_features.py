@@ -1,11 +1,10 @@
 """歷屆題庫、擬真考試、難度校準、每日計畫、工程任務驗收。"""
-import json
 import tempfile
 import unittest
 from pathlib import Path
 
 from cpe_coach import bank as bank_mod
-from cpe_coach import calibrate, cli, course, eng, mock, pastexams, srs, vocab
+from cpe_coach import calibrate, cli, course, eng, mock, pastexams, vocab
 from cpe_coach import plan as plan_mod
 from cpe_coach.store import Workspace, new_problem_state
 
