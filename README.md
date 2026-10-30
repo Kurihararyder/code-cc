@@ -197,7 +197,7 @@ cpe mock finish           # 交卷。通過就自動進入下一個單元
 
 - **6 題是全國前 1% 的成績。** 課程涵蓋需要的知識並用檢核擋住『以為學會了』，但不能保證你一定達成；**真實 CPE 成績才是最終檢核**。每個階段結尾都安排一次真實報考。卡在平台期延長 6–12 個月很正常。
 - 課程內的難度星等、模擬考是我自己估的；官網連不上，沒能核對『官方一顆星選集 49 題』與 CPE26 選集，請自行到 [CPE 官網](https://cpe.mcu.edu.tw/) 取得後用 `cpe import` 加入。**歷屆題目與官方答對率只有報告列出的那一場**，其餘要照上面「歷屆資料要自己匯入」自己匯入。
-- **Windows 與 macOS：** 全部單元測試（含記憶體限制、輸出限制、C++ 判題）在 GitHub Actions 的 Windows／macOS／Linux × Python 3.9／3.12 上通過；CI 抓到並修掉了 macOS 不執行 `RLIMIT_AS`、macOS 的 clang 會把沒被使用的配置整個省掉（測試改成真的使用它）、Windows 預設編碼這幾個問題。我沒有在真人使用的 Windows／macOS 桌面上跑過網頁介面；瀏覽器介面測試只在 Linux 的 Chromium 上跑。
+- **Windows 與 macOS：** 全部單元測試（含記憶體限制、輸出限制、C++ 判題、安裝精靈的安裝／更新／修復／解除安裝與圖形視窗）在 GitHub Actions 的 Windows／macOS／Linux × Python 3.9／3.12 上通過；安裝精靈另外在 GitHub 的 Windows（英文版）與 macOS 機器上，用雙擊用的啟動檔從 GitHub 真的下載、安裝、開啟與關閉服務、解除安裝一次，並檢查捷徑、登錄、PATH 都建立與清乾淨。CI 抓到並修掉了這些只有在真的平台上才看得到的問題：macOS 不執行 `RLIMIT_AS`、macOS 的 clang 會把沒被使用的配置整個省掉（測試改成真的使用它）、Windows 預設編碼、macOS 虛擬機上 Python 內建網頁伺服器啟動時的反向 DNS 查詢會卡 35 秒（現在不做這個查詢）、英文版 Windows 的 WScript.Shell 存不了檔名有中文的捷徑（現在直接用系統的 IShellLinkW）。我沒有在真人使用的 Windows／macOS 桌面上用滑鼠點過精靈、控制台與網頁介面；瀏覽器介面測試只在 Linux 的 Chromium 上跑。
 - 難度校準與每日計畫的時間預估是粗略的啟發式，沒有拿多個真實學習者的資料驗證過。
 - `uva…` 真題的題號／標題憑記憶整理（約 120 題），部分沒有內建提示（標為 `unverified`）；請以 vjudge 連結上的題目為準，發現錯誤用 `cpe add` 覆蓋。
 - 教材不是我寫的：每個單元指向免費教材與章節（Python 官方教學、Competitive Programmer's Handbook、CP-Algorithms…），章節編號以書中目錄為準。

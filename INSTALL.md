@@ -2,9 +2,9 @@
 
 這份教學的安裝精靈已經做過的驗證（誠實版）：
 
-- **Linux：** 在這個開發環境裡實際跑過整套流程——文字模式與圖形視窗（Python 3.9、3.12，用虛擬螢幕，由測試程式去按每一個按鈕）、從 git／下載 zip／本機資料夾三種來源安裝、更新、修復、解除安裝、開啟與關閉服務，並逐張檢視過截圖。
-- **Windows、macOS：** 由 GitHub 上的 Windows、macOS 機器自動執行同一套測試，另外在那兩台機器上用雙擊用的啟動檔（`install-windows.bat`／`install-macos.command`）真的安裝一次，檢查捷徑、登錄、PATH、`cpe` 指令、開啟／關閉服務、解除安裝是否清乾淨。
-- **還沒驗證到的：** 我沒有在真人的 Windows／macOS 桌面上用滑鼠點過；也沒有在『完全沒有 Python 的乾淨電腦』上跑過『自動安裝 Python』那一步（winget、python.org 安裝程式、Homebrew、apt）。如果某一步和你看到的畫面不一樣，請按控制台的「維護 → 查看紀錄」，把內容貼給我。
+- **Linux：** 在 GitHub 的 Linux 機器與開發環境都跑過整套流程——文字模式與圖形視窗（Python 3.9、3.12，用虛擬螢幕，由測試程式去按每一個按鈕）、從 git／下載 zip／本機資料夾三種來源安裝、更新、修復、解除安裝、開啟與關閉服務，並逐張檢視過截圖。
+- **Windows（英文版）、macOS（Apple 晶片）：** 由 GitHub 的這兩種機器自動執行同一套單元測試（含圖形視窗），另外用雙擊用的啟動檔（Windows：`install-windows.bat`；macOS：它呼叫的 `setup/bootstrap.sh`）**從 GitHub 真的下載、安裝一次**，檢查桌面與開始功能表的捷徑（Windows 是真正的 `.lnk`，檔名含中文）、「應用程式與功能」的項目、PATH、`cpe` 指令，開啟與關閉服務，最後解除安裝並確認清乾淨、學習進度還在。
+- **還沒驗證到的：** 我沒有在真人的 Windows／macOS 桌面上用滑鼠點過；也沒有在『完全沒有 Python 的乾淨電腦』上跑過『自動安裝 Python』那一步（winget、python.org 安裝程式、Homebrew、apt），GitHub 的機器都已經有 Python；`install-macos.command` 本身只跑了檢查模式。如果某一步和你看到的畫面不一樣，請按控制台的「維護 → 查看紀錄」，把內容貼給我。
 
 ## 先搞懂三個位置
 
