@@ -96,7 +96,7 @@ cpe eng verify 3    # 驗收；通過才標記完成
 ## 執行限制與相容性
 
 - 你的程式在子行程中執行：Linux／macOS 上有記憶體上限（預設 1024 MB，`config.json` 的 `memory_mb`）、輸出上限（32 MB）、超時就連同子行程一起殺掉；超過記憶體顯示 **MLE**。Windows 用 Job Object 限制記憶體。
-- 支援 Python 3.9+（考場是 3.9.6）：我在 3.9.25 與 3.13 上跑過全部單元測試。`.github/workflows/ci.yml` 設定了 Linux／macOS／Windows × Python 3.9／3.12 的矩陣測試。
+- 支援 Python 3.9+（考場是 3.9.6）：我在 3.9.25 與 3.13 上跑過全部單元測試。`.github/workflows/ci.yml` 在 Linux／macOS／Windows × Python 3.9／3.12 上跑全部單元測試（目前全綠）。
 
 ## 每天的流程（終端機版）
 
@@ -142,7 +142,7 @@ cpe mock finish           # 交卷。通過就自動進入下一個單元
 
 - **6 題是全國前 1% 的成績。** 課程涵蓋需要的知識並用檢核擋住『以為學會了』，但不能保證你一定達成；**真實 CPE 成績才是最終檢核**。每個階段結尾都安排一次真實報考。卡在平台期延長 6–12 個月很正常。
 - 課程內的難度星等、模擬考是我自己估的；官網連不上，沒能核對『官方一顆星選集 49 題』與 CPE26 選集，請自行到 [CPE 官網](https://cpe.mcu.edu.tw/) 取得後用 `cpe import` 加入。**歷屆題目與官方答對率只有報告列出的那一場**，其餘要照上面「歷屆資料要自己匯入」自己匯入。
-- **Windows 與 macOS 我沒有實機測過。** Windows 的記憶體限制（Job Object）和檔案鎖是照文件寫的，沒有在 Windows 上跑過；Linux 上的版本有測試。請看 CI 的結果，有問題請告訴我。
+- **Windows 與 macOS：** 全部單元測試在 GitHub Actions 的 Windows／macOS／Linux × Python 3.9／3.12 上都通過（第一輪 CI 抓到 macOS 不執行 `RLIMIT_AS`、以及 Windows 預設編碼的問題，已修）。但 **Windows 的記憶體限制（Job Object）沒有測試涵蓋**（那個測試只在 POSIX 跑），而 macOS 的記憶體限制是用輪詢常駐記憶體實作，只能擋住「真的寫入」的配置。我沒有在真人使用的 Windows／macOS 桌面上跑過網頁介面。
 - 難度校準與每日計畫的時間預估是粗略的啟發式，沒有拿多個真實學習者的資料驗證過。
 - `uva…` 真題的題號／標題憑記憶整理（約 120 題），部分沒有內建提示（標為 `unverified`）；請以 vjudge 連結上的題目為準，發現錯誤用 `cpe add` 覆蓋。
 - 教材不是我寫的：每個單元指向免費教材與章節（Python 官方教學、Competitive Programmer's Handbook、CP-Algorithms…），章節編號以書中目錄為準。
