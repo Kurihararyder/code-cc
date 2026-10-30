@@ -25,7 +25,7 @@ const BRUTE = 'n = int(input())\na = input().split()\nr = []\nfor x in a:\n    i
   log((await p.locator('.weakrow', { hasText: '動態規劃' }).count()) === 1, '統計頁：主題弱點列出「動態規劃」');
   log((await p.locator('.weakrow:has-text("動態規劃") .pill.bad').count()) === 1, '動態規劃標示為弱點');
   log((await p.locator('section:has-text("主題弱點") h4:has-text("建議加練")').count()) === 1, '有建議加練的題');
-  await p.screenshot({ path: 'shots/l1-weak.png', fullPage: true });
+  await p.locator('section:has(h3:has-text("主題弱點"))').screenshot({ path: 'shots/l1-weak-card.png' });
   await p.goto(BASE + '#/home'); await p.waitForSelector('.plan');
   await p.click('button:has-text("90 分")'); await p.waitForTimeout(500);
   log((await p.locator('.plan .pill:has-text("弱點")').count()) >= 1, '今日計畫排進「弱點」加練');

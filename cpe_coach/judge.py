@@ -110,7 +110,7 @@ _LAUNCH = (
 
 
 def _win_limit(proc, mem_mb: int) -> None:
-    """Windows：用 Job Object 限制單一行程的記憶體（盡力而為；失敗就不限制）。尚未在真實 Windows 上驗證，見 CI。"""
+    """Windows：用 Job Object 限制單一行程的記憶體（盡力而為；失敗就不限制）。記憶體限制的測試在 CI 的 Windows 上通過。"""
     try:
         import ctypes
         from ctypes import wintypes as w
