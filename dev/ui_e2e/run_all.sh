@@ -1,6 +1,6 @@
 #!/bin/bash
 # 一次跑完所有介面測試（本機與 CI 共用）。需要 Node、playwright（含 chromium）、python3。
-# 每個腳本前都重建全新工作區；任何 FAIL、或腳本沒印出任何 PASS（代表中途當掉）都算失敗。
+# 每個腳本前都重建全新工作區；任何 FAIL、node 非 0 結束（例外／逾時）、或沒印出任何 PASS 都算失敗。
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 E2E_DIR="${E2E_DIR:-/tmp/cpe-e2e}"; mkdir -p "$E2E_DIR"
@@ -15,7 +15,8 @@ for t in ui gate mobile a11y exam learn; do
   "$HERE/fresh.sh" >/dev/null || { echo "fresh.sh 失敗"; exit 1; }
   echo "=== $t"
   (cd "$E2E_DIR" && timeout 600 node "$HERE/$t.js" 2>&1) | tee "$E2E_DIR/$t.log"
-  if grep -q "^FAIL" "$E2E_DIR/$t.log" || ! grep -q "^PASS" "$E2E_DIR/$t.log"; then echo "✗ $t 失敗"; status=1; fi
+  rc=${PIPESTATUS[0]}                                   # node 本身的結束碼：中途當掉（例外、逾時）也要算失敗
+  if [ "$rc" -ne 0 ] || grep -q "^FAIL" "$E2E_DIR/$t.log" || ! grep -q "^PASS" "$E2E_DIR/$t.log"; then echo "✗ $t 失敗（結束碼 $rc）"; status=1; fi
 done
 [ $status -eq 0 ] && echo "✓ 全部介面測試通過" || echo "✗ 有介面測試失敗"
 exit $status

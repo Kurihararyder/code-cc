@@ -19,7 +19,7 @@ from urllib.parse import parse_qs, urlparse
 from . import ask as ask_mod
 from . import bank as bank_mod
 from . import course as course_mod
-from . import backup, dashboard, hints, service, srs
+from . import __version__, backup, dashboard, hints, service, srs, updater
 from .llm import detect_client
 from .web_exam import ExamMixin
 from .web_learn import LearnMixin
@@ -107,8 +107,14 @@ class App(PracticeMixin, ExamMixin, LearnMixin):
         cfg = ws.config()
         return {"timeout_sec": cfg["timeout_sec"], "start_date": cfg["start_date"], "stage": cfg["stage"], "statement_lang": cfg.get("statement_lang", "auto"),
                 "model": cfg.get("model"), "ai": self.ai_info(ws), "g++": bool(shutil.which("g++")),
-                "workspace": str(ws.root)}
+                "workspace": str(ws.root), "version": __version__}
 
+
+    def update_check(self, body: Dict[str, Any]) -> Dict[str, Any]:
+        """只檢查有沒有新版本（git fetch），不更新。真正的更新請在終端機執行 cpe update。"""
+        r = updater.apply(updater.repo_root(), check_only=True)
+        return {"status": r["status"], "version": __version__, "reason": r.get("reason"), "branch": r.get("branch"), "commit": r.get("commit"),
+                "behind": r.get("behind", 0), "commits": [{"sha": a, "subject": b} for a, b in r.get("commits", [])][:15]}
 
     def course_goto(self, body: Dict[str, Any]) -> Dict[str, Any]:
         ws = self.ws()
@@ -178,7 +184,7 @@ def make_handler(app: App):
             "/api/mock": app.mock_start, "/api/exam/finish": app.exam_finish, "/api/course/goto": app.course_goto,
             "/api/course/next": app.course_next, "/api/settings": app.set_settings, "/api/past/import": app.past_import,
             "/api/past/statement": app.past_statement, "/api/past/start": app.past_start, "/api/vocab/add": app.vocab_add,
-            "/api/vocab/remove": app.vocab_remove, "/api/eng/start": app.eng_start, "/api/eng/verify": app.eng_verify, "/api/key": app.set_key, "/api/ai/test": app.ai_test}
+            "/api/vocab/remove": app.vocab_remove, "/api/eng/start": app.eng_start, "/api/eng/verify": app.eng_verify, "/api/key": app.set_key, "/api/ai/test": app.ai_test, "/api/update/check": app.update_check}
 
     class H(BaseHTTPRequestHandler):
         server_version = "cpe"

@@ -16,6 +16,21 @@ export async function mountSettings(view) {
   const testAi = async (btn) => { btn.disabled = true; status.textContent = "測試中…"; status.className = "small mt muted"; try { const r = await post("/api/ai/test"); status.textContent = r.ok ? `✓ 連線成功（${r.model}，${r.ms} ms）` : "✗ " + r.error; status.className = "small mt " + (r.ok ? "ok" : "bad"); } catch (e) { status.textContent = "✗ " + e.message; status.className = "small mt bad"; } finally { btn.disabled = false; } };
   const testBtn = h("button", { class: "btn", onclick: (e) => testAi(e.currentTarget) }, icon("refresh"), "測試連線");
 
+  const upd = h("div", { class: "small mt", id: "updResult", "aria-live": "polite" });
+  const checkUpdate = async (btn) => {
+    btn.disabled = true; upd.className = "small mt muted"; upd.textContent = "檢查中…";
+    try {
+      const r = await post("/api/update/check");
+      clear(upd);
+      if (r.status === "up_to_date") { upd.className = "small mt ok"; upd.textContent = `✓ 已經是最新版（${r.version}）。`; }
+      else if (r.status === "available") {
+        upd.className = "small mt";
+        upd.append(h("div", { class: "warn", text: `有 ${r.behind} 個新的更新：` }), h("ul", null, r.commits.map((c) => h("li", null, h("span", { class: "mono", text: c.sha + " " }), c.subject))),
+          h("div", null, "在終端機執行 ", h("code", { text: "cpe update" }), "，完成後結束這個網頁服務（Ctrl+C）再重新執行 ", h("code", { text: "cpe web" }), "。學習進度不會被動到。"));
+      } else { upd.className = "small mt warn"; upd.textContent = r.reason || "無法檢查更新"; }
+    } catch (e) { upd.className = "small mt bad"; upd.textContent = e.message; } finally { btn.disabled = false; }
+  };
+
   const theme = h("div", { class: "seg", role: "group", "aria-label": "外觀" }, [["auto", "跟隨系統"], ["light", "淺色"], ["dark", "深色"]].map(([k, t]) => h("button", { "aria-pressed": String(pref.get("theme", "auto") === k), onclick: (e) => { pref.set("theme", k); applyTheme(k); paintTop(); [...e.currentTarget.parentElement.children].forEach((b) => b.setAttribute("aria-pressed", String(b === e.currentTarget))); } }, t)));
   const fs = h("input", { type: "number", min: 11, max: 22, value: pref.get("fontSize", 14), "aria-label": "編輯器字體大小", style: { width: "90px" }, onchange: (e) => { pref.set("fontSize", Math.max(11, Math.min(22, +e.target.value || 14))); toast("下次開啟題目時套用", "", 1600); } });
   const timeout = h("input", { type: "number", min: 0.5, max: 120, step: 0.5, value: st.timeout_sec, "aria-label": "每筆測資時限", style: { width: "110px" } });
@@ -36,6 +51,10 @@ export async function mountSettings(view) {
       h("p", { class: "muted small", text: "把所有進度、解答、測資、對話與單字本打包成一個 zip。換電腦時：cpe restore <檔案> --dir <新資料夾>。系統也會每小時自動留一份進度快照（.cpe/backups，保留最近 24 份）。" }),
       h("div", { class: "row wrap" }, h("button", { class: "btn", onclick: async (e) => { const b = e.currentTarget; b.disabled = true; try { await download("/api/backup", "cpe-backup.zip"); toast("已下載備份", "ok", 2500); } catch (err) { toast(err.message, "bad"); } finally { b.disabled = false; } } }, icon("save"), "下載備份 (.zip)")),
       h("p", { class: "muted xs mt", text: "備份不包含 API 金鑰（金鑰只存在記憶體）。" })),
+    h("section", { class: "card pad mt" }, h("div", { class: "card-h" }, h("h3", { text: "版本與更新" })),
+      h("dl", { class: "dl" }, h("dt", { text: "目前版本" }), h("dd", { class: "mono", text: st.version || "—" })),
+      h("p", { class: "muted small", text: "更新在終端機執行 cpe update（只做 fast-forward，失敗會自動退回）。這裡只檢查有沒有新版本，不會改任何檔案。" }),
+      h("div", { class: "row" }, h("button", { class: "btn", onclick: (e) => checkUpdate(e.currentTarget) }, icon("refresh"), "檢查更新")), upd),
     h("section", { class: "card pad mt" }, h("div", { class: "card-h" }, h("h3", { text: "環境" })),
       h("dl", { class: "dl" }, h("dt", { text: "工作區" }), h("dd", { class: "mono small", text: st.workspace }), h("dt", { text: "g++（C++ 判題）" }), h("dd", null, st["g++"] ? h("span", { class: "ok", text: "已安裝" }) : h("span", { class: "warn", text: "找不到。階段 4 起需要安裝（Windows 可裝 MSYS2/MinGW）" })), h("dt", { text: "快速鍵" }), h("dd", null, h("kbd", { text: "?" }), " 查看全部"))),
   ));

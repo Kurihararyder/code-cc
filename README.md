@@ -11,11 +11,14 @@
 
 ## 開始
 
+**完整的安裝、使用與更新教學（Windows／macOS／Linux）：[INSTALL.md](INSTALL.md)。** 最短版本：
+
 ```bash
-pip install -e .          # 之後就有 cpe 指令（或用 python -m cpe_coach）
-cpe init my-cpe && cd my-cpe
-cpe today                 # 今天該做什麼
-cpe course                # 目前單元：要學什麼、必做題、教材、陷阱、檢核
+git clone -b claude/clever-archimedes-ekcn2m https://github.com/Kurihararyder/code-cc.git
+cd code-cc && python -m pip install -e .     # 之後就有 cpe 指令（也可以用 python -m cpe_coach）
+cd .. && cpe init my-cpe && cd my-cpe        # 學習進度放在這個工作區，和程式資料夾分開
+cpe web                                      # 網頁介面；終端機版：cpe today、cpe course
+cpe update                                   # 之後要更新程式時（進度不受影響）；更新內容見 CHANGELOG.md
 ```
 
 ## 網頁介面（建議用這個）

@@ -118,6 +118,13 @@ const STMT = (n) => `Problem ${n}\n\nRead one integer from the standard input an
   const path = await dl.path(); const size = require('fs').statSync(path).size;
   log(dl.suggestedFilename().endsWith('.zip') && size > 500, `下載備份 zip（${size} bytes）`);
 
+  // ---- 版本與更新（只檢查，不更新）----
+  await p.goto(BASE + '#/settings'); await p.waitForSelector('h3:has-text("版本與更新")');
+  log(/\d+\.\d+\.\d+/.test(await p.textContent('section:has-text("版本與更新") .mono')), '設定頁顯示目前版本');
+  await p.click('button:has-text("檢查更新")');
+  await p.waitForFunction(() => { const t = document.querySelector('#updResult')?.textContent || ''; return t && !t.includes('檢查中'); }, null, { timeout: 60000 });
+  log((await p.textContent('#updResult')).length > 3, '檢查更新有回應（最新／有新版本／或說明為何無法檢查）：' + (await p.textContent('#updResult')).slice(0, 40));
+
   // ---- 手機：6 個導覽項目不溢出 ----
   const m = await b.newContext({ ...devices['iPhone 13'] });
   await m.addInitScript(() => { localStorage.setItem('cpe.onboarded', 'true'); });

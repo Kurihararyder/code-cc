@@ -365,6 +365,20 @@ class WebApiTests(WebBase):
         self.assertIn("families", w)
         self.assertIsInstance(w["suggestions"], list)
 
+    def test_update_check_endpoint_and_version_in_settings(self):
+        import cpe_coach
+        from unittest import mock
+        self.assertEqual(self.get("/api/settings")[1]["version"], cpe_coach.__version__)
+        fake = {"status": "available", "behind": 2, "branch": "b", "commit": "abc", "commits": [("111", "feat one"), ("222", "feat two")]}
+        with mock.patch("cpe_coach.updater.apply", return_value=fake) as m:
+            code, r = self.post("/api/update/check")
+        self.assertEqual(code, 200)
+        self.assertTrue(m.call_args.kwargs.get("check_only"))                      # 網頁只檢查，不更新
+        self.assertEqual((r["status"], r["behind"], [c["subject"] for c in r["commits"]]), ("available", 2, ["feat one", "feat two"]))
+        with mock.patch("cpe_coach.updater.apply", return_value={"status": "unavailable", "reason": "不是 git 安裝"}):
+            self.assertEqual(self.post("/api/update/check")[1]["reason"], "不是 git 安裝")
+        self.assertEqual(self.req("/api/update/check", {}, token=False)[0], 403)
+
     def test_backup_download(self):
         r = urllib.request.Request(f"http://127.0.0.1:{self.port}/api/backup", headers={"Host": f"127.0.0.1:{self.port}", "X-CPE-Token": self.app.token})
         with urllib.request.urlopen(r) as resp:
