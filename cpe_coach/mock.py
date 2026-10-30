@@ -20,9 +20,7 @@ TEMPLATE = '''import sys
 
 def main():
     for line in sys.stdin:  # 多組測資：讀到 EOF
-        line = line.strip()
-        if not line:
-            continue
+        line = line.rstrip("\\n")  # 空行也可能是一筆資料；題目沒說就不要跳過
         # TODO
 
 
@@ -31,17 +29,36 @@ if __name__ == "__main__":
 '''
 
 
+CPP_TEMPLATE = '''#include <bits/stdc++.h>
+using namespace std;
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+    // TODO
+    return 0;
+}
+'''
+
+
+def template(lang: str) -> str:
+    return CPP_TEMPLATE if lang == "cpp" else TEMPLATE
+
+
 def pick_by_difficulty(bank: Dict[str, dict], difficulties: List[int], st: Dict[str, Any],
-                       rng: random.Random) -> List[str]:
-    """每個難度挑一題（盡量挑沒通過的）。該難度沒題目時，退而取最接近的難度。"""
+                       rng: random.Random, max_stage: int = 9) -> List[str]:
+    """每個難度挑一題（盡量挑沒通過的）。該難度沒題目時，退而取最接近的難度。
+    max_stage 限制題目階段，避免出到你還沒學過的主題。"""
     chosen: List[str] = []
     for d in difficulties:
-        pool = [p for p in bank.values() if p["id"] not in chosen]
+        pool = [p for p in bank.values() if p["id"] not in chosen and p.get("stage", 1) <= max_stage]
         if not pool:
             break
-        pool.sort(key=lambda p: (abs(p["difficulty"] - d),
-                                 st["problems"].get(p["id"], {}).get("first_pass") is not None,
-                                 rng.random()))
+        # 優先順序：難度最接近 → 沒做過（其中優先驗收專用題 reserve）→ 隨機
+        def key(p):
+            solved = st["problems"].get(p["id"], {}).get("first_pass") is not None
+            return (abs(p["difficulty"] - d), solved, (not p.get("reserve")) if not solved else False, rng.random())
+        pool.sort(key=key)
         chosen.append(pool[0]["id"])
     return chosen
 
@@ -57,27 +74,34 @@ def _stamp(ts: float) -> str:
     return time.strftime("%Y%m%d-%H%M%S", time.localtime(ts))
 
 
-def start(ws: Workspace, bank: Dict[str, dict], kind: str, rng: Optional[random.Random] = None) -> Dict[str, Any]:
+def start(ws: Workspace, bank: Dict[str, dict], kind: str, rng: Optional[random.Random] = None, *,
+          ids: Optional[List[str]] = None, minutes: Optional[int] = None, lang: str = "py",
+          gate: Optional[Dict[str, Any]] = None, max_stage: int = 9) -> Dict[str, Any]:
+    """kind: mock（7 題 3 小時）／short（3 題 90 分）／weekly（重寫 3 題舊題）／gate（指定題目）。"""
     if ws.exam_active():
         raise ValueError("已有進行中的考試，先 cpe mock finish")
     st = ws.state()
     rng = rng or random.Random()
-    if kind == "weekly":
+    if kind == "gate":
+        if not ids:
+            raise ValueError("gate 需要指定題目")
+    elif kind == "weekly":
         ids, minutes = pick_weekly(st), WEEKLY_MINUTES
         if not ids:
             raise ValueError("還沒有通過的題目，無法出每週測驗。先解幾題吧")
     else:
         spec = FULL if kind == "mock" else SHORT
-        ids, minutes = pick_by_difficulty(bank, spec["difficulties"], st, rng), spec["minutes"]
+        ids, minutes = pick_by_difficulty(bank, spec["difficulties"], st, rng, max_stage), spec["minutes"]
+    ext = "cpp" if lang == "cpp" else "py"
     folder = ws.exam_dir / f"{kind}-{_stamp(ws.now())}"
     folder.mkdir(parents=True, exist_ok=True)
     files = {}
     for pid in ids:
-        f = folder / f"{pid}.py"
-        f.write_text(TEMPLATE, encoding="utf-8")
+        f = folder / f"{pid}.{ext}"
+        f.write_text(template(lang), encoding="utf-8")
         files[pid] = str(f.relative_to(ws.root))
-    exam = {"kind": kind, "start": ws.now(), "minutes": minutes, "problems": ids, "files": files,
-            "results": {pid: {"wrong": 0, "ac_min": None} for pid in ids}}
+    exam = {"kind": kind, "start": ws.now(), "minutes": minutes, "problems": ids, "files": files, "lang": lang,
+            "gate": gate, "results": {pid: {"wrong": 0, "ac_min": None} for pid in ids}}
     ws.save_exam(exam)
     ws.log("exam_start", exam_kind=kind, problems=ids, minutes=minutes)
     return exam
@@ -117,7 +141,7 @@ def score(exam: Dict[str, Any]) -> Dict[str, Any]:
     solved = [(pid, r) for pid, r in exam["results"].items() if r["ac_min"] is not None]
     penalty = sum(r["ac_min"] + PENALTY_MIN * r["wrong"] for _, r in solved)
     return {"kind": exam["kind"], "solved": len(solved), "total": len(exam["problems"]),
-            "penalty": penalty, "problems": exam["problems"],
+            "penalty": penalty, "problems": exam["problems"], "gate": exam.get("gate"),
             "detail": {pid: dict(r) for pid, r in exam["results"].items()}}
 
 

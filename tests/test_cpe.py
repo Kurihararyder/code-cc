@@ -3,7 +3,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from cpe_coach import bank, hints, judge, llm, mock, srs, stats
+import shutil
+
+from cpe_coach import bank, cli, course, hints, judge, llm, mock, srs, stats
 from cpe_coach.store import Workspace, new_problem_state
 
 DAY = 86400.0
@@ -275,19 +277,214 @@ class MockTests(unittest.TestCase):
 class BankTests(unittest.TestCase):
     def test_bank_integrity(self):
         b = bank.load_bank()
-        self.assertGreaterEqual(len(b), 60)
+        self.assertGreaterEqual(len(b), 200)
         for p in b.values():
-            for k in ("id", "title", "stage", "difficulty", "topic", "hint_category", "hint_insight", "url"):
+            for k in ("id", "title", "stage", "difficulty", "topic", "hint_category"):
                 self.assertTrue(p.get(k), (p["id"], k))
+            if not p.get("unverified"):
+                self.assertTrue(p.get("hint_insight"), p["id"])
             self.assertIn(p["stage"], (1, 2, 3, 4))
             self.assertIn(p["difficulty"], (1, 2, 3, 4))
-        self.assertGreaterEqual(sum(1 for p in b.values() if p["difficulty"] == 4), 1)
+        self.assertGreaterEqual(sum(1 for p in b.values() if p["difficulty"] == 4), 5)
 
     def test_custom_overrides(self):
         tmp, ws, _ = make_ws()
         with tmp:
             bank.add_custom(ws, {"id": "uva100", "title": "X", "stage": 1, "difficulty": 1})
             self.assertEqual(bank.load_bank(ws)["uva100"]["title"], "X")
+
+
+class CourseTests(unittest.TestCase):
+    def setUp(self):
+        self.c = course.load()
+        self.bank = bank.load_bank()
+
+    def test_weeks_contiguous_and_total(self):
+        w = 1
+        for i, u in enumerate(self.c["units"], 1):
+            self.assertEqual((u["n"], u["start"]), (i, w))
+            w += u["weeks"]
+        self.assertEqual(w - 1, self.c["total_weeks"])
+        self.assertEqual(self.c["total_weeks"], 126)
+
+    def test_stages_monotonic(self):
+        stages = [u["stage"] for u in self.c["units"]]
+        self.assertEqual(stages, sorted(stages))
+        self.assertEqual(set(stages), {0, 1, 2, 3, 4, 5})
+
+    def test_all_references_exist_and_every_drill_used(self):
+        used = set()
+        for u in self.c["units"]:
+            ids = list(u["drills"]) + list(u["anchors"])
+            if u["gate"] and u["gate"]["type"] == "set":
+                ids += u["gate"]["problems"]
+                self.assertLessEqual(u["gate"]["need"], len(u["gate"]["problems"]), u["n"])
+            for pid in ids:
+                self.assertIn(pid, self.bank, (u["n"], pid))
+            used |= set(u["drills"])
+            if u["gate"] and u["gate"]["type"] == "set":
+                used |= set(u["gate"]["problems"])
+            for r in u["resources"]:
+                self.assertIn(r, self.c["resources"])
+            self.assertTrue(u["learn"] and u["goal"] and u["title"], u["n"])
+        drills = {p for p, v in self.bank.items() if v.get("drill") and not v.get("reserve")}
+        self.assertEqual(drills - used, set())
+
+    def test_cpp_gates_are_cpp_units(self):
+        for u in self.c["units"]:
+            if u["gate"] and u["gate"]["type"] == "set":
+                self.assertEqual(u["gate"]["lang"], u["lang"], u["n"])
+
+    def test_gate_problems_not_all_required_practice_for_first_unit(self):
+        # 第一個檢核含沒練過的新題，而不是只重寫
+        u = self.c["units"][0]
+        self.assertTrue(set(u["gate"]["problems"]) - set(u["drills"]))
+
+    def test_expected_unit(self):
+        self.assertEqual(course.expected_unit(self.c, 1)["n"], 1)
+        self.assertEqual(course.expected_unit(self.c, 126)["n"], 52)
+        self.assertEqual(course.expected_unit(self.c, 9999)["n"], 52)
+
+    def test_drill_files_complete(self):
+        for pid, p in self.bank.items():
+            if not p.get("drill"):
+                continue
+            d = bank.DRILLS / pid
+            self.assertTrue((d / "statement.md").exists(), pid)
+            ins = sorted((d / "tests").glob("*.in"))
+            self.assertGreaterEqual(len(ins), 2, pid)
+            for f in ins:
+                self.assertTrue(f.with_suffix(".out").exists(), (pid, f.name))
+            self.assertTrue(ins[0].with_suffix(".out").read_text(encoding="utf-8").strip(), pid)  # 範例輸出不可為空
+            # 範例（case01）要出現在題目敘述裡
+            self.assertIn(ins[0].read_text(encoding="utf-8").rstrip("\n"), (d / "statement.md").read_text(encoding="utf-8"))
+
+    def test_install_drill_does_not_overwrite_tests(self):
+        tmp, ws, _ = make_ws()
+        with tmp:
+            self.assertTrue(bank.install_drill(ws, "d001"))
+            (ws.tests / "d001" / "mine.in").write_text("x\n")
+            self.assertFalse(bank.install_drill(ws, "d001"))
+            self.assertTrue((ws.tests / "d001" / "mine.in").exists())
+            self.assertFalse(bank.install_drill(ws, "uva100"))
+
+    def test_gate_requires_unit_drills_and_advances(self):
+        tmp, ws, clock = make_ws()
+        with tmp:
+            u = self.c["units"][0]
+            with self.assertRaises(ValueError):
+                course.start_gate(ws, self.bank, self.c, u)          # 還沒練
+            for d in u["drills"]:
+                ws.log("test", problem=d, verdict="AC", lang="py")
+            exam = course.start_gate(ws, self.bank, self.c, u)
+            self.assertEqual(exam["problems"], u["gate"]["problems"])
+            self.assertTrue((ws.tests / "d004").exists())
+            exam = ws.exam()
+            for pid in exam["problems"]:
+                mock.record(ws, exam, pid, judge.AC)
+            s = mock.finish(ws)
+            msg = course.evaluate_gate(ws, self.c, s)
+            self.assertIn("通過", msg)
+            self.assertEqual(ws.state()["course"]["unit"], 2)
+
+    def test_failed_gate_does_not_advance(self):
+        tmp, ws, _ = make_ws()
+        with tmp:
+            u = self.c["units"][0]
+            for d in u["drills"]:
+                ws.log("test", problem=d, verdict="AC", lang="py")
+            exam = course.start_gate(ws, self.bank, self.c, u)
+            msg = course.evaluate_gate(ws, self.c, mock.finish(ws))
+            self.assertIn("未通過", msg)
+            self.assertEqual(ws.state()["course"]["unit"], 1)
+
+    def test_goto_sets_stage(self):
+        tmp, ws, _ = make_ws()
+        with tmp:
+            course.goto(ws, self.c, 30)
+            self.assertEqual(ws.config()["stage"], self.c["units"][29]["stage"])
+            self.assertEqual(ws.state()["course"]["done"], list(range(1, 30)))
+
+
+class ImportTests(unittest.TestCase):
+    def test_parse_samples_english_and_chinese(self):
+        t = "Problem\nSample Input\n3 4\n5 6\n\nSample Output\n7\n11\n"
+        self.assertEqual(cli.parse_samples(t), [("3 4\n5 6", "7\n11")])
+        t2 = "## 範例輸入 #1\n1\n## 範例輸出 #1\n2\n## 範例輸入 #2\n3\n## 範例輸出 #2\n4\n"
+        self.assertEqual(cli.parse_samples(t2), [("1", "2"), ("3", "4")])
+        self.assertEqual(cli.parse_samples("沒有範例"), [])
+
+
+@unittest.skipUnless(shutil.which("g++"), "需要 g++")
+class CppTests(unittest.TestCase):
+    def test_cpp_verdicts(self):
+        tmp, ws, _ = make_ws()
+        with tmp:
+            td = ws.tests / "p"
+            td.mkdir()
+            (td / "a.in").write_text("3\n")
+            (td / "a.out").write_text("6\n")
+            src = {
+                "ok": ('#include <iostream>\nint main(){int n;std::cin>>n;std::cout<<n*2<<"\\n";}', judge.AC),
+                "wa": ('#include <iostream>\nint main(){std::cout<<7<<"\\n";}', judge.WA),
+                "re": ('int main(){return 3;}', judge.RE),
+                "ce": ('int main(){ this is not c++ }', judge.CE),
+                "tle": ('int main(){while(1){}}', judge.TLE),
+            }
+            for name, (code, want) in src.items():
+                f = ws.root / f"{name}.cpp"
+                f.write_text(code)
+                self.assertEqual(judge.judge(f, td, timeout=2.0).verdict, want, name)
+
+
+
+class CliSmokeTests(unittest.TestCase):
+    """從頭走一遍：init → course → new → test → hint 閘門 → import → 重練。"""
+
+    def run_cli(self, *args):
+        import contextlib
+        import io
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+            rc = cli.main(list(args))
+        return rc, buf.getvalue()
+
+    def test_learner_flow(self):
+        import os
+        with tempfile.TemporaryDirectory() as d:
+            old = os.getcwd()
+            os.chdir(d)
+            try:
+                self.assertEqual(self.run_cli("init", "ws", "--start", "2026-11-02")[0], 0)
+                os.chdir("ws")
+                rc, out = self.run_cli("course")
+                self.assertEqual(rc, 0)
+                self.assertIn("d001", out)
+                rc, out = self.run_cli("new", "d001")
+                self.assertEqual(rc, 0)
+                self.assertTrue((Path("statements") / "d001.md").exists())
+                self.assertEqual(len(list(Path("tests/d001").glob("*.in"))), 3)
+                # 空白模板應失敗；L1 在還沒嘗試前被擋；試過一次後可以
+                self.assertNotEqual(self.run_cli("test", "d001")[0], 0)
+                Path("solutions/d001.py").write_text("print(f\"Hello, {input().strip()}!\")\n")
+                self.assertEqual(self.run_cli("test", "d001")[0], 0)
+                rc, out = self.run_cli("today")
+                self.assertEqual(rc, 0)
+                self.assertIn("d002", out)
+                # 沒做完必做練習不能開檢核
+                rc, out = self.run_cli("gate")
+                self.assertEqual(rc, 2)
+                self.assertIn("d002", out)
+                # import 抓範例
+                Path("p.txt").write_text("題目\nSample Input\n1 2\nSample Output\n3\n")
+                self.assertEqual(self.run_cli("import", "uva99999", "p.txt")[0], 0)
+                self.assertTrue(Path("tests/uva99999/case01.in").exists())
+                # 跳關
+                self.assertEqual(self.run_cli("course", "goto", "30")[0], 0)
+                self.assertIn("單元 30", self.run_cli("course")[1])
+                self.assertEqual(self.run_cli("course", "list")[0], 0)
+            finally:
+                os.chdir(old)
 
 
 class StatsTests(unittest.TestCase):

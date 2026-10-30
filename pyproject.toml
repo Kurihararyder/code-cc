@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cpe-coach"
-version = "1.0.0"
-description = "CPE 自學教練：本地判題、提示階梯、間隔重練、模擬考"
+version = "2.0.0"
+description = "CPE 自學教練：126 週課程、107 題原創練習、本地判題、提示階梯、間隔重練、模擬考"
 requires-python = ">=3.9"
 readme = "README.md"
 
@@ -16,4 +16,4 @@ cpe = "cpe_coach.cli:main"
 packages = ["cpe_coach"]
 
 [tool.setuptools.package-data]
-cpe_coach = ["data/*.json"]
+cpe_coach = ["data/*.json", "data/*.md", "data/drills/index.json", "data/drills/*/statement.md", "data/drills/*/tests/*"]

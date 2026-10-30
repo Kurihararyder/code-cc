@@ -68,7 +68,7 @@ class Workspace:
             cfg["start_date"] = start_date
             ws._write(ws.config_path, cfg)
         if not ws.state_path.exists():
-            ws._write(ws.state_path, {"problems": {}, "eng_done": [], "exams": []})
+            ws._write(ws.state_path, {"problems": {}, "eng_done": [], "exams": [], "course": {"unit": 1, "done": []}})
         return ws
 
     # ---- 檔案 ----
@@ -121,6 +121,7 @@ class Workspace:
         st.setdefault("problems", {})
         st.setdefault("eng_done", [])
         st.setdefault("exams", [])
+        st.setdefault("course", {"unit": 1, "done": []})
         return st
 
     def save_state(self, st: Dict[str, Any]) -> None:

@@ -56,7 +56,12 @@ def static_hint(problem: Dict[str, Any], level: int, last_failure: Optional[Dict
     if level == 1:
         return problem.get("hint_category")
     if level == 2:
-        return problem.get("hint_insight")
+        if problem.get("hint_insight"):
+            return problem["hint_insight"]
+        if problem.get("unverified"):
+            return ("這題沒有內建的關鍵觀察。回頭看 L1 的分類，想想這一類題的標準模板；"
+                    "把題目的限制範圍寫下來，反推可行的複雜度。")
+        return None
     if level == 3:
         return ("（沒有設定 AI 金鑰，改用自助骨架法）請在檔案開頭用註解寫出三段：\n"
                 "  # 1. 讀入：每組資料如何讀？\n  # 2. 處理：L2 那句關鍵觀察要變成哪幾個步驟？用哪個資料結構？\n"

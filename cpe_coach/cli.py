@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import re
 import shutil
 import sys
 import time
@@ -11,12 +12,12 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from . import bank as bank_mod
+from . import course as course_mod
 from . import hints, mock, roadmap, srs, stats
 from .judge import AC, VERDICT_ZH, find_cases, judge, stress
 from .llm import RULES, LLMError, detect_client
 from .store import Workspace, WorkspaceError
 
-TEMPLATE = mock.TEMPLATE
 
 
 # ---------- 小工具 ----------
@@ -39,13 +40,18 @@ def today_date(ws: Workspace) -> dt.date:
     return dt.date.fromtimestamp(ws.now())
 
 
-def solution_file(ws: Workspace, pid: str) -> Path:
+def solution_file(ws: Workspace, pid: str, lang: Optional[str] = None) -> Path:
+    """考試中的題目用考試檔；否則依 --lang 或最近修改的 .py/.cpp。"""
     exam = ws.exam()
-    if exam:
+    if exam and not lang:
         p = mock.solution_path(ws, exam, pid)
         if p:
             return p
-    return ws.solutions / f"{pid}.py"
+    py, cpp = ws.solutions / f"{pid}.py", ws.solutions / f"{pid}.cpp"
+    if lang:
+        return cpp if lang == "cpp" else py
+    existing = [f for f in (py, cpp) if f.exists()]
+    return max(existing, key=lambda f: f.stat().st_mtime) if existing else py
 
 
 def fail_path(ws: Workspace, pid: str) -> Path:
@@ -101,35 +107,51 @@ def cmd_stage(ws: Workspace, args) -> int:
 
 
 def suggestions(ws: Workspace, bank: Dict[str, dict], limit: int = 3) -> List[dict]:
+    """目前單元的下一批練習題（先 drills，再真題）；單元沒有時退回依階段挑題。"""
+    c = course_mod.load()
+    u = course_mod.current_unit(ws, c)
     st = ws.state()
+
+    def unsolved(pid: str) -> bool:
+        sp = st["problems"].get(pid)
+        return not (sp and sp["first_pass"] is not None)
+
+    if u:
+        _, todo = course_mod.unit_progress(ws, u)
+        ids = todo + [a for a in u["anchors"] if unsolved(a)]
+        out = [bank[i] for i in ids if i in bank]
+        if out:
+            return out[:limit]
     eff = effective_stage(ws)
-    out = []
-    for p in bank.values():
-        sp = st["problems"].get(p["id"])
-        if sp and sp["first_pass"] is not None:
-            continue
-        if p["stage"] <= eff:
-            out.append(p)
-    out.sort(key=lambda p: (p["stage"], p["difficulty"], p.get("number", 0)))
-    # 優先挑目前階段的題目
-    out.sort(key=lambda p: 0 if p["stage"] == eff else 1)
+    out = [p for p in bank.values() if p["stage"] <= eff and unsolved(p["id"]) and not p.get("drill")]
+    out.sort(key=lambda p: (0 if p["stage"] == eff else 1, p["stage"], p["difficulty"], p.get("number", 0)))
     return out[:limit]
 
 
-def show_problem(p: dict) -> None:
+def show_problem(p: dict, hint_new: bool = True) -> None:
     star = "★" * int(p.get("difficulty", 1))
     print(f"  {p['id']:<10} {star:<5} {p['title']}　[{p.get('topic', '')}]")
-    if p.get("url"):
+    if p.get("drill") and hint_new:
+        print(f"             cpe new {p['id']}　→ 題目與測資自動安裝")
+    elif p.get("url"):
         print(f"             題目：{p['url']}（也可到瘋狂程設／UVA 找）")
 
 
 def cmd_today(ws: Workspace, args) -> int:
     bank = bank_mod.load_bank(ws)
     st, now = ws.state(), ws.now()
-    cfg = ws.config()
-    s = roadmap.STAGES[int(cfg["stage"])]
-    print(f"📅 {today_date(ws)}　階段 {s['n']}：{s['name']}")
+    c = course_mod.load()
+    u = course_mod.current_unit(ws, c)
     exam = ws.exam()
+    if u:
+        a, b = course_mod.week_range(u)
+        wk = course_mod.expected_week(start_date(ws), today_date(ws))
+        eu = course_mod.expected_unit(c, wk)
+        print(f"📅 {today_date(ws)}　第 {wk} 週　你在：單元 {u['n']}《{u['title']}》（課表第 {a}{'' if a == b else '–' + str(b)} 週）")
+        if eu["n"] > u["n"]:
+            print(f"   ⚠ 依課表你現在應該在單元 {eu['n']}。落後不用慌，但別連續兩週沒練（卡住用 cpe hint，不要卡著不動）。")
+        elif eu["n"] < u["n"]:
+            print(f"   👍 你比課表快 {u['n'] - eu['n']} 個單元。")
     if exam:
         left = mock.remaining_seconds(exam, now)
         print(f"\n⏱ 考試進行中（{exam['kind']}），{'剩 ' + fmt_dur(left) if left > 0 else '時間到'}。題目：{', '.join(exam['problems'])}")
@@ -141,21 +163,29 @@ def cmd_today(ws: Workspace, args) -> int:
         for pid, _ in due:
             show_problem(bank_mod.resolve(bank, pid))
         print("  做法：cpe new <題號> --fresh，寫完 cpe test <題號>")
-    print("\n🆕 今天的新題：")
-    sug = suggestions(ws, bank, 2)
-    if sug:
-        for p in sug:
-            show_problem(p)
-    else:
-        print("  題庫裡這個階段的題目都完成了。用 cpe add 補題，或換更高的階段 cpe stage N")
-    if cfg["stage"] == 0:
-        print("  （階段 0 建議先用 ZeroJudge 入門題把語法練熟；上面是你之後的目標題）")
+    if u:
+        done, todo = course_mod.unit_progress(ws, u)
+        print(f"\n📘 本單元必做 {len(done)}/{len(u['drills'])} 完成：")
+        shown = 0
+        for pid in todo[:3]:
+            show_problem(bank_mod.resolve(bank, pid))
+            shown += 1
+        if not todo:
+            print("  必做練習都完成了。")
+            if u["anchors"]:
+                print("  真題（選做）：" + "、".join(u["anchors"][:6]))
+            if u["gate"]:
+                print("  👉 準備好了就檢核：cpe gate")
+            else:
+                print("  這個單元的檢核是實際報考。完成後：cpe course next")
+        print("  詳細內容：cpe course")
     solved = srs.counts(st)["solved"]
     if solved >= mock.WEEKLY_COUNT:
         ex = [e for e in ws.events() if e["kind"] == "exam_start" and e.get("exam_kind") == "weekly"]
         if not ex or now - ex[-1]["ts"] > 7 * 86400:
             print("\n📝 這週還沒做無 AI 測驗：cpe mock start --kind weekly")
-    open_eng = [t for t in roadmap.ENGINEERING if t["min_stage"] <= int(cfg["stage"]) and t["n"] not in st["eng_done"]]
+    stage = int(ws.config()["stage"])
+    open_eng = [t for t in roadmap.ENGINEERING if t["min_stage"] <= stage and t["n"] not in st["eng_done"]]
     if open_eng:
         print(f"\n🛠 工程能力（每週撥 20–30% 時間）：#{open_eng[0]['n']} {open_eng[0]['task']}")
     print("\n開始：cpe new <題號> → 寫程式 → cpe test <題號>。卡住再 cpe hint <題號>。")
@@ -166,26 +196,178 @@ def cmd_next(ws: Workspace, args) -> int:
     bank = bank_mod.load_bank(ws)
     sug = suggestions(ws, bank, args.n)
     if not sug:
-        print("沒有符合目前階段的未完成題目。")
+        print("沒有符合目前單元的未完成題目。")
     for p in sug:
         show_problem(p)
     return 0
 
 
+def cmd_course(ws: Workspace, args) -> int:
+    c = course_mod.load()
+    bank = bank_mod.load_bank(ws)
+    st = ws.state()
+    if args.action == "list":
+        cur = st["course"]["unit"]
+        wk = course_mod.expected_week(start_date(ws), today_date(ws))
+        print(f"今天是第 {wk} 週（依開始日期 {start_date(ws)}）")
+        for u in c["units"]:
+            a, b = course_mod.week_range(u)
+            mark = "✓" if u["n"] in st["course"]["done"] else ("▶" if u["n"] == cur else " ")
+            print(f"{mark} 單元{u['n']:>2}　第{a:>3}{'' if a == b else '–' + str(b):<4}週　階段{u['stage']}　{u['title']}")
+        return 0
+    if args.action == "goto":
+        u = course_mod.goto(ws, c, args.n)
+        print(f"已跳到單元 {u['n']}《{u['title']}》，之前的單元視為完成（階段 {u['stage']}）。")
+        return 0
+    if args.action == "next":
+        u = course_mod.current_unit(ws, c)
+        if not u:
+            print("課程已經全部完成 🎓")
+            return 0
+        if u["gate"]:
+            raise ValueError("這個單元要通過檢核才能前進：cpe gate。（已有把握可用 cpe course goto N 跳過）")
+        nxt = course_mod.advance(ws, c, u["n"])
+        print(f"完成單元 {u['n']}。" + (f"下一個：單元 {nxt['n']}《{nxt['title']}》" if nxt else "課程結束！"))
+        return 0
+    u = course_mod.get_unit(c, args.n) if args.n else course_mod.current_unit(ws, c)
+    if not u:
+        print("課程已經全部完成 🎓（cpe course list 查看全部單元）")
+        return 0
+    a, b = course_mod.week_range(u)
+    print(f"單元 {u['n']}／{len(c['units'])}　《{u['title']}》　階段 {u['stage']}　第 {a}{'' if a == b else '–' + str(b)} 週" + ("　【C++】" if u["lang"] == "cpp" else ""))
+    print(f"\n學完你能：{u['goal']}\n\n要學的：")
+    for x in u["learn"]:
+        print(f"  • {x}")
+    if u["drills"]:
+        done, todo = course_mod.unit_progress(ws, u)
+        print(f"\n必做練習（{len(done)}/{len(u['drills'])}）：")
+        for d in u["drills"]:
+            p = bank_mod.resolve(bank, d)
+            print(f"  {'✓' if d in done else ' '} {d}  {p['title']}　[{p.get('topic', '')}]")
+    if u["anchors"]:
+        print("\n真題（選做）：" + "、".join(u["anchors"]))
+    for x in u["pool"]:
+        print(f"延伸題庫：{x}")
+    if u.get("read"):
+        print("\n要讀的章節：")
+        for x in u["read"]:
+            print(f"  📖 {x}")
+    if u["resources"]:
+        print("\n教材：" + "；".join(f"{c['resources'][r]['name']} {c['resources'][r]['url']}" for r in u["resources"]))
+    if u["pitfalls"]:
+        print("\n常見陷阱：")
+        for x in u["pitfalls"]:
+            print(f"  ! {x}")
+    if u["check"]:
+        print("\n自我檢查（不看資料回答）：")
+        for x in u["check"]:
+            print(f"  ? {x}")
+    g = u["gate"]
+    if g:
+        if g["type"] == "mock":
+            print(f"\n檢核（cpe gate）：模擬考 {g['kind']}，至少答對 {g['need']} 題")
+        else:
+            print(f"\n檢核（cpe gate）：{g['minutes']} 分鐘、不看提示，{', '.join(g['problems'])} 至少答對 {g['need']} 題" + ("（C++）" if g["lang"] == "cpp" else ""))
+    else:
+        print("\n檢核：實際報考。完成後 cpe course next")
+    return 0
+
+
+def cmd_gate(ws: Workspace, args) -> int:
+    c = course_mod.load()
+    bank = bank_mod.load_bank(ws)
+    u = course_mod.current_unit(ws, c)
+    if not u:
+        raise ValueError("課程已經全部完成")
+    exam = course_mod.start_gate(ws, bank, c, u)
+    print(f"單元 {u['n']} 檢核開始：{exam['minutes']} 分鐘，{len(exam['problems'])} 題，需答對 {exam['gate']['need']} 題。提示已鎖定。")
+    for pid in exam["problems"]:
+        show_problem(bank_mod.resolve(bank, pid), hint_new=False)
+        print(f"             檔案：{exam['files'][pid]}　題目：cpe statement {pid}")
+    print("寫完用 cpe test <題號>；交卷用 cpe mock finish。")
+    return 0
+
+
 def cmd_new(ws: Workspace, args) -> int:
-    f = ws.solutions / f"{args.id}.py"
+    bank = bank_mod.load_bank(ws)
+    f = solution_file(ws, args.id, args.lang or "py")
+    if bank_mod.is_drill(args.id):
+        bank_mod.install_drill(ws, args.id)
+        print(f"題目：statements/{args.id}.md　（cpe statement {args.id} 可直接顯示）")
+    elif args.id not in bank:
+        print(f"（{args.id} 不在題庫，當作自訂題目。範例測資請用 cpe import 或 cpe addtest 加入）")
     ws.solutions.mkdir(exist_ok=True)
     if f.exists():
         if not args.fresh:
             raise ValueError(f"{f.name} 已存在。要從空白重寫請加 --fresh（舊檔會備份到 solutions/archive/）")
         arc = ws.solutions / "archive"
         arc.mkdir(exist_ok=True)
-        shutil.move(str(f), str(arc / f"{args.id}-{time.strftime('%Y%m%d%H%M%S', time.localtime(ws.now()))}.py"))
-    f.write_text(TEMPLATE, encoding="utf-8")
+        shutil.move(str(f), str(arc / f"{f.stem}-{time.strftime('%Y%m%d%H%M%S', time.localtime(ws.now()))}{f.suffix}"))
+    f.write_text(mock.template(args.lang or "py"), encoding="utf-8")
     (ws.tests / args.id).mkdir(parents=True, exist_ok=True)
-    print(f"已建立 {f.relative_to(ws.root)}")
-    if not find_cases(ws.tests / args.id):
-        print(f"請先加入題目的範例測資：cpe addtest {args.id}")
+    n = len(find_cases(ws.tests / args.id))
+    print(f"已建立 {f.relative_to(ws.root)}（{n} 組測資）")
+    if not n:
+        print(f"請先加入題目的範例測資：cpe import {args.id} <題目文字檔>　或　cpe addtest {args.id}")
+    return 0
+
+
+def cmd_statement(ws: Workspace, args) -> int:
+    f = ws.root / "statements" / f"{args.id}.md"
+    if not f.exists() and bank_mod.is_drill(args.id):
+        bank_mod.install_drill(ws, args.id)
+    for ext in ("md", "txt"):
+        f = ws.root / "statements" / f"{args.id}.{ext}"
+        if f.exists():
+            print(f.read_text(encoding="utf-8"))
+            return 0
+    raise ValueError(f"沒有 {args.id} 的題目敘述。外部題目請用 cpe import {args.id} <檔案> 存入")
+
+
+SAMPLE_IN = re.compile(r"^\s*(?:#+\s*)?(?:sample\s+input|範例\s*輸入|輸入\s*範例|測試\s*輸入)\b.*$", re.I)
+SAMPLE_OUT = re.compile(r"^\s*(?:#+\s*)?(?:sample\s+output|範例\s*輸出|輸出\s*範例|測試\s*輸出)\b.*$", re.I)
+
+
+def parse_samples(text: str) -> List[tuple]:
+    """從題目文字找出 (範例輸入, 範例輸出) 配對。支援 Sample Input/Output、範例輸入/輸出。"""
+    marks = []
+    lines_ = text.replace("\r\n", "\n").split("\n")
+    for i, ln in enumerate(lines_):
+        if SAMPLE_IN.match(ln):
+            marks.append((i, "in"))
+        elif SAMPLE_OUT.match(ln):
+            marks.append((i, "out"))
+    blocks = []
+    for k, (i, kind) in enumerate(marks):
+        end = marks[k + 1][0] if k + 1 < len(marks) else len(lines_)
+        body = lines_[i + 1:end]
+        while body and not body[0].strip():
+            body.pop(0)
+        while body and not body[-1].strip():
+            body.pop()
+        blocks.append((kind, "\n".join(body)))
+    out, pending = [], None
+    for kind, body in blocks:
+        if kind == "in":
+            pending = body
+        elif pending is not None:
+            out.append((pending, body))
+            pending = None
+    return out
+
+
+def cmd_import(ws: Workspace, args) -> int:
+    text = Path(args.file).read_text(encoding="utf-8")
+    (ws.root / "statements").mkdir(exist_ok=True)
+    (ws.root / "statements" / f"{args.id}.txt").write_text(text, encoding="utf-8")
+    samples = parse_samples(text)
+    if not samples:
+        print(f"已存入 statements/{args.id}.txt，但找不到『Sample Input / 範例輸入』區塊。請改用 cpe addtest {args.id}")
+        return 1
+    for inp, out in samples:
+        name = add_test(ws, args.id, inp, out)
+        print(f"  加入 tests/{args.id}/{name}（輸入 {len(inp.splitlines())} 行／輸出 {len(out.splitlines())} 行）")
+    print("請對照原題確認輸出沒有被多切或少切；範例通常只是『最基本』的測資，通過後還要自己補邊界測資。")
     return 0
 
 
@@ -230,7 +412,7 @@ def cmd_addtest(ws: Workspace, args) -> int:
 
 def cmd_test(ws: Workspace, args) -> int:
     pid = args.id
-    sol = solution_file(ws, pid)
+    sol = solution_file(ws, pid, args.lang)
     cfg = ws.config()
     res = judge(sol, ws.tests / pid, float(cfg["timeout_sec"]))
     if res.setup_error:
@@ -258,7 +440,7 @@ def cmd_test(ws: Workspace, args) -> int:
     p = ws.problem(st, pid)
     info = srs.record_result(p, res.verdict, ws.now())
     ws.save_state(st)
-    ws.log("test", problem=pid, verdict=res.verdict, **info)
+    ws.log("test", problem=pid, verdict=res.verdict, lang="cpp" if sol.suffix == ".cpp" else "py", **info)
 
     exam = ws.exam()
     if exam:
@@ -372,12 +554,16 @@ def cmd_mock(ws: Workspace, args) -> int:
     bank = bank_mod.load_bank(ws)
     now = ws.now()
     if args.action == "start":
-        exam = mock.start(ws, bank, args.kind)
+        cap = max(int(ws.config()["stage"]), 1) if not args.all else 9
+        avail = {pid: p for pid, p in bank.items() if bank_mod.is_drill(pid) or any((ws.tests / pid).glob("*.in"))}
+        exam = mock.start(ws, avail, args.kind, lang=args.lang or "py", max_stage=cap)
+        for pid in exam["problems"]:
+            bank_mod.install_drill(ws, pid)
         print(f"考試開始：{args.kind}，{exam['minutes']} 分鐘，{len(exam['problems'])} 題。提示與看解法已鎖定。")
         for pid in exam["problems"]:
-            show_problem(bank_mod.resolve(bank, pid))
-            print(f"             檔案：{exam['files'][pid]}　測資：cpe addtest {pid}（考場有範例；這裡請先自己加好）")
-        print("寫完用 cpe test <題號>；交卷用 cpe mock finish。")
+            show_problem(bank_mod.resolve(bank, pid), hint_new=False)
+            print(f"             檔案：{exam['files'][pid]}　題目：cpe statement {pid}")
+        print("寫完用 cpe test <題號>；交卷用 cpe mock finish。（只會出已有測資的題目：內建練習題，或你用 cpe import 加過的題）")
     elif args.action == "status":
         exam = ws.exam()
         if not exam:
@@ -391,6 +577,9 @@ def cmd_mock(ws: Workspace, args) -> int:
     else:
         s = mock.finish(ws)
         print(f"交卷：{s['kind']} 答對 {s['solved']}/{s['total']} 題，總罰時 {s['penalty']} 分鐘")
+        msg = course_mod.evaluate_gate(ws, course_mod.load(), s)
+        if msg:
+            print(msg)
         print("考後檢討：沒解出的題目現在可以走提示階梯（cpe hint）。")
     return 0
 
@@ -473,6 +662,10 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("dir", nargs="?", default="cpe-workspace")
     s.add_argument("--start", help="開始日期 YYYY-MM-DD（預設今天）")
 
+    s = sub.add_parser("course", help="課程：目前單元、全部單元、跳關")
+    s.add_argument("action", nargs="?", default="show", choices=["show", "list", "next", "goto"])
+    s.add_argument("n", nargs="?", type=int, help="單元編號（show／goto）")
+    sub.add_parser("gate", help="開始目前單元的檢核")
     sub.add_parser("roadmap", help="顯示學習路線與各階段目標日期")
     s = sub.add_parser("stage", help="設定目前階段 0–5")
     s.add_argument("n", type=int)
@@ -480,15 +673,22 @@ def build_parser() -> argparse.ArgumentParser:
     s = sub.add_parser("next", help="推薦下一題")
     s.add_argument("-n", type=int, default=3)
 
-    s = sub.add_parser("new", help="建立解答檔（空白模板）")
+    s = sub.add_parser("new", help="建立解答檔（空白模板）；內建練習題會自動安裝題目與測資")
     s.add_argument("id")
     s.add_argument("--fresh", action="store_true", help="舊檔備份後從空白重寫")
+    s.add_argument("--lang", choices=["py", "cpp"], help="語言（預設 py）")
+    s = sub.add_parser("statement", help="顯示題目敘述")
+    s.add_argument("id")
+    s = sub.add_parser("import", help="從題目文字檔匯入敘述與範例測資（Sample Input/Output、範例輸入/輸出）")
+    s.add_argument("id")
+    s.add_argument("file")
     s = sub.add_parser("addtest", help="加入一組範例測資")
     s.add_argument("id")
     s.add_argument("--in", dest="infile")
     s.add_argument("--out", dest="outfile")
     s = sub.add_parser("test", help="本地判題")
     s.add_argument("id")
+    s.add_argument("--lang", choices=["py", "cpp"], help="同時有 .py 與 .cpp 時指定")
     s = sub.add_parser("stress", help="對拍：暴力解 vs 你的解")
     s.add_argument("id")
     s.add_argument("--gen", required=True, help="產生器（以 seed 為 argv[1]）")
@@ -508,6 +708,8 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("action", choices=["start", "status", "finish"])
     s.add_argument("--kind", choices=["mock", "short", "weekly"], default="mock",
                    help="mock=7 題 3 小時；short=3 題 90 分；weekly=重寫 3 題舊題 60 分")
+    s.add_argument("--lang", choices=["py", "cpp"], help="考試檔語言")
+    s.add_argument("--all", action="store_true", help="不限制階段（預設只出你學過階段的題目）")
     sub.add_parser("stats", help="學習統計")
 
     s = sub.add_parser("add", help="加入／更新自訂題目")
@@ -544,6 +746,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             return cmd_gpt_prompt(args)
         ws = Workspace.find()
         handler = {
+            "course": cmd_course, "gate": cmd_gate, "statement": cmd_statement, "import": cmd_import,
             "roadmap": cmd_roadmap, "stage": cmd_stage, "today": cmd_today, "next": cmd_next, "new": cmd_new,
             "addtest": cmd_addtest, "test": cmd_test, "stress": cmd_stress, "hint": cmd_hint,
             "giveup": cmd_giveup, "solution": cmd_solution, "review": cmd_review, "mock": cmd_mock,

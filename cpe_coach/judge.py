@@ -1,8 +1,10 @@
 """本地判題：跑解答、比對輸出、對拍。判對錯只看測資，不看任何 AI 的意見。"""
 from __future__ import annotations
 
+import shutil
 import subprocess
 import sys
+import tempfile
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -65,13 +67,28 @@ def syntax_error(path: Path) -> Optional[str]:
     return None
 
 
-def run_program(path: Path, stdin_text: str, timeout: float):
+def prepare(path: Path):
+    """回傳 (指令列, 暫存目錄或 None, 錯誤訊息)。.cpp 會先編譯。"""
+    if path.suffix != ".cpp":
+        return [sys.executable, str(path)], None, None
+    gxx = shutil.which("g++")
+    if not gxx:
+        return None, None, "找不到 g++。請先安裝（Linux/Mac 通常內建；Windows 可裝 MSYS2/MinGW），或改用 Python"
+    tmp = Path(tempfile.mkdtemp(prefix="cpe-build-"))
+    exe = tmp / "prog"
+    p = subprocess.run([gxx, "-O2", "-std=c++17", "-o", str(exe), str(path)], capture_output=True, timeout=120)
+    if p.returncode != 0:
+        shutil.rmtree(tmp, ignore_errors=True)
+        err = p.stderr.decode("utf-8", "replace").strip().splitlines()
+        return None, None, "編譯失敗：" + "\n".join(err[:6])
+    return [str(exe)], tmp, None
+
+
+def run_program(path: Path, stdin_text: str, timeout: float, cmd=None):
     start = time.perf_counter()
     try:
-        proc = subprocess.run(
-            [sys.executable, str(path)], input=stdin_text.encode("utf-8"),
-            capture_output=True, timeout=timeout,
-        )
+        proc = subprocess.run(cmd or [sys.executable, str(path)], input=stdin_text.encode("utf-8"),
+                              capture_output=True, timeout=timeout)
     except subprocess.TimeoutExpired as e:
         return None, (e.stdout or b"").decode("utf-8", "replace"), "", timeout, True
     elapsed = time.perf_counter() - start
@@ -89,43 +106,61 @@ def find_cases(tests_dir: Path):
 def judge(solution: Path, tests_dir: Path, timeout: float = 3.0) -> JudgeResult:
     if not solution.exists():
         return JudgeResult(CE, message=f"找不到解答檔 {solution}", setup_error=True)
-    err = syntax_error(solution)
-    if err:
-        return JudgeResult(CE, message=err)
     cases = find_cases(tests_dir)
+    if solution.suffix == ".py":
+        err = syntax_error(solution)
+        if err:
+            return JudgeResult(CE, message=err)
     if not cases:
-        return JudgeResult(CE, message=f"{tests_dir} 沒有測資。先用 cpe addtest 加入題目範例", setup_error=True)
-    results: List[CaseResult] = []
-    for fin, fout in cases:
-        inp = fin.read_text(encoding="utf-8")
-        exp = fout.read_text(encoding="utf-8")
-        rc, out, err_text, secs, timed_out = run_program(solution, inp, timeout)
-        if timed_out:
-            v = TLE
-        elif rc != 0:
-            v = RE
-        else:
-            v = compare(out, exp)
-        results.append(CaseResult(fin.stem, v, secs, inp, exp, out, err_text))
+        return JudgeResult(CE, message=f"{tests_dir} 沒有測資。先用 cpe addtest 或 cpe import 加入題目範例", setup_error=True)
+    cmd, tmp, err = prepare(solution)
+    if err:
+        # 缺 g++ 是環境問題；編譯失敗才是一次提交
+        return JudgeResult(CE, message=err, setup_error=err.startswith("找不到"))
+    try:
+        results: List[CaseResult] = []
+        for fin, fout in cases:
+            inp = fin.read_text(encoding="utf-8")
+            exp = fout.read_text(encoding="utf-8")
+            rc, out, err_text, secs, timed_out = run_program(solution, inp, timeout, cmd)
+            if timed_out:
+                v = TLE
+            elif rc != 0:
+                v = RE
+            else:
+                v = compare(out, exp)
+            results.append(CaseResult(fin.stem, v, secs, inp, exp, out, err_text))
+    finally:
+        if tmp:
+            shutil.rmtree(tmp, ignore_errors=True)
     overall = next((c.verdict for c in results if c.verdict != AC), AC)
     return JudgeResult(overall, results)
 
 
 def stress(solution: Path, brute: Path, gen: Path, rounds: int, timeout: float = 5.0, first_seed: int = 1):
     """對拍：gen 以 seed 為 argv[1] 產生輸入，比對正解與暴力解。回傳 (seed, input, brute_out, sol_out, verdict) 或 None。"""
-    for seed in range(first_seed, first_seed + rounds):
-        g = subprocess.run([sys.executable, str(gen), str(seed)], capture_output=True, timeout=timeout)
-        if g.returncode != 0:
-            raise RuntimeError(f"產生器失敗：{g.stderr.decode('utf-8', 'replace')[-300:]}")
-        inp = g.stdout.decode("utf-8")
-        rc_b, out_b, err_b, _, to_b = run_program(brute, inp, timeout)
-        if to_b or rc_b != 0:
-            raise RuntimeError("暴力解本身執行失敗或超時，請先修好暴力解")
-        rc_s, out_s, _, _, to_s = run_program(solution, inp, timeout)
-        if to_s:
-            return seed, inp, out_b, out_s, TLE
-        if rc_s != 0:
-            return seed, inp, out_b, out_s, RE
-        if out_s.split() != out_b.split():
-            return seed, inp, out_b, out_s, WA
-    return None
+    cmd_s, tmp_s, err_s = prepare(solution)
+    cmd_b, tmp_b, err_b = prepare(brute)
+    try:
+        if err_s or err_b:
+            raise RuntimeError(err_s or err_b)
+        for seed in range(first_seed, first_seed + rounds):
+            g = subprocess.run([sys.executable, str(gen), str(seed)], capture_output=True, timeout=timeout)
+            if g.returncode != 0:
+                raise RuntimeError(f"產生器失敗：{g.stderr.decode('utf-8', 'replace')[-300:]}")
+            inp = g.stdout.decode("utf-8")
+            rc_b, out_b, _, _, to_b = run_program(brute, inp, timeout, cmd_b)
+            if to_b or rc_b != 0:
+                raise RuntimeError("暴力解本身執行失敗或超時，請先修好暴力解")
+            rc_s, out_s, _, _, to_s = run_program(solution, inp, timeout, cmd_s)
+            if to_s:
+                return seed, inp, out_b, out_s, TLE
+            if rc_s != 0:
+                return seed, inp, out_b, out_s, RE
+            if out_s.split() != out_b.split():
+                return seed, inp, out_b, out_s, WA
+        return None
+    finally:
+        for t in (tmp_s, tmp_b):
+            if t:
+                shutil.rmtree(t, ignore_errors=True)
