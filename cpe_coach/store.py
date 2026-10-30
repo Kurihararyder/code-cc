@@ -27,7 +27,7 @@ class WorkspaceError(Exception):
 
 class _FileLock:
     """跨程序鎖（CLI 與網頁介面同時寫同一個工作區時，序列化讀改寫）。
-    POSIX 用 flock；Windows 用 msvcrt.locking（尚未在真實 Windows 驗證，見 CI）。"""
+    POSIX 用 flock；Windows 用 msvcrt.locking（兩者都在 CI 的 Linux／macOS／Windows 上跑過測試）。"""
 
     def __init__(self, path: Path, timeout: float = 30.0):
         self.path, self.timeout, self.fd = path, timeout, None

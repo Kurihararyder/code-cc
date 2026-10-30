@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cpe-coach"
-version = "2.2.0"
+version = "2.3.0"
 description = "CPE 自學教練：126 週課程、107 題原創練習、本地判題、歷屆整場模擬、網頁介面（選取文字問 AI）"
 requires-python = ">=3.9"
 readme = "README.md"

@@ -3,6 +3,10 @@
 需要 Node 與 Playwright（`npm i playwright`，並有 Chromium）。測試用一個假的 OpenAI 伺服器（`../fake_llm.py`，port 8792），
 所以不需要真的金鑰。
 
+一次跑完全部（本機與 CI 共用）：`bash run_all.sh`（會自己啟動假 OpenAI 伺服器、每個腳本前重建全新工作區，任何 FAIL 或中途當掉都回傳非 0）。
+
+分開跑：
+
 ```bash
 python3 ../fake_llm.py 8792 &        # 假的 OpenAI
 ./fresh.sh                           # 在 /tmp 建一個全新工作區並啟動 cpe web（port 8793）
@@ -10,6 +14,8 @@ node ui.js                           # 桌面：編輯器、選取彈出選單�
 ./fresh.sh && node gate.js           # 單元檢核完整流程（開始 → 計時 → 交卷 → 進入下一單元）
 ./fresh.sh && node mobile.js         # 手機（iPhone 13）：分頁、底部導覽、選單位置、無橫向捲動
 node a11y.js                         # 無障礙：控制項名稱、標題層級、跳到主要內容、焦點回復
+./fresh.sh && node exam.js           # 考試頁、歷屆整場、計分板、單字本、計畫、校準、工程任務、備份
+./fresh.sh && node learn.js          # 弱點診斷、題目語言切換、真實考場英文模式、對拍補測資
 ```
 
 腳本的截圖會寫到「目前目錄」的 `shots/`，所以請在測試目錄（預設 `/tmp/cpe-e2e`）裡執行，並讓 Node 找得到 playwright（例如 `NODE_PATH=$(npm root -g)`）：
