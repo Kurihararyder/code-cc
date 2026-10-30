@@ -47,6 +47,23 @@ class Formats(unittest.TestCase):
             r = subprocess.run([SH, "-n", str(REPO / name)], capture_output=True)
             self.assertEqual(r.returncode, 0, r.stderr.decode("utf-8", "replace"))
 
+    def test_shell_variables_are_never_glued_to_non_ascii_text(self):
+        """macOS 的 sh（bash 3.2）在非 UTF-8 語系下，會把 $OS）的全形括號當成變數名稱的一部分（unbound variable）：訊息裡的變數都要用 ${名稱}。"""
+        import re
+        for name in ("setup/bootstrap.sh", "install-macos.command", "install-linux.sh"):
+            text = (REPO / name).read_text(encoding="utf-8")
+            bad = re.findall(r"\$[A-Za-z_][A-Za-z0-9_]*(?=[^\x00-\x7f])", text)
+            self.assertEqual(bad, [], f"{name}: 變數後面直接接中文／全形符號，請改成 ${{名稱}}")
+
+    @unittest.skipIf(WINDOWS, "POSIX 啟動檔")
+    def test_bootstrap_survives_a_non_utf8_locale_under_strict_mode(self):
+        """用 C 語系跑（macOS CI 的情況）：不能因為訊息裡的非 ASCII 字元而失敗。"""
+        env = dict(os.environ, LC_ALL="C", LANG="C", HOME=tempfile.gettempdir())
+        r = subprocess.run([SH, str(REPO / "setup" / "bootstrap.sh"), "--check"], capture_output=True, timeout=120, env=env, cwd=tempfile.gettempdir())
+        out = r.stdout.decode("utf-8", "replace") + r.stderr.decode("utf-8", "replace")
+        self.assertEqual(r.returncode, 0, out)
+        self.assertNotIn("unbound variable", out)
+
     def test_launch_files_point_at_the_same_repository_and_branch(self):
         from cpe_coach.launcher import constants
         for name in ("install-windows.bat", "setup/bootstrap.ps1", "setup/bootstrap.sh"):

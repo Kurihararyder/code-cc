@@ -40,6 +40,11 @@ def setUpModule():
         raise unittest.SkipTest(why)
 
 
+def ttk_spinbox_type():
+    from tkinter import ttk
+    return ttk.Spinbox
+
+
 def walk(w):
     yield w
     for c in w.winfo_children():
@@ -333,6 +338,30 @@ class WizardTests(GuiBase):
         w.toggle_adv()
         app.root.update()
         self.assertFalse(w.adv.winfo_ismapped())
+
+    def test_pages_stay_reachable_with_very_large_fonts_on_a_small_screen(self):
+        """字體很大時，選項頁放不下：進階選項與所有按鈕還是要點得到（用捲軸）；視窗也不會比螢幕高。"""
+        app = self.open()
+        app.root.tk.call("tk", "scaling", 2.6)
+        w = app.view
+        w.btn_next.invoke()
+        self.assertTrue(app.pump(lambda: bool(w.checks) and not w.busy, 30))
+        w.btn_next.invoke()
+        self.assertEqual(w.page, 2)
+        w.toggle_adv()
+        app.root.update()
+        app.root.update()
+        self.assertTrue(w.adv.winfo_ismapped())
+        scroll = next(x for x in walk(w.body) if isinstance(x, gui.ScrollFrame))
+        overflow = scroll.inner.winfo_reqheight() > scroll.canvas.winfo_height()          # 字體放大多少看這台電腦的 Tk（沒有 Xft 的建置幾乎不會放大）
+        self.assertEqual(scroll.bar.winfo_ismapped(), overflow)                          # 放不下才出現捲軸，放得下就不顯示
+        for b in (w.btn_next, w.btn_back, w.btn_cancel):
+            self.assertTrue(b.winfo_ismapped())
+            self.assertLessEqual(b.winfo_rooty() + b.winfo_height(), app.root.winfo_rooty() + app.root.winfo_height())
+        self.assertLessEqual(app.root.winfo_height(), app.root.winfo_screenheight())
+        scroll.canvas.yview_moveto(1.0)                                               # 捲到最底下還是有東西可點
+        app.root.update()
+        self.assertTrue(any(isinstance(x, ttk_spinbox_type()) for x in walk(w.adv)))
 
     def test_closing_the_window_mid_install_asks_first(self):
         app = self.open()
@@ -694,6 +723,7 @@ class WidgetTests(GuiBase):
         f.place(x=0, y=0, width=200, height=100)
         for i in range(3):
             tk.Label(f.inner, text=str(i)).pack()
+        app.root.update()
         app.root.update()
         self.assertFalse(f.bar.winfo_ismapped())
         for i in range(30):

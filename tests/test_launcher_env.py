@@ -31,7 +31,9 @@ def by_id(checks):
 
 class Checks(unittest.TestCase):
     def test_healthy_machine_has_no_blocking_problem(self):
-        c = ctx(plat(DISPLAY=":0"))
+        t = TempDir()                                                         # 安裝位置要是真的可寫的資料夾（只有 root 才會讓假的路徑通過 os.access）
+        self.addCleanup(t.cleanup)
+        c = ctx(plat("linux", str(t.path), DISPLAY=":0"), target=t.path / "app")
         cs = by_id(envcheck.run_checks(c))
         self.assertTrue(envcheck.summarize(list(cs.values()))["ok"])
         self.assertEqual(cs["python"].status, "ok")

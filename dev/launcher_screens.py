@@ -59,7 +59,6 @@ def main(out_dir: str) -> int:
     w.v_ws.set(str(tmp / "CPE學習進度"))
     w.v_port.set(str(port))
     w.v_source.set("bundle")
-    w.toggle_adv()
     snap(app, "03-options")
     w.btn_next.invoke()
     app.pump(lambda: w.page == 3 and getattr(w, "step_idx", -1) >= 2, 30)

@@ -88,7 +88,7 @@ mac_install_python() {
   say "下載 python.org 的 Python 3.12.10 安裝程式（約 45 MB）…"
   curl -fL --progress-bar -o "$tmp/python.pkg" "$PKG_URL" || { say "下載失敗，請到 https://www.python.org/downloads/ 手動安裝。"; return 1; }
   got=$(shasum -a 256 "$tmp/python.pkg" | cut -d' ' -f1)
-  if [ "$got" != "$PKG_SHA256" ]; then say "下載的檔案雜湊值不符（$got），為了安全已中止。"; return 1; fi
+  if [ "$got" != "$PKG_SHA256" ]; then say "下載的檔案雜湊值不符（${got}），為了安全已中止。"; return 1; fi
   say "雜湊值驗證通過。接下來會開啟 Apple 的安裝視窗，請一路按『繼續』並輸入你的電腦密碼。"
   open -W "$tmp/python.pkg"
   return 0
@@ -96,7 +96,7 @@ mac_install_python() {
 
 fetch_bundle() {   # 沒有程式資料夾（只下載了這個 sh）時：下載 zip 到暫存位置
   tmp=$(mktemp -d)
-  say "下載程式…（$ARCHIVE）"
+  say "下載程式…（${ARCHIVE}）"
   "$PY" - "$ARCHIVE" "$tmp" <<'PYEOF' || return 1
 import sys, urllib.request, zipfile, pathlib
 url, out = sys.argv[1], pathlib.Path(sys.argv[2])
@@ -109,7 +109,7 @@ print(sub[0] if sub else out / "x")
 PYEOF
 }
 
-say "== CPE 教練 安裝程式（$OS）"
+say "== CPE 教練 安裝程式（${OS}）"
 PY=$(find_python tk) || PY=$(find_python) || PY=""
 if [ -z "$PY" ]; then
   say "✗ 找不到 Python 3.9 以上。"
@@ -123,7 +123,7 @@ if [ -z "$PY" ]; then
   fi
   if [ -z "$PY" ]; then say "✗ 還是找不到 Python 3.9 以上。請先安裝 Python（https://www.python.org/downloads/），再重新執行。"; exit 1; fi
 fi
-say "✓ Python：$PY（$("$PY" -c 'import sys; print(sys.version.split()[0])')）"
+say "✓ Python：${PY}（$("$PY" -c 'import sys; print(sys.version.split()[0])')）"
 
 if "$PY" -c 'import tkinter' >/dev/null 2>&1; then
   say "✓ 圖形介面套件（tkinter）可用"
@@ -139,7 +139,7 @@ if [ -f "$ROOT/cpe_coach/launcher/__main__.py" ]; then
   BUNDLE=$ROOT
   say "✓ 程式資料夾：$BUNDLE"
 elif [ "$CHECK" -eq 1 ]; then
-  say "· 這裡沒有程式資料夾；正式安裝時會從 GitHub 下載（$ARCHIVE）。"
+  say "· 這裡沒有程式資料夾；正式安裝時會從 GitHub 下載（${ARCHIVE}）。"
   exit 0
 else
   BUNDLE=$(fetch_bundle | tail -n 1) || { say "✗ 下載失敗，請確認網路。"; exit 1; }

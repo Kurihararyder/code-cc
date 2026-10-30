@@ -154,7 +154,9 @@ class Runner:
 
 
 class ScrollFrame(tk.Frame):
-    """內容比視窗高時可以捲動（滑鼠滾輪也行）。把東西放進 .inner。"""
+    """內容比視窗高時可以捲動（滑鼠滾輪在框內任何位置都有用）。把東西放進 .inner。
+    字體大、螢幕小的時候，頁面內容放不下也不會有按鈕被切掉而點不到。"""
+    WHEEL = ("<MouseWheel>", "<Button-4>", "<Button-5>")
 
     def __init__(self, master: tk.Misc, bg: str):
         super().__init__(master, bg=bg)
@@ -165,14 +167,18 @@ class ScrollFrame(tk.Frame):
         self.canvas.configure(yscrollcommand=self.bar.set)
         self.canvas.pack(side="left", fill="both", expand=True)
         self.inner.bind("<Configure>", self._sync)
-        self.canvas.bind("<Configure>", lambda e: self.canvas.itemconfigure(self.win, width=e.width))
-        for w in (self.canvas, self.inner):
-            w.bind("<MouseWheel>", self._wheel)
-            w.bind("<Button-4>", lambda e: self.canvas.yview_scroll(-2, "units"))
-            w.bind("<Button-5>", lambda e: self.canvas.yview_scroll(2, "units"))
+        self.canvas.bind("<Configure>", self._resize)
+        for seq in self.WHEEL:
+            self.bind_all(seq, self._wheel, add="+")
+
+    def _resize(self, e: tk.Event) -> None:
+        self.canvas.itemconfigure(self.win, width=e.width)
+        self._sync()
 
     def _sync(self, _e: Optional[tk.Event] = None) -> None:
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+        if self.canvas.winfo_height() <= 1:
+            return                                                                 # 版面還沒算好：先不要讓捲軸閃一下
         need = self.inner.winfo_reqheight() > self.canvas.winfo_height()
         if need and not self.bar.winfo_ismapped():
             self.bar.pack(side="right", fill="y", before=self.canvas)
@@ -180,11 +186,26 @@ class ScrollFrame(tk.Frame):
             self.bar.pack_forget()
 
     def _wheel(self, e: tk.Event) -> None:
-        self.canvas.yview_scroll(-1 if e.delta > 0 else 1, "units")
+        if not self.winfo_exists() or not self.bar.winfo_ismapped():
+            return
+        under = self.winfo_containing(*self.winfo_pointerxy())
+        if under is None or not str(under).startswith(str(self)):
+            return                                                                 # 滑鼠不在這個框裡
+        step = -1 if (getattr(e, "num", 0) == 4 or getattr(e, "delta", 0) > 0) else 1
+        self.canvas.yview_scroll(step, "units")
+
+    def destroy(self) -> None:
+        for seq in self.WHEEL:
+            try:
+                self.unbind_all(seq)
+            except tk.TclError:
+                pass
+        super().destroy()
 
 
 def center(win: tk.Tk, w: int, h: int) -> None:
     win.update_idletasks()
+    w, h = min(w, win.winfo_screenwidth() - 40), min(h, win.winfo_screenheight() - 90)        # 小螢幕（例如 1366×768 放大 125%）也放得下
     x, y = max(0, (win.winfo_screenwidth() - w) // 2), max(0, (win.winfo_screenheight() - h) // 3)
     win.geometry(f"{w}x{h}+{x}+{y}")
 
@@ -205,7 +226,7 @@ class GuiApp:
         self.th = Theme(self.root, plat.system)
         self.runner = Runner(self.root, plat)
         self.root.configure(bg=PAL["bg"])
-        self.root.minsize(760, 520)
+        self.root.minsize(700, 460)
         center(self.root, self.W, self.H)
         self.icon_img: Optional[tk.PhotoImage] = None
         self._style()
@@ -428,6 +449,16 @@ class Wizard:
         f.pack(fill="both", expand=True, padx=20, pady=16)
         return f
 
+    def set_scroll_body(self) -> tk.Frame:
+        """放得下就和 set_body 一樣；放不下（字體大、螢幕小）就出現捲軸。"""
+        for w in self.body.winfo_children():
+            w.destroy()
+        sf = ScrollFrame(self.body, PAL["surface"])
+        sf.pack(fill="both", expand=True, padx=8, pady=6)
+        f = tk.Frame(sf.inner, bg=PAL["surface"])
+        f.pack(fill="both", expand=True, padx=12, pady=10)
+        return f
+
     def goto(self, n: int) -> None:
         self.page = n
         self.mark_steps()
@@ -473,7 +504,7 @@ class Wizard:
     def page_welcome(self) -> None:
         self.head.configure(text=f"歡迎使用 {C.APP_NAME}")
         self.sub.configure(text="這個精靈會檢測你的電腦、自動補齊需要的元件，然後把 CPE 教練安裝好。整個過程大約一到兩分鐘。")
-        f = self.set_body()
+        f = self.set_scroll_body()
         items = [("自動檢測環境", "Python、git、網路、磁碟空間、C++ 編譯器…缺什麼會告訴你，能自動安裝的幫你裝。"),
                  ("安裝後有控制台", "桌面與開始功能表的捷徑會開啟控制台：按「開啟」開始學習、按「關閉」結束，也能更新、備份、修復與解除安裝。"),
                  ("學習進度另外放", "你的解答與紀錄放在獨立的資料夾，更新或解除安裝都不會動到它（除非你自己選要刪除）。")]
@@ -586,7 +617,7 @@ class Wizard:
         self.head.configure(text="安裝選項")
         self.sub.configure(text="預設值就可以直接按「安裝」。")
         self.btn_next.set_text("安裝")
-        f = self.set_body()
+        f = self.set_scroll_body()
 
         def path_row(label: str, var: tk.StringVar, hint: str, pick) -> None:
             tk.Label(f, text=label, bg=PAL["surface"], fg=PAL["text"], font=self.th.f(10, True), anchor="w").pack(fill="x", pady=(6, 0))
@@ -1297,8 +1328,10 @@ class UninstallView:
         self.btn_go.pack(side="right")
         self.body = tk.Frame(right, bg=PAL["surface"], highlightthickness=1, highlightbackground=PAL["border"])
         self.body.pack(fill="both", expand=True, padx=32, pady=(0, 4))
-        f = tk.Frame(self.body, bg=PAL["surface"])
-        f.pack(fill="both", expand=True, padx=20, pady=14)
+        sf = ScrollFrame(self.body, PAL["surface"])
+        sf.pack(fill="both", expand=True, padx=8, pady=6)
+        f = tk.Frame(sf.inner, bg=PAL["surface"])
+        f.pack(fill="both", expand=True, padx=12, pady=8)
         self.inner = f
         c = self.cfg
         rows = [("程式", c.app_dir), ("捷徑", f"{len(c.shortcuts)} 個（桌面、開始功能表）"), ("終端機指令 cpe", "移除")]
