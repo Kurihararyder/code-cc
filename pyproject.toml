@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cpe-coach"
-version = "2.3.0"
+dynamic = ["version"]
 description = "CPE 自學教練：126 週課程、107 題原創練習、本地判題、歷屆整場模擬、網頁介面（選取文字問 AI）"
 requires-python = ">=3.9"
 readme = "README.md"
@@ -14,6 +14,9 @@ cpe = "cpe_coach.cli:main"
 
 [tool.setuptools]
 packages = ["cpe_coach"]
+
+[tool.setuptools.dynamic]
+version = {attr = "cpe_coach.__version__"}
 
 [tool.setuptools.package-data]
 cpe_coach = ["data/*.json", "data/*.md", "static/*.html", "static/*.svg", "static/css/*.css", "static/js/*.js", "data/drills/index.json", "data/drills/*/statement.md", "data/drills/*/statement.en.md", "data/drills/*/tests/*"]

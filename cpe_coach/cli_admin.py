@@ -52,3 +52,34 @@ def cmd_web(ws: Workspace, args) -> int:
 def cmd_gpt_prompt(args) -> int:
     print(RULES)
     return 0
+
+
+def cmd_update(args) -> int:
+    """不需要工作區：更新的是程式本身。"""
+    from . import __version__, updater
+    root = updater.repo_root()
+    print(f"目前版本 {__version__}（{root}）")
+    r = updater.apply(root, check_only=args.check)
+    st = r["status"]
+    if st == "unavailable":
+        print("✗ " + r["reason"])
+        return 1
+    print(f"分支 {r['branch']}（{r['commit']}）　對應遠端 {r['upstream']}")
+    if st == "up_to_date":
+        print("✓ 已經是最新版。")
+        return 0
+    if st == "available":
+        print(f"有 {r['behind']} 個新的更新：")
+        for sha, subject in r["commits"][:15]:
+            print(f"  {sha}  {subject}")
+        print("\n執行 cpe update 就會更新。（你的學習進度在工作區，不會被動到。）")
+        return 0
+    if st in ("blocked", "rolled_back"):
+        print("✗ " + r["reason"])
+        return 1
+    print(f"✓ 已更新：{r['old_version']}（{r['old_commit']}）→ {r['new_version']}（{r['new_commit']}）")
+    if r.get("notes"):
+        print("\n這次更新的內容：\n" + r["notes"])
+    print("\n如果網頁介面正開著，請在它的終端機按 Ctrl+C 結束，再重新執行 cpe web。")
+    print(f"你的學習進度在工作區，不受影響。萬一更新後有問題，可以退回：git -C \"{root}\" reset --hard {r['old_commit']}")
+    return 0

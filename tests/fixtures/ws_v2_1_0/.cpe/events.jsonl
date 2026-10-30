@@ -1,0 +1,6 @@
+{"ts": 1793374910.4633548, "kind": "test", "problem": "d001", "verdict": "WA", "lang": "py", "review_attempt": false, "clean": true, "advanced": false, "mastered": false}
+{"ts": 1793374910.5547862, "kind": "hint", "problem": "d001", "level": 1, "source": "static"}
+{"ts": 1793374910.7232103, "kind": "test", "problem": "d001", "verdict": "AC", "lang": "py", "review_attempt": false, "clean": false, "advanced": false, "mastered": false}
+{"ts": 1793374910.9036715, "kind": "test", "problem": "d002", "verdict": "WA", "lang": "py", "review_attempt": false, "clean": true, "advanced": false, "mastered": false}
+{"ts": 1793374911.0850666, "kind": "test", "problem": "d002", "verdict": "WA", "lang": "py", "review_attempt": false, "clean": true, "advanced": false, "mastered": false}
+{"ts": 1793374911.1688585, "kind": "giveup", "problem": "d003"}
