@@ -128,9 +128,49 @@ def lnk():
     print(f"  桌面資料夾 {desk} 存在={desk.is_dir()}；APPDATA={os.environ.get('APPDATA')}", flush=True)
 
 
+def install_timing():
+    """一次安裝（git 來源）每一步花多久，加上幾個基本動作的單價：Windows 的單元測試一個要 15 分鐘，要知道時間花在哪。"""
+    import shutil
+    print("== 基本動作要多久", flush=True)
+    tmp = Path(tempfile.mkdtemp(prefix="cpe-inst-"))
+    timed("複製程式資料夾 shutil.copytree（約 1300 個檔案）", lambda: shutil.copytree(str(REPO / "cpe_coach"), str(tmp / "copy1")) and None)
+    timed("刪除它 shutil.rmtree", lambda: shutil.rmtree(str(tmp / "copy1")))
+    timed("啟動一次 python（-c pass）", lambda: sh([sys.executable, "-c", "pass"]))
+    timed("python -I -S -B -c 'import cpe_coach.launcher.engine'", lambda: sh([sys.executable, "-I", "-S", "-B", "-c", "import sys; sys.path.insert(0, %r); import cpe_coach.launcher.engine" % str(REPO)]))
+    timed("git --version", lambda: sh(["git", "--version"]))
+    sys.path.insert(0, str(REPO / "tests"))
+    from launcher_helpers import free_port, isolated_env, make_origin
+    from cpe_coach.launcher import engine
+    from cpe_coach.launcher.envcheck import Ctx
+    from cpe_coach.launcher.osinfo import detect
+    t0 = time.time()
+    origin = make_origin(tmp)
+    print(f"  建立暫時的 git 倉庫（複製、git init、add、commit）{time.time() - t0:.2f}s", flush=True)
+    timed("git clone 它", lambda: sh(["git", "clone", "-q", str(origin), str(tmp / "clone1")]))
+    print("== 一次安裝（git 來源），每一行紀錄距離上一行多久", flush=True)
+    env = isolated_env(tmp)
+    os.environ.update(env, CPE_REPO_URL=str(origin), CPE_INSTALL_BRANCH="main")
+    plat = detect(env=env, home=Path(env["HOME"]))
+    ctx = Ctx(plat=plat, net=lambda *a: True)
+    opts = engine.InstallOptions(app_dir=tmp / "app", workspace=tmp / "ws", branch="main", python=engine.base_python(), port=free_port())
+    start = last = time.time()
+    state = {"last": last}
+
+    def on_log(line):
+        now = time.time()
+        print(f"  +{now - state['last']:5.2f}s  累計 {now - start:5.2f}s  {line[:90]}", flush=True)
+        state["last"] = now
+    cfg = engine.install(opts, plat, ctx, engine.Reporter(None, on_log))
+    print(f"  安裝總共 {time.time() - start:.2f}s", flush=True)
+    t0 = time.time()
+    engine.uninstall(cfg, plat, engine.UninstallOptions(), engine.Reporter(None, on_log))
+    print(f"  解除安裝總共 {time.time() - t0:.2f}s", flush=True)
+
+
 if __name__ == "__main__":
     print(f"Python {sys.version.split()[0]}  {sys.platform}  {os.name}", flush=True)
     names()
     web_start()
     if sys.platform == "win32":
         lnk()
+    install_timing()

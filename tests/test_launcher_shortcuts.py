@@ -277,6 +277,7 @@ class Linux(Fixture):
         made = shortcuts.create_all(self.cfg(), p, True, True)
         self.assertEqual([Path(m).parent for m in made], [self.t.path / "menu"])
 
+    @unittest.skipIf(sys.platform == "win32", "要用真的 sh 執行")
     def test_generated_shims_really_run_python_with_the_right_path(self):
         """用真的 sh 執行產生出來的 cpe：它會用記錄的 Python、PYTHONPATH 指到程式資料夾。"""
         p = self.plat("linux")

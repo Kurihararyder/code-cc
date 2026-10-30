@@ -208,7 +208,8 @@ class WizardTests(GuiBase):
 
     def test_fixable_problems_show_a_checkbox_with_the_right_default(self):
         self.ctx = self.make_ctx(which=lambda n: None if n in ("git", "g++") else "/usr/bin/" + n)
-        with mock.patch.object(gui.envcheck, "fix_plan", return_value=engine.envcheck.FixPlan([["true"]], "會跳出授權視窗")):
+        with mock.patch.object(gui.envcheck, "fix_plan", return_value=engine.envcheck.FixPlan([["true"]], "會跳出授權視窗")), \
+                mock.patch.object(gui.envcheck, "known_gpp_dirs", return_value=[]):          # Windows 的 CI 機器在 C:\\mingw64 裝了 g++
             app = self.open()
             w = app.view
             w.btn_next.invoke()

@@ -146,7 +146,9 @@ class WindowsCheckMode(unittest.TestCase):
         (folder / "setup").mkdir(parents=True)
         shutil.copy2(REPO / "install-windows.bat", folder / "install-windows.bat")
         shutil.copy2(REPO / "setup" / "bootstrap.ps1", folder / "setup" / "bootstrap.ps1")
-        r = subprocess.run(["cmd", "/c", str(folder / "install-windows.bat"), "-CheckOnly"], capture_output=True, timeout=180, stdin=subprocess.DEVNULL, cwd=str(t.path))
+        bat = folder / "install-windows.bat"
+        # 檔案總管雙擊 .bat 時執行的是  cmd.exe /c ""路徑" "；路徑裡有 & ( ) 時 cmd 的引號規則要靠 /s 才會剝掉最外面那一對
+        r = subprocess.run('cmd /s /c ""%s" -CheckOnly"' % bat, capture_output=True, timeout=180, stdin=subprocess.DEVNULL, cwd=str(t.path))
         out = r.stdout.decode("utf-8", "replace") + r.stderr.decode("utf-8", "replace")
         self.assertEqual(r.returncode, 0, out)
         self.assertIn("Python", out)
