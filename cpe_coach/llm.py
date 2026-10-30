@@ -49,13 +49,15 @@ def _post(url: str, headers: dict, body: dict, timeout: float = 60.0) -> dict:
 
 class LLMClient:
     def __init__(self, provider: str, api_key: str, model: Optional[str] = None, transport: Transport = _post,
-                 base_url: Optional[str] = None, sleep: Callable[[float], None] = time.sleep, retries: int = 2):
+                 base_url: Optional[str] = None, sleep: Callable[[float], None] = time.sleep, retries: int = 2,
+                 send_auth: bool = True):
         if provider not in DEFAULT_MODELS:
             raise LLMError(f"不支援的 provider：{provider}")
         self.provider, self.api_key, self.transport = provider, api_key, transport
         self.model = model or DEFAULT_MODELS[provider]
         self.base_url = (base_url or DEFAULT_BASE[provider]).rstrip("/")
         self.sleep, self.retries = sleep, retries
+        self.send_auth = send_auth                     # False：認證標頭由外部代理加上（金鑰不進入這個程序）
         self.json_mode = provider == "openai"          # 要求 JSON 物件輸出；伺服器不支援時自動關掉
         self.usage_log: List[Dict[str, Any]] = []          # 每次呼叫的 token 與耗時（供費用與評測）
 
@@ -86,7 +88,9 @@ class LLMClient:
         self._last_retries = 0
         if self.provider == "openai":
             body: Dict[str, Any] = {"model": self.model, "messages": [{"role": "system", "content": system}] + list(messages)}
-            headers = {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
+            headers = {"Content-Type": "application/json"}
+            if self.send_auth:
+                headers["Authorization"] = f"Bearer {self.api_key}"
             url = f"{self.base_url}/chat/completions"
             if self.json_mode:
                 body["response_format"] = {"type": "json_object"}
@@ -111,7 +115,7 @@ class LLMClient:
         else:
             data = self._send(
                 f"{self.base_url}/messages",
-                {"x-api-key": self.api_key, "anthropic-version": "2023-06-01", "Content-Type": "application/json"},
+                dict({"x-api-key": self.api_key} if self.send_auth else {}, **{"anthropic-version": "2023-06-01", "Content-Type": "application/json"}),
                 {"model": self.model, "max_tokens": 1024, "system": system, "messages": list(messages)},
             )
             try:
@@ -125,7 +129,9 @@ class LLMClient:
 
 
 def detect_client(cfg: Dict, env: Optional[Dict[str, str]] = None, key: Optional[str] = None) -> Optional[LLMClient]:
-    """key：網頁介面暫存的金鑰（只存在記憶體）。CPE_API_BASE 可改成相容的代理網址。"""
+    """key：網頁介面暫存的金鑰（只存在記憶體）。CPE_API_BASE 可改成相容的代理網址。
+    CPE_PROXY_AUTH=1：認證標頭由外部代理（例如雲端環境的『網路密鑰』）加上，這裡不需要、也不會送出金鑰。
+    有明確給金鑰時一律以金鑰為準。"""
     env = os.environ if env is None else env
     provider = cfg.get("provider")
     model = cfg.get("model") or env.get("CPE_MODEL")
@@ -134,11 +140,16 @@ def detect_client(cfg: Dict, env: Optional[Dict[str, str]] = None, key: Optional
     if key:
         keys["openai" if not provider or provider == "openai" else provider] = key
         provider = provider or "openai"
+    proxy = env.get("CPE_PROXY_AUTH", "").strip().lower() in ("1", "true", "yes")
     if provider:
-        return LLMClient(provider, keys[provider], model, base_url=base) if keys.get(provider) else None
+        if keys.get(provider):
+            return LLMClient(provider, keys[provider], model, base_url=base)
+        return LLMClient(provider, "", model, base_url=base, send_auth=False) if proxy else None
     for name in ("openai", "anthropic"):
         if keys[name]:
             return LLMClient(name, keys[name], model, base_url=base)
+    if proxy:
+        return LLMClient("anthropic" if env.get("CPE_PROVIDER") == "anthropic" else "openai", "", model, base_url=base, send_auth=False)
     return None
 
 

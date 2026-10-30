@@ -150,6 +150,34 @@ class ClientTests(unittest.TestCase):
         self.assertEqual((c.usage()["tokens_in"], c.usage()["tokens_out"]), (3, 2))
 
 
+class ProxyAuthTests(unittest.TestCase):
+    def test_proxy_mode_sends_no_credentials_and_explicit_key_wins(self):
+        from cpe_coach.llm import detect_client
+        self.assertIsNone(detect_client({}, env={}))
+        self.assertIsNone(detect_client({}, env={"CPE_PROXY_AUTH": "0"}))
+        c = detect_client({}, env={"CPE_PROXY_AUTH": "1", "CPE_MODEL": "m1"})
+        self.assertEqual((c.provider, c.model, c.send_auth), ("openai", "m1", False))
+        seen = []
+        c.transport = lambda u, h, b: (seen.append(h), {"choices": [{"message": {"content": "hi"}}]})[1]
+        self.assertEqual(c.chat("s", [{"role": "user", "content": "x"}]), "hi")
+        self.assertNotIn("Authorization", seen[0])
+        self.assertNotIn("x-api-key", seen[0])
+        k = detect_client({}, env={"CPE_PROXY_AUTH": "1", "OPENAI_API_KEY": "sk-real"})
+        self.assertTrue(k.send_auth)
+        k.transport = lambda u, h, b: (seen.append(h), {"choices": [{"message": {"content": "hi"}}]})[1]
+        k.chat("s", [{"role": "user", "content": "x"}])
+        self.assertEqual(seen[1]["Authorization"], "Bearer sk-real")
+        a = detect_client({}, env={"CPE_PROXY_AUTH": "true", "CPE_PROVIDER": "anthropic"})
+        self.assertEqual((a.provider, a.send_auth), ("anthropic", False))
+        a.transport = lambda u, h, b: (seen.append(h), {"content": [{"type": "text", "text": "ok"}]})[1]
+        a.chat("s", [{"role": "user", "content": "x"}])
+        self.assertNotIn("x-api-key", seen[2])
+        self.assertEqual(seen[2]["anthropic-version"], "2023-06-01")
+        p = detect_client({"provider": "openai"}, env={"CPE_PROXY_AUTH": "1"})
+        self.assertFalse(p.send_auth)
+        self.assertIsNone(detect_client({"provider": "openai"}, env={}))
+
+
 class EvalTests(unittest.TestCase):
     def test_well_behaved_model_scores_clean(self):
         rep = run("good", n=6)

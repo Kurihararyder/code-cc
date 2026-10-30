@@ -214,7 +214,7 @@ def cmd_eng(ws: Workspace, args) -> int:
 def cmd_ai_eval(ws: Workspace, args) -> int:
     llm = detect_client(ws.config())
     if llm is None:
-        raise ValueError("沒有設定 API 金鑰（環境變數 OPENAI_API_KEY，或 ANTHROPIC_API_KEY）。")
+        raise ValueError("沒有設定 API 金鑰（環境變數 OPENAI_API_KEY，或 ANTHROPIC_API_KEY）。若金鑰由雲端環境的『網路密鑰』代理注入，請加上環境變數 CPE_PROXY_AUTH=1。")
     kinds = tuple(k for k in args.kinds.split(",") if k)
     if not set(kinds) <= set(aieval.KINDS):
         raise ValueError("--kinds 只能是 explain,question,mismatch")
