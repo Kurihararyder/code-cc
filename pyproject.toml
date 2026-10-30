@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cpe-coach"
+version = "1.0.0"
+description = "CPE 自學教練：本地判題、提示階梯、間隔重練、模擬考"
+requires-python = ">=3.9"
+readme = "README.md"
+
+[project.scripts]
+cpe = "cpe_coach.cli:main"
+
+[tool.setuptools]
+packages = ["cpe_coach"]
+
+[tool.setuptools.package-data]
+cpe_coach = ["data/*.json"]
