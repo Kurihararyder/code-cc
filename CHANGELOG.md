@@ -13,7 +13,7 @@
 - 修正更新驗證失敗要退回時，可能留下過期的 `.pyc`（版本號這種長度相同的修改，會讓退回後仍執行新版的程式）；驗證改用 `-B` 並在退回後清除 `__pycache__`。
 - 判題：Windows 找得到沒有加進 PATH 的 MSYS2／MinGW 的 g++，並改用靜態連結（執行時不會找不到 DLL）。
 - 網頁服務：新增 `/api/ping`（讓控制台判斷埠上跑的是不是 CPE 教練）、收到結束訊號時正常收尾；啟動時不再做反向 DNS 查詢（Python 內建的 HTTPServer 會做，某些 macOS 上要卡 30 秒才起得來）。
-- Windows 的捷徑改成只啟動一次 PowerShell 就建立全部（原本每個捷徑一次，慢又多一個失敗的機會）；建立不了 `.lnk` 時會把 PowerShell 的錯誤寫進紀錄，並改用 `.cmd` 捷徑。
+- Windows 的捷徑改用系統的 IShellLinkW（Unicode）一次建立全部：原本用 PowerShell 的 WScript.Shell，在英文版 Windows 上只要檔名或路徑有中文（例如「CPE 教練.lnk」、使用者資料夾是中文）就建立不了；建立不了 `.lnk` 時會把原因寫進紀錄，並改用 `.cmd` 捷徑。
 - CI：新增虛擬螢幕上的圖形介面測試，以及 Windows／macOS／Linux 各一台用雙擊啟動檔真的安裝、開啟、關閉、解除安裝的端對端檢查。
 
 ## 2.4.1（2026-10-30）

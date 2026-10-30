@@ -163,6 +163,7 @@ def apply(root: Path, check_only: bool = False) -> Dict[str, Any]:
     rc, out = _git(root, "merge", "--ff-only", "@{u}")
     if rc != 0:
         return dict(info, status="blocked", reason="無法 fast-forward 更新：" + out[-300:])
+    purge_bytecode(root)                                  # 更新跟上一次執行在同一秒內、檔案大小又一樣（版本號）時，舊的 .pyc 會被當成有效
     env = dict(os.environ, PYTHONPATH=str(root))
     chk = subprocess.run([sys.executable, "-B", "-c", "import cpe_coach.cli, cpe_coach; print(cpe_coach.__version__)"], cwd=str(root), env=env,
                          capture_output=True, timeout=60)

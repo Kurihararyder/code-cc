@@ -43,8 +43,9 @@ ask() {   # ask "問題" → 同意回傳 0。--yes 一律同意；沒有終端�
 py_ok() { "$1" -c 'import sys; sys.exit(0 if sys.version_info[:2] >= (3, 9) else 1)' >/dev/null 2>&1; }
 
 find_python() {   # find_python [tk]：加 tk 時只挑有圖形介面套件（tkinter）的
-  for c in /Library/Frameworks/Python.framework/Versions/3.13/bin/python3 /Library/Frameworks/Python.framework/Versions/3.12/bin/python3 \
-           python3.13 python3.12 python3.11 python3.10 python3.9 python3 python; do
+  fixed="/Library/Frameworks/Python.framework/Versions/3.13/bin/python3 /Library/Frameworks/Python.framework/Versions/3.12/bin/python3"
+  [ -n "${CPE_NO_FIXED_PYTHON:-}" ] && fixed=""      # 測試用：只靠 PATH 找（模擬沒有 Python 的電腦；macOS 的 CI 機器在固定位置裝了 Python）
+  for c in $fixed python3.13 python3.12 python3.11 python3.10 python3.9 python3 python; do
     p=$(command -v "$c" 2>/dev/null) || continue
     [ -x "$p" ] || continue
     # macOS 沒裝命令列開發者工具時，/usr/bin/python3 只是會跳出安裝視窗的空殼：不要去執行它

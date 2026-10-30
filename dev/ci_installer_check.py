@@ -52,6 +52,8 @@ def installed():
     check((app / "cpe_coach" / "__init__.py").is_file(), f"程式資料夾 {app}")
     check((ws / ".cpe" / "state.json").is_file(), f"學習進度資料夾 {ws}")
     check(bool(cfg.shortcuts) and all(Path(p).exists() or Path(p).is_symlink() for p in cfg.shortcuts), f"捷徑 {len(cfg.shortcuts)} 個都存在：{cfg.shortcuts}")
+    if plat.is_windows:
+        check(all(p.lower().endswith(".lnk") for p in cfg.shortcuts), "Windows 的捷徑都是真正的 .lnk（不是建立失敗時的 .cmd 備案）")
     shim = shortcuts.bin_dir(plat) / ("cpe.cmd" if plat.is_windows else "cpe")
     r = subprocess.run([str(shim), "--version"], capture_output=True, timeout=60, cwd=str(ws))
     check(r.returncode == 0 and b"cpe " in r.stdout, f"cpe 指令可用：{r.stdout.decode('utf-8', 'replace').strip()}")

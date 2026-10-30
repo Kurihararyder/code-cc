@@ -89,9 +89,15 @@ class Base(unittest.TestCase):
 
 
 def read_lnk(path: Path):
-    """用 Windows 的 COM 讀回 .lnk 的目標與參數（確認捷徑真的指到對的地方）。"""
-    ps = "$s=(New-Object -ComObject WScript.Shell).CreateShortcut($env:CPE_LNK); Write-Output $s.TargetPath; Write-Output $s.Arguments; Write-Output $s.WorkingDirectory"
-    out = subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-Command", ps], env=dict(os.environ, CPE_LNK=str(path)), capture_output=True, timeout=60)
+    """用 Windows 的 COM 讀回 .lnk 的目標與參數（確認捷徑真的指到對的地方）。
+    WScript.Shell 在英文版 Windows 上打不開有中文的路徑，所以先複製成純英文的檔名再讀（檔案內容一樣）。"""
+    import shutil
+    import tempfile
+    with tempfile.TemporaryDirectory() as d:
+        plain = Path(d) / "read-back.lnk"
+        shutil.copyfile(str(path), str(plain))
+        ps = "$s=(New-Object -ComObject WScript.Shell).CreateShortcut($env:CPE_LNK); Write-Output $s.TargetPath; Write-Output $s.Arguments; Write-Output $s.WorkingDirectory"
+        out = subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-Command", ps], env=dict(os.environ, CPE_LNK=str(plain)), capture_output=True, timeout=60)
     return out.stdout.decode("utf-8", "replace").splitlines()
 
 

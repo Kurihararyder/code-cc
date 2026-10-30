@@ -1,5 +1,4 @@
 """捷徑與指令檔的產生邏輯：用假的『Windows／macOS／Linux』環境在任何平台檢查產生出來的內容（引號、路徑、特殊字元、PowerShell 失敗時的備案）。"""
-import base64
 import json
 import os
 import plistlib
@@ -125,7 +124,7 @@ class Windows(Fixture):
         cfg.app_dir = str(self.t.path / "app dir")
         return p, cfg, shortcuts.create_all(cfg, p, True, True, log=(logs.append if logs is not None else (lambda s: None)), run=run)
 
-    def test_all_lnk_files_are_made_by_one_powershell_run_with_the_values_passed_as_json(self):
+    def test_all_lnk_files_are_made_by_one_helper_run_with_the_values_passed_as_json(self):
         calls = []
 
         def run(cmd, timeout=60, env=None):
@@ -136,14 +135,13 @@ class Windows(Fixture):
                 out.append(f"OK {i}")
             return 0, "\r\n".join(out)
         p, cfg, made = self.make(run)
-        self.assertEqual(len(calls), 1)                                             # 四個捷徑只啟動一次 PowerShell（每次要 1 秒左右）
+        self.assertEqual(len(calls), 1)                                             # 四個捷徑只啟動一次小程式
         self.assertEqual(len(made), 4)
         self.assertTrue(all(m.endswith(".lnk") for m in made))
         cmd, env = calls[0]
-        self.assertEqual(cmd[0], "powershell")
-        self.assertIn("-NoProfile", cmd)
-        self.assertIn("CreateShortcut", cmd[-1])
-        self.assertNotIn('"', cmd[-1])                                              # 腳本裡沒有雙引號，命令列不會有跳脫問題
+        self.assertEqual(cmd[0], r"C:\Python312\python.exe")                         # 用記錄的 Python（console 版），不是 pythonw
+        self.assertEqual(cmd[1], "-I")                                              # 隔離模式：不吃使用者的 PYTHON* 環境變數與當前目錄
+        self.assertEqual(Path(cmd[2]), Path(shortcuts.__file__).with_name("winlnk.py"))
         items = json.loads(env["CPE_LNKS"])["items"]
         self.assertEqual([Path(i["lnk"]).name for i in items], ["CPE 教練.lnk", "CPE 教練（控制台）.lnk", "CPE 教練　開始學習.lnk", "解除安裝 CPE 教練.lnk"])
         self.assertEqual(Path(items[0]["lnk"]).parent, self.home / "Desktop")
@@ -156,14 +154,19 @@ class Windows(Fixture):
         self.assertTrue(items[3]["args"].endswith(" uninstall"))
         self.assertTrue(all(Path(m).parent in (self.home / "Desktop", p.menu_dir / "CPE 教練") for m in made))
 
-    def test_the_powershell_script_reads_the_json_and_survives_a_single_item(self):
-        """Windows PowerShell 5.1 的 ConvertFrom-Json 不展開最上層陣列，所以要包成物件再取 .items（這裡檢查腳本的形狀，真的執行在 Windows 的測試裡）。"""
-        self.assertIn("(ConvertFrom-Json $env:CPE_LNKS).items", shortcuts.LNK_SCRIPT)
-        self.assertIn("catch", shortcuts.LNK_SCRIPT)
+    def test_the_helper_exists_and_refuses_politely_outside_windows(self):
+        helper = Path(shortcuts.__file__).with_name("winlnk.py")
+        self.assertTrue(helper.is_file())
+        r = subprocess.run([sys.executable, "-I", str(helper)], capture_output=True, env=dict(os.environ, CPE_LNKS=json.dumps({"items": []})))
+        if sys.platform == "win32":
+            self.assertEqual(r.returncode, 0, r.stdout.decode("utf-8", "replace") + r.stderr.decode("utf-8", "replace"))      # 空清單：什麼都不做
+        else:
+            self.assertEqual(r.returncode, 2)
+            self.assertIn("FAIL", r.stdout.decode("utf-8"))
 
-    def test_when_powershell_cannot_make_a_lnk_a_cmd_launcher_is_made_instead_and_the_reason_is_logged(self):
+    def test_when_the_helper_cannot_make_a_lnk_a_cmd_launcher_is_made_instead_and_the_reason_is_logged(self):
         logs = []
-        p, cfg, made = self.make(lambda cmd, timeout=60, env=None: (1, "Constrained language mode"), logs)
+        p, cfg, made = self.make(lambda cmd, timeout=60, env=None: (1, "FAIL 0 : OSError: [WinError -2147221164] Class not registered"), logs)
         self.assertEqual(len(made), 4)
         self.assertTrue(all(m.endswith(".cmd") for m in made))
         text = Path(made[0]).read_bytes().decode("utf-8")
@@ -171,7 +174,7 @@ class Windows(Fixture):
         self.assertIn("cpe-panel.pyw", text)
         self.assertTrue(any(Path(m).read_bytes().decode("utf-8").rstrip().endswith("uninstall") for m in made))
         joined = "\n".join(logs)
-        self.assertIn("Constrained language mode", joined)                          # 沒有原因的失敗訊息沒辦法排查
+        self.assertIn("Class not registered", joined)                               # 沒有原因的失敗訊息沒辦法排查
         self.assertIn("結束碼 1", joined)
 
     def test_one_failing_item_only_replaces_that_one(self):
@@ -310,48 +313,67 @@ class Assets(unittest.TestCase):
 
 
 
-@unittest.skipUnless(sys.platform == "win32", "真的用 Windows 的 PowerShell 與 WScript.Shell")
+@unittest.skipUnless(sys.platform == "win32", "真的用 Windows 的 COM 建立 .lnk")
 class RealWindowsLnk(Fixture):
-    def read_back(self, lnk):
-        """用 PowerShell 把 .lnk 讀回來；結果轉成 UTF-8 的 base64 再傳（不靠主控台的編碼）。"""
+    def read_target(self, lnk):
+        """用另一條路（WScript.Shell）讀回 .lnk 的目標，確認 Windows 自己認得這個捷徑。WScript.Shell 在英文版 Windows 上不吃中文路徑，
+        所以複製成純英文檔名再讀。"""
+        import shutil
+        plain = self.t.path / "read-back.lnk"
+        shutil.copyfile(lnk, plain)
         script = ("$s=(New-Object -ComObject WScript.Shell).CreateShortcut($env:CPE_READ);"
-                  "$j=ConvertTo-Json -Compress @{target=$s.TargetPath;args=$s.Arguments;wd=$s.WorkingDirectory;desc=$s.Description};"
-                  "[Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($j))")
+                  "$s.TargetPath")
         r = subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", script],
-                           capture_output=True, env=dict(os.environ, CPE_READ=str(lnk)), timeout=120)
+                           capture_output=True, env=dict(os.environ, CPE_READ=str(plain)), timeout=120)
         self.assertEqual(r.returncode, 0, r.stdout.decode("utf-8", "replace") + r.stderr.decode("utf-8", "replace"))
-        return json.loads(base64.b64decode(r.stdout.strip()).decode("utf-8"))
+        return r.stdout.decode("utf-8", "replace").strip()
 
-    def test_lnk_files_are_really_created_with_chinese_and_spaces_and_read_back_correctly(self):
+    def item(self, name, args="", desc="x", wd=None):
+        return {"lnk": str(name), "target": str(Path(sys.executable).with_name("pythonw.exe")), "args": args, "wd": str(wd or self.t.path),
+                "icon": ICON, "desc": desc}
+
+    def test_lnk_files_are_really_created_with_chinese_and_spaces_in_every_field(self):
         folder = self.t.path / "開始 功能表 (1)" / "CPE 教練"
-        target = Path(sys.executable).with_name("pythonw.exe")
-        wd = self.t.path / "app dir"
+        wd = self.t.path / "王小明 的 app"
         wd.mkdir()
-        items = [{"lnk": str(folder / "CPE 教練（控制台）.lnk"), "target": str(target), "args": f'"{wd / "cpe-panel.pyw"}"', "wd": str(wd),
-                  "icon": ICON, "desc": "控制台：開啟、關閉"},
-                 {"lnk": str(folder / "CPE 教練　開始學習.lnk"), "target": str(target), "args": f'"{wd / "cpe-panel.pyw"}" open', "wd": str(wd),
-                  "icon": ICON, "desc": "直接開啟學習畫面"}]
+        items = [self.item(folder / "CPE 教練（控制台）.lnk", f'"{wd / "cpe-panel.pyw"}"', "控制台：開啟、關閉", wd),
+                 self.item(folder / "CPE 教練　開始學習.lnk", f'"{wd / "cpe-panel.pyw"}" open', "直接開啟學習畫面", wd)]
         logs = []
-        made = shortcuts.make_lnks(items, log=logs.append)
+        made = shortcuts.make_lnks(items, sys.executable, log=logs.append)
         self.assertEqual(made, [True, True], logs)
         for it in items:
-            info = self.read_back(it["lnk"])
-            self.assertEqual(info["target"].lower(), it["target"].lower())
-            self.assertEqual(info["args"], it["args"])
-            self.assertEqual(info["wd"].lower(), it["wd"].lower())
-            self.assertEqual(info["desc"], it["desc"])
+            data = Path(it["lnk"]).read_bytes()
+            self.assertEqual(data[:4], b"\x4c\x00\x00\x00")                                    # Shell Link 檔頭
+            for field in ("args", "wd", "desc"):
+                self.assertIn(it[field].encode("utf-16-le"), data, field)                  # 字串用 UTF-16 存：中文沒有被轉成 ?
+            self.assertEqual(self.read_target(it["lnk"]).lower(), it["target"].lower())
 
     def test_a_single_item_works_too_and_overwriting_is_fine(self):
-        item = {"lnk": str(self.t.path / "one.lnk"), "target": sys.executable, "args": "-V", "wd": str(self.t.path), "icon": ICON, "desc": "x"}
-        self.assertEqual(shortcuts.make_lnks([item]), [True])
-        self.assertEqual(shortcuts.make_lnks([item]), [True])
-        self.assertEqual(self.read_back(item["lnk"])["args"], "-V")
+        item = self.item(self.t.path / "one.lnk", "-V")
+        self.assertEqual(shortcuts.make_lnks([item], sys.executable), [True])
+        self.assertEqual(shortcuts.make_lnks([item], sys.executable), [True])
+        self.assertIn("-V".encode("utf-16-le"), Path(item["lnk"]).read_bytes())
 
     def test_a_name_windows_does_not_allow_is_reported_with_the_reason(self):
         logs = []
-        made = shortcuts.make_lnks([{"lnk": str(self.t.path / "bad|name.lnk"), "target": sys.executable, "args": "", "wd": str(self.t.path), "icon": ICON, "desc": "x"}], log=logs.append)
+        made = shortcuts.make_lnks([self.item(self.t.path / "bad|name.lnk")], sys.executable, log=logs.append)
         self.assertEqual(made, [False])
-        self.assertTrue(logs and "PowerShell" in logs[0], logs)                      # 失敗要留下原因
+        self.assertTrue(logs and "FAIL" not in logs[0] and "OSError" in logs[0], logs)      # 失敗要留下原因
+
+    def test_one_bad_item_does_not_stop_the_others(self):
+        items = [self.item(self.t.path / "bad|name.lnk"), self.item(self.t.path / "good.lnk")]
+        self.assertEqual(shortcuts.make_lnks(items, sys.executable), [False, True])
+
+    def test_create_all_makes_real_lnk_shortcuts_for_a_chinese_user_folder(self):
+        p = self.plat("windows")
+        cfg = self.cfg(sys.executable)
+        cfg.app_dir = str(self.t.path / "王小明" / "app")
+        Path(cfg.app_dir).mkdir(parents=True)
+        shortcuts.copy_assets(str(REPO), p)
+        logs = []
+        made = shortcuts.create_all(cfg, p, True, True, log=logs.append)
+        self.assertEqual(len(made), 4, logs)
+        self.assertTrue(all(m.endswith(".lnk") and Path(m).is_file() for m in made), (made, logs))
 
 
 if __name__ == "__main__":

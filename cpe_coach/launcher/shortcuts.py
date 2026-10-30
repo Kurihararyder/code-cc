@@ -23,15 +23,6 @@ from .osinfo import Plat, pythonw_for
 
 Runner = Callable[..., Tuple[int, str]]
 Log = Callable[[str], None]
-# 一次建立所有 .lnk（PowerShell 每啟動一次要 1 秒左右，四個捷徑只啟動一次）。值用環境變數裡的 JSON 傳，腳本裡只有單引號，不會有引號跳脫的問題。
-# 注意：Windows PowerShell 5.1 的 ConvertFrom-Json 不會把最上層的陣列展開，所以包成 {"items": [...]} 再取 .items。
-LNK_SCRIPT = ("$ErrorActionPreference='Stop';$sh=New-Object -ComObject WScript.Shell;$n=0;"
-              "foreach($i in (ConvertFrom-Json $env:CPE_LNKS).items){"
-              "try{$s=$sh.CreateShortcut($i.lnk);$s.TargetPath=$i.target;$s.Arguments=$i.args;$s.WorkingDirectory=$i.wd;"
-              "$s.IconLocation=$i.icon;$s.Description=$i.desc;$s.Save();Write-Output ('OK '+$n)}"
-              "catch{Write-Output ('FAIL '+$n+' : '+$_.Exception.Message)};$n++}")
-
-
 # ---------- 路徑 ----------
 def bin_dir(plat: Plat) -> Path:
     return plat.launcher_home / "bin"
@@ -265,9 +256,14 @@ def uninstall_entry_exists(plat: Plat) -> bool:
 
 
 # ---------- 捷徑檔 ----------
-def make_lnks(items: List[Dict[str, str]], run: Runner = run_cmd, log: Log = lambda s: None) -> List[bool]:
+def lnk_helper() -> Path:
+    return Path(__file__).with_name("winlnk.py")
+
+
+def make_lnks(items: List[Dict[str, str]], python: str, run: Runner = run_cmd, log: Log = lambda s: None) -> List[bool]:
     """Windows 的 .lnk，一次建立全部。每一項是 {lnk, target, args, wd, icon, desc}；回傳每一項是否真的建立出來。
-    PowerShell 失敗時把它的輸出寫進紀錄（不然只知道失敗、不知道為什麼）。"""
+    用另一個行程執行 winlnk.py（IShellLinkW，Unicode；路徑有中文也行，WScript.Shell 在英文版 Windows 上不行），
+    失敗時把它的輸出寫進紀錄（不然只知道失敗、不知道為什麼）。"""
     if not items:
         return []
     for it in items:
@@ -278,14 +274,14 @@ def make_lnks(items: List[Dict[str, str]], run: Runner = run_cmd, log: Log = lam
                 lnk.unlink()                            # 重新安裝：先刪掉舊的，之後才分得出這次有沒有建立成功
         except OSError:
             pass
-    env = dict(os.environ, CPE_LNKS=json.dumps({"items": items}))
-    rc, out = run(["powershell", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", LNK_SCRIPT], 90, env)
+    env = dict(os.environ, CPE_LNKS=json.dumps({"items": items}), PYTHONIOENCODING="utf-8")
+    rc, out = run([console_python(python), "-I", str(lnk_helper())], 90, env)
     out = out.replace("\r", "")
     failed = {int(m.group(1)): m.group(2) for m in re.finditer(r"^FAIL (\d+) : (.*)$", out, re.M)}
     made = [Path(it["lnk"]).is_file() and i not in failed for i, it in enumerate(items)]
     if not all(made):
         why = "; ".join(sorted(set(failed.values())))[:300] if failed else out.strip()[-300:]
-        log(f"PowerShell 沒能建立 .lnk 捷徑（結束碼 {rc}）：{why or '沒有任何輸出'}")
+        log(f"沒能建立 .lnk 捷徑（結束碼 {rc}）：{why or '沒有任何輸出'}")
     return made
 
 
@@ -359,7 +355,7 @@ def create_all(cfg: LauncherConfig, plat: Plat, desktop: bool = True, menu: bool
                       (folder, f"解除安裝 {name}", "uninstall", f"解除安裝 {name}")]
         items = [{"lnk": str(f / f"{t}.lnk"), "target": gui, "args": (f'"{script}" ' + a).strip(), "wd": cfg.app_dir, "icon": icon, "desc": d} for f, t, a, d in specs]
         try:
-            made_lnk = make_lnks(items, run, log)
+            made_lnk = make_lnks(items, cfg.python, run, log)
         except (OSError, subprocess.SubprocessError) as e:
             log(f"捷徑沒有建立成功：{e}")
             made_lnk = [False] * len(items)

@@ -130,6 +130,17 @@ class UpdateTests(unittest.TestCase):
         out = subprocess.run([sys.executable, "-c", "import cpe_coach; print(cpe_coach.__version__)"], cwd=str(self.clone), capture_output=True, env=dict(os.environ, PYTHONPATH=str(self.clone)))
         self.assertEqual(out.stdout.decode().strip(), "2.0.0", out.stderr.decode())
 
+    def test_update_does_not_leave_stale_bytecode_for_a_same_size_edit(self):
+        """程式剛跑過（寫了 .pyc）、同一秒內更新成長度一樣的版本號（2.0.0 → 2.1.0）：更新後再啟動，跑的必須是新版（服務重新啟動時就是這樣）。"""
+        env = dict(os.environ, PYTHONPATH=str(self.clone))
+        subprocess.run([sys.executable, "-c", "import cpe_coach"], cwd=str(self.clone), env=env, check=True)        # 寫下 __pycache__
+        self.assertTrue(list((self.clone / "cpe_coach").rglob("*.pyc")))
+        self.publish("2.1.0", "same size, fine")
+        r = updater.apply(self.clone)
+        self.assertEqual(r["status"], "updated", r)
+        out = subprocess.run([sys.executable, "-c", "import cpe_coach; print(cpe_coach.__version__)"], cwd=str(self.clone), capture_output=True, env=env)
+        self.assertEqual(out.stdout.decode().strip(), "2.1.0", out.stderr.decode())
+
     def test_not_a_git_checkout_and_no_upstream_and_detached(self):
         plain = Path(self.tmp.name) / "plain"
         write_version(plain, "1.0.0")

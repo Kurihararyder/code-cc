@@ -81,7 +81,7 @@ class Formats(unittest.TestCase):
 @unittest.skipIf(WINDOWS, "POSIX 啟動檔")
 class PosixCheckMode(unittest.TestCase):
     def run_sh(self, script, *args, path=None):
-        env = dict(os.environ, HOME=tempfile.gettempdir())
+        env = dict(os.environ, HOME=tempfile.gettempdir(), CPE_NO_FIXED_PYTHON="1")          # 只靠 PATH 找 Python（macOS 的 CI 機器在固定位置裝了 Python）
         if path is not None:
             env["PATH"] = path
         return subprocess.run([SH, str(REPO / script)] + list(args), capture_output=True, timeout=120, env=env, cwd=tempfile.gettempdir())
@@ -120,7 +120,7 @@ class PosixCheckMode(unittest.TestCase):
             real = shutil.which(t)
             if real:
                 os.symlink(real, tools.path / t)
-        r = subprocess.run([SH, str(REPO / "setup" / "bootstrap.sh")], capture_output=True, timeout=60, env=dict(os.environ, PATH=str(tools.path)),
+        r = subprocess.run([SH, str(REPO / "setup" / "bootstrap.sh")], capture_output=True, timeout=60, env=dict(os.environ, PATH=str(tools.path), CPE_NO_FIXED_PYTHON="1"),
                            stdin=subprocess.DEVNULL, cwd=tempfile.gettempdir())
         out = r.stdout.decode("utf-8", "replace")
         self.assertEqual(r.returncode, 1, out)
