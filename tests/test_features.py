@@ -166,14 +166,15 @@ class PastStartTests(unittest.TestCase):
         b = bank_mod.load_bank(self.ws)
         with self.assertRaises(ValueError) as cm:
             course.start_mock(self.ws, b, "weekly", real=True)
-        self.assertIn("英文題目", str(cm.exception))
+        self.assertIn("已通過", str(cm.exception))
         st = self.ws.state()
         for i in range(1, 4):
             self.add_tests(f"uva{20000 + i}", english=(i != 3))
             st["problems"][f"uva{20000 + i}"] = dict(new_problem_state(), first_pass=self.clock.t - DAY * i, last_pass=self.clock.t - DAY * i)
         self.ws.save_state(st)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ValueError) as cm:
             course.start_mock(self.ws, b, "weekly", real=True)            # 第 3 題是中文，只有 2 題合格
+        self.assertIn("目前只有 2 題", str(cm.exception))
         self.add_tests("uva20003", english=True)
         ex = course.start_mock(self.ws, b, "weekly", real=True)
         self.assertEqual(sorted(ex["problems"]), ["uva20001", "uva20002", "uva20003"])

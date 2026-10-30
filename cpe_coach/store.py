@@ -15,6 +15,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "stage": 0,           # 目前所在階段 0–5
     "timeout_sec": 3.0,   # 本地判題每筆測資時限
     "memory_mb": 1024,    # 單一程式的記憶體上限（POSIX 用 RLIMIT_AS；macOS 不一定強制）
+    "statement_lang": "auto",  # 內建練習題的題目語言：auto（階段 0 中文、階段 1 中英對照、之後英文）／zh／bi／en
     "provider": None,     # openai / anthropic；None 代表依環境變數自動偵測
     "model": None,
 }

@@ -331,6 +331,41 @@ class WebApiTests(WebBase):
         self.assertEqual(code, 200)
         self.assertEqual(r["summary"]["past"], "2024-02-02")
 
+    def test_fuzz_endpoint(self):
+        from cpe_coach import service
+        ws = self.app.ws()
+        d = ws.tests / "fz1"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "sample01.in").write_text("3\n1 1 2\n", encoding="utf-8")
+        (d / "sample01.out").write_text("2\n", encoding="utf-8")
+        buggy = "n = int(input())\na = input().split()\nprint(1 + sum(1 for i in range(1, n) if a[i] != a[i-1]))\n"
+        brute = "n = int(input())\na = input().split()\nr = []\nfor x in a:\n    if x not in r:\n        r.append(x)\nprint(len(r))\n"
+        self.assertEqual(self.post("/api/save", {"id": "fz1", "code": buggy})[0], 200)
+        self.assertEqual(self.post("/api/fuzz", {"id": "fz1", "brute": ""})[0], 400)
+        code, r = self.post("/api/fuzz", {"id": "fz1", "brute": brute, "rounds": 300, "seed": 3, "save": True})
+        self.assertEqual(code, 200)
+        self.assertTrue(r["found"] and r["saved"], r)
+        self.assertGreaterEqual(r["tests"], 2)
+        code, t = self.post("/api/test", {"id": "fz1"})
+        self.assertEqual(t["verdict"], "WA")                                           # 存下的測資讓壞解答現形
+        code, r = self.post("/api/fuzz", {"id": "fz1", "brute": "print(0)"})
+        self.assertEqual(code, 400)                                                   # 暴力解沒過現有測資：拒絕
+
+    def test_statement_language_setting(self):
+        code, s = self.post("/api/settings", {"statement_lang": "en"})
+        self.assertEqual((code, s["statement_lang"]), (200, "en"))
+        code, v = self.get("/api/problem?id=d001")
+        self.assertEqual((v["lang_mode"], v["lang_setting"]), ("en", "en"))
+        self.assertIn("## Input", v["statement"])
+        self.assertEqual(self.post("/api/settings", {"statement_lang": "klingon"})[0], 400)
+        self.post("/api/settings", {"statement_lang": "auto"})
+
+    def test_weakness_endpoint(self):
+        code, w = self.get("/api/weakness")
+        self.assertEqual(code, 200)
+        self.assertIn("families", w)
+        self.assertIsInstance(w["suggestions"], list)
+
     def test_backup_download(self):
         r = urllib.request.Request(f"http://127.0.0.1:{self.port}/api/backup", headers={"Host": f"127.0.0.1:{self.port}", "X-CPE-Token": self.app.token})
         with urllib.request.urlopen(r) as resp:

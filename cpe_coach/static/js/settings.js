@@ -20,7 +20,8 @@ export async function mountSettings(view) {
   const fs = h("input", { type: "number", min: 11, max: 22, value: pref.get("fontSize", 14), "aria-label": "編輯器字體大小", style: { width: "90px" }, onchange: (e) => { pref.set("fontSize", Math.max(11, Math.min(22, +e.target.value || 14))); toast("下次開啟題目時套用", "", 1600); } });
   const timeout = h("input", { type: "number", min: 0.5, max: 120, step: 0.5, value: st.timeout_sec, "aria-label": "每筆測資時限", style: { width: "110px" } });
   const start = h("input", { type: "date", value: st.start_date || "", "aria-label": "開始日期", style: { width: "180px" } });
-  const saveLearn = async () => { try { await post("/api/settings", { timeout_sec: +timeout.value, start_date: start.value || undefined }); toast("已儲存", "ok", 1500); } catch (e) { toast(e.message, "bad"); } };
+  const lang = h("select", { "aria-label": "內建練習題的題目語言", style: { width: "220px" } }, [["auto", "自動（中文 → 中英對照 → 英文）"], ["zh", "全部中文"], ["bi", "全部中英對照"], ["en", "全部英文"]].map(([k, t]) => h("option", { value: k, text: t, selected: st.statement_lang === k })));
+  const saveLearn = async () => { try { await post("/api/settings", { timeout_sec: +timeout.value, start_date: start.value || undefined, statement_lang: lang.value }); toast("已儲存", "ok", 1500); } catch (e) { toast(e.message, "bad"); } };
 
   view.append(h("div", { class: "page", style: { "max-width": "820px" } }, h("div", { class: "page-head" }, h("div", null, h("h1", { text: "設定" }))),
     h("section", { class: "card pad" }, h("div", { class: "card-h" }, h("h3", null, icon("sparkle"), "AI（OpenAI）")),
@@ -30,7 +31,7 @@ export async function mountSettings(view) {
     h("section", { class: "card pad mt" }, h("div", { class: "card-h" }, h("h3", { text: "外觀與編輯器" })),
       h("div", { class: "col" }, h("div", { class: "row wrap" }, h("span", { class: "grow", text: "外觀" }), theme), h("div", { class: "row wrap" }, h("span", { class: "grow", text: "編輯器字體大小（px）" }), fs))),
     h("section", { class: "card pad mt" }, h("div", { class: "card-h" }, h("h3", { text: "學習" })),
-      h("div", { class: "col" }, h("label", { class: "field" }, "每筆測資時限（秒）", timeout, h("small", { text: "Python 比 C++ 慢；本機電腦慢時可以調高。" })), h("label", { class: "field" }, "課程開始日期", start, h("small", { text: "用來計算『依課表你應該在第幾週』。" }))), h("div", { class: "mt" }, h("button", { class: "btn primary", onclick: saveLearn }, "儲存"))),
+      h("div", { class: "col" }, h("label", { class: "field" }, "每筆測資時限（秒）", timeout, h("small", { text: "Python 比 C++ 慢；本機電腦慢時可以調高。" })), h("label", { class: "field" }, "課程開始日期", start, h("small", { text: "用來計算『依課表你應該在第幾週』。" })), h("label", { class: "field" }, "內建練習題的題目語言", lang, h("small", { text: "自動：階段 0 中文、階段 1 中英對照、之後純英文。考場是英文，所以越後面越該習慣讀英文。比照考場的模擬考一律英文。" }))), h("div", { class: "mt" }, h("button", { class: "btn primary", onclick: saveLearn }, "儲存"))),
     h("section", { class: "card pad mt" }, h("div", { class: "card-h" }, h("h3", { text: "備份與搬家" })),
       h("p", { class: "muted small", text: "把所有進度、解答、測資、對話與單字本打包成一個 zip。換電腦時：cpe restore <檔案> --dir <新資料夾>。系統也會每小時自動留一份進度快照（.cpe/backups，保留最近 24 份）。" }),
       h("div", { class: "row wrap" }, h("button", { class: "btn", onclick: async (e) => { const b = e.currentTarget; b.disabled = true; try { await download("/api/backup", "cpe-backup.zip"); toast("已下載備份", "ok", 2500); } catch (err) { toast(err.message, "bad"); } finally { b.disabled = false; } } }, icon("save"), "下載備份 (.zip)")),

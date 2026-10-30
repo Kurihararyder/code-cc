@@ -356,3 +356,10 @@ table.t tfoot td{border-top:1px solid var(--border);padding:8px 10px}
 .scoreboard th:nth-child(1){width:44px}.scoreboard th:nth-child(3){width:90px}.scoreboard th:nth-child(4){width:150px}
 .card-h{flex-wrap:wrap}.card-h h3{white-space:nowrap}
 @media (max-width:520px){.card-h .grow{display:none}.tablewrap table.t{min-width:520px}}
+.weakrow{display:grid;grid-template-columns:150px 70px 1fr;gap:6px 10px;align-items:center}
+.weakrow .tr{height:8px;border-radius:6px;background:var(--surface-2);overflow:hidden}.weakrow .tr i{display:block;height:100%;width:var(--p);background:var(--c);border-radius:6px}
+.weakrow .wmeta{grid-column:2/-1;margin-top:-4px}
+@media (max-width:520px){.weakrow{grid-template-columns:1fr auto}.weakrow .tr{grid-column:1/-1}.weakrow .wmeta{grid-column:1/-1}}
+.langseg{margin-left:auto}.langseg button{padding:2px 9px;font-size:12.5px}
+.stmt hr{border:0;border-top:1px solid var(--border);margin:20px 0}
+.modal pre{margin:4px 0 0;background:var(--surface-2);border-radius:8px;padding:6px 8px;max-height:140px;overflow:auto;white-space:pre-wrap;word-break:break-word}

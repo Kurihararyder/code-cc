@@ -35,7 +35,6 @@ class LimitTests(unittest.TestCase):
         r = self.run_code("print(int(input())*2)", inp="21\n")
         self.assertEqual((r.rc, r.out.strip(), r.timed_out, r.mle, r.ole), (0, "42", False, False, False))
 
-    @unittest.skipUnless(POSIX, "記憶體上限需要 POSIX（Windows 見 CI）")
     def test_memory_limit(self):
         r = self.run_code("x = [0] * (10**9)\nprint(len(x))")
         self.assertTrue(r.mle)
@@ -59,7 +58,6 @@ class LimitTests(unittest.TestCase):
             judge.WATCH_RSS = old
         self.assertEqual((r.rc, r.out.strip(), r.mle), (0, "45", False))
 
-    @unittest.skipUnless(POSIX, "輸出上限的核心行為在 POSIX 上驗證")
     def test_output_limit_stops_runaway_output(self):
         t = time.time()
         r = self.run_code("while True: print('x' * 1000)", timeout=10)
@@ -84,9 +82,22 @@ class LimitTests(unittest.TestCase):
         f = self.d / "s.py"
         f.write_text("while True: pass", encoding="utf-8")
         self.assertEqual(judge.judge(f, t, timeout=0.5).verdict, judge.TLE)
-        if POSIX:
-            f.write_text("x = bytearray(b'x') * (2 * 1024**3)", encoding="utf-8")
-            self.assertEqual(judge.judge(f, t, timeout=3.0, mem_mb=256).verdict, judge.MLE)
+        f.write_text("x = bytearray(b'x') * (2 * 1024**3)", encoding="utf-8")
+        self.assertEqual(judge.judge(f, t, timeout=3.0, mem_mb=256).verdict, judge.MLE)
+
+    @unittest.skipUnless(shutil.which("g++"), "需要 g++")
+    def test_cpp_memory_and_tle(self):
+        t = self.d / "t"
+        t.mkdir()
+        (t / "a.in").write_text("1\n", encoding="utf-8")
+        (t / "a.out").write_text("1\n", encoding="utf-8")
+        f = self.d / "m.cpp"
+        f.write_text("#include <vector>\n#include <cstdio>\nint main(){ std::vector<char> v(2000000000); for (size_t i = 0; i < v.size(); i += 4096) v[i] = 1; printf(\"1\\n\"); }\n", encoding="utf-8")
+        self.assertEqual(judge.judge(f, t, timeout=10.0, mem_mb=256).verdict, judge.MLE)
+        f.write_text("int main(){ for(;;); }\n", encoding="utf-8")
+        self.assertEqual(judge.judge(f, t, timeout=0.7).verdict, judge.TLE)
+        f.write_text("#include <cstdio>\nint main(){ int x; scanf(\"%d\", &x); printf(\"%d\\n\", x); }\n", encoding="utf-8")
+        self.assertEqual(judge.judge(f, t, timeout=5.0).verdict, judge.AC)
 
 
 class LockAndRecoveryTests(unittest.TestCase):

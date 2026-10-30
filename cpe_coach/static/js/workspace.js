@@ -1,4 +1,4 @@
-import { h, icon, clear, toast, stars, confirmDialog, debounce, fmtDate, VERDICT_ZH, $ } from "./dom.js";
+import { h, icon, clear, toast, stars, confirmDialog, debounce, fmtDate, modal, VERDICT_ZH, $ } from "./dom.js";
 import { get, post } from "./api.js";
 import { go } from "./router.js";
 import { S, pref } from "./state.js";
@@ -53,10 +53,11 @@ class Workspace {
     this.predict = h("select", { "aria-label": "先預測結果", title: "先預測再執行：統計你預測自己程式的準確度" },
       [["", "預測：—"], ["AC", "預測：通過"], ["WA", "預測：答案錯"], ["TLE", "預測：超時"], ["RE", "預測：執行錯誤"]].map(([v, t]) => h("option", { value: v, text: t })));
     this.traceBtn = h("button", { class: "btn", onclick: () => this.trace(), title: "逐行顯示變數怎麼變" }, icon("list"), h("span", { class: "hide-m", text: "逐行追蹤" }));
+    this.fuzzBtn = h("button", { class: "btn", onclick: () => this.fuzz(), title: "寫一個暴力解，自動找出你的解答在範例附近的錯，存成新測資" }, icon("neq"), h("span", { class: "hide-m", text: "對拍補測資" }));
     this.ladder = h("div", { class: "ladder", title: "提示使用程度；用了提示通過的題目，之後要無提示重寫" }, [0, 1, 2, 3, 4].map(() => h("i")));
     const fs = h("div", { class: "row gap-sm hide-m" }, h("button", { class: "btn ghost sm icon", "aria-label": "縮小字體", onclick: () => this.font(-1) }, "A−"), h("button", { class: "btn ghost sm icon", "aria-label": "放大字體", onclick: () => this.font(1) }, "A+"));
     this.langPill = h("span", { class: "pill accent", text: V.lang === "cpp" ? "C++" : "Python" });
-    const bar = h("div", { class: "toolbar" }, this.runBtn, this.predict, this.traceBtn, h("span", { class: "grow" }), this.langPill);
+    const bar = h("div", { class: "toolbar" }, this.runBtn, this.predict, this.traceBtn, this.fuzzBtn, h("span", { class: "grow" }), this.langPill);
     this.startBox = h("div", { class: "pane-b" });
     this.edwrap = h("div", { class: "edwrap" }, bar, this.editor.el, h("div", { class: "edfoot" }, h("div", { class: "grow" }, this.ladder), this.saveStat, fs));
     this.resTabs = h("div", { class: "tabs", role: "tablist" }, this.resTab("結果", "res", true), this.resTab("追蹤", "trace"), this.resTab("提醒", "lint"));
@@ -107,7 +108,7 @@ class Workspace {
 
   // ---------- 題目 ----------
   async reloadView() { try { this.V = await get("/api/problem", { id: this.pid }); this.paintBadges(); this.paintLadder(); if (this.aiK === "hints") this.paintAi(); } catch { /* 忽略 */ } }
-  paintProblem() {
+  paintStatement() {
     const V = this.V;
     clear(this.stmtBox);
     this.head = h("div", { class: "row wrap", style: { "margin-bottom": "10px" } });
@@ -116,6 +117,14 @@ class Workspace {
     else this.stmtBox.append(h("div", { class: "callout" }, icon("book"), h("div", null, "這題沒有內建的題目敘述。", V.url ? [" 請到 ", h("a", { href: V.url, target: "_blank", rel: "noopener noreferrer", text: "題目頁" }), " 閱讀，把文字存成檔案後用 ", h("code", { text: `cpe import ${V.id} 檔案` }), " 匯入範例測資。"] : null)));
     this.paintBadges(); this.paintLadder();
     if (V.code === null) this.stmtBox.append(this.startCta());
+  }
+  async setLang(mode) {
+    try { await post("/api/settings", { statement_lang: mode }); this.V = await get("/api/problem", { id: this.pid }); this.paintStatement(); }
+    catch (e) { toast(e.message, "bad"); }
+  }
+  paintProblem() {
+    const V = this.V;
+    this.paintStatement();
     if (V.code === null) this.showStart(); else { this.startBox.hidden = true; this.edwrap.hidden = false; this.editor.setValue(V.code, V.lang); this.editor.setReadOnly(false); this.statusLine("已載入"); }
     // 初次載入也跑一次陷阱提醒（不提示解法，只列語法上的常見坑）
   }
@@ -123,9 +132,43 @@ class Workspace {
     const V = this.V; clear(this.head);
     this.head.append(h("span", { class: "pill", text: V.id }), h("span", { class: "stars", text: stars(V.difficulty) }), h("span", { class: "tag", text: V.topic || "" }),
       V.solved ? h("span", { class: "pill ok" }, icon("check"), V.review_stage === 3 || V.review_stage == null ? "精熟" : "已通過（待無提示重寫）") : null,
-      V.exam ? h("span", { class: "pill bad", text: "考試中" }) : null);
+      V.exam ? h("span", { class: "pill bad", text: "考試中" }) : null,
+      V.title_en ? h("span", { class: "muted small", text: V.title_en }) : null,
+      V.has_english && !V.exam ? h("div", { class: "seg langseg", role: "group", "aria-label": "題目語言", title: "階段 0 中文 → 階段 1 中英對照 → 之後英文（考場是英文）" },
+        [["auto", "自動"], ["zh", "中"], ["bi", "對照"], ["en", "EN"]].map(([k, t]) => h("button", { "aria-pressed": String(V.lang_setting === k), title: { auto: `自動（目前：${{ zh: "中文", bi: "中英對照", en: "English" }[V.lang_mode]}）`, zh: "中文", bi: "中英對照", en: "English" }[k], onclick: () => this.setLang(k) }, t))) : null);
   }
   paintLadder() { [...this.ladder.children].forEach((el, i) => el.classList.toggle("on", this.V.hint_level >= 0 && i <= this.V.hint_level)); }
+  fuzz() {
+    if (this.V.exam) { toast("考試中不能對拍。", "warn"); return; }
+    const key = "cpe.brute." + this.pid;
+    let saved = ""; try { saved = localStorage.getItem(key) || ""; } catch { /* 隱私模式 */ }
+    const ta = h("textarea", { rows: 12, spellcheck: "false", "aria-label": "暴力解程式碼", placeholder: "# 最直白、一定對的解法（讀 stdin、寫 stdout）。慢沒關係。\n# 它必須先通過這題現有的所有測資，才會被拿來當標準答案。",
+      style: { "font-family": "var(--mono)", width: "100%" } });
+    ta.value = saved;
+    const rounds = h("input", { type: "number", min: 20, max: 2000, value: 300, "aria-label": "嘗試次數", style: { width: "100px" } });
+    const keep = h("input", { type: "checkbox", checked: true, id: "fuzzSave" });
+    const out = h("div", { class: "mt", "aria-live": "polite" });
+    let busy = false;
+    const m = modal({ title: "對拍補測資", wide: true, body: h("div", { class: "col" },
+      h("p", { class: "muted small", text: "官方只給範例時，通過範例不代表正確。貼上你的暴力解，系統會拿現有測資的輸入當種子，在原本的結構內變動數值（含邊界值），和你的解答對拍；不一致的輸入縮小後可存成新測資。" }),
+      ta, h("div", { class: "row wrap" }, h("label", { class: "row gap-sm small" }, "嘗試次數", rounds), h("label", { class: "row gap-sm small", for: "fuzzSave" }, keep, "把差異存成測資")),
+      h("p", { class: "muted xs", text: "它不知道題目的限制條件；極少數情況下變異出的輸入可能不合法，請自己確認後再保留。" }), out),
+    actions: [{ label: "關閉" }, { label: "開始對拍", kind: "primary", keep: true, onClick: async (close) => {
+      if (busy) return false; busy = true; clear(out); out.append(h("span", { class: "muted", text: "對拍中…（最多約一分鐘）" }));
+      try {
+        try { localStorage.setItem(key, ta.value); } catch { /* 隱私模式 */ }
+        const r = await post("/api/fuzz", { id: this.pid, code: this.editor.getValue(), brute: ta.value, rounds: +rounds.value || 300, save: keep.checked });
+        clear(out);
+        out.append(h("div", { class: "muted small", text: `變異 ${r.tried} 組（暴力解自己跑不動而略過 ${r.skipped} 組）` }));
+        if (!r.found.length) out.append(h("div", { class: "callout mt" }, icon("check"), h("span", { text: "沒有發現不一致。這只代表範例附近的變化沒問題，不代表一定正確。" })));
+        r.found.forEach((f, i) => out.append(h("div", { class: "callout warn mt" }, icon("alert"), h("div", null, h("b", { text: `差異 ${i + 1}（${f.verdict}）` }),
+          h("div", { class: "small" }, "輸入"), h("pre", { class: "small", text: f.input }), h("div", { class: "small" }, "暴力解"), h("pre", { class: "small", text: f.brute_out }), h("div", { class: "small" }, "你的解"), h("pre", { class: "small", text: f.sol_out })))));
+        if (r.saved.length) { out.append(h("div", { class: "callout ok mt" }, icon("check"), h("span", { text: `已存成 ${r.saved.join("、")}。之後『執行測試』會一起跑。` }))); notify(); this.reloadView(); }
+      } catch (e) { clear(out); out.append(h("div", { class: "callout bad" }, icon("x"), h("span", { text: e.message }))); }
+      finally { busy = false; }
+      return false;
+    } }] });
+  }
   async begin(lang) {
     try { this.V = await post("/api/new", { id: this.pid, lang }); this.paintProblem(); this.tab("code"); this.editor.focus(); notify(); }
     catch (e) { toast(e.message, "bad"); }

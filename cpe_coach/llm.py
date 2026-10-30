@@ -4,10 +4,11 @@ from __future__ import annotations
 import json
 import os
 import re
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
-from typing import Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 RULES = (Path(__file__).parent / "data" / "tutor_rules.md").read_text(encoding="utf-8")
 
@@ -18,7 +19,14 @@ Transport = Callable[[str, dict, dict], dict]
 
 
 class LLMError(Exception):
-    pass
+    """code：HTTP 狀態碼（連線失敗為 0；未知為 -1，不重試）；retry_after：伺服器要求的等待秒數。"""
+
+    def __init__(self, msg: str, code: int = -1, retry_after: Optional[float] = None):
+        super().__init__(msg)
+        self.code, self.retry_after = code, retry_after
+
+
+RETRY_CODES = (0, 408, 409, 429, 500, 502, 503, 504)
 
 
 def _post(url: str, headers: dict, body: dict, timeout: float = 60.0) -> dict:
@@ -27,43 +35,93 @@ def _post(url: str, headers: dict, body: dict, timeout: float = 60.0) -> dict:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             return json.loads(resp.read().decode("utf-8"))
     except urllib.error.HTTPError as e:
-        raise LLMError(f"API 回應 {e.code}：{e.read().decode('utf-8', 'replace')[:200]}")
-    except (urllib.error.URLError, TimeoutError) as e:
-        raise LLMError(f"連線失敗：{e}")
+        ra = e.headers.get("Retry-After") if e.headers else None
+        try:
+            wait = float(ra) if ra else None
+        except ValueError:
+            wait = None
+        raise LLMError(f"API 回應 {e.code}：{e.read().decode('utf-8', 'replace')[:300]}", e.code, wait)
+    except (urllib.error.URLError, TimeoutError, ConnectionError) as e:
+        raise LLMError(f"連線失敗：{e}", 0)
+    except json.JSONDecodeError:
+        raise LLMError("API 回應不是 JSON", 502)
 
 
 class LLMClient:
     def __init__(self, provider: str, api_key: str, model: Optional[str] = None, transport: Transport = _post,
-                 base_url: Optional[str] = None):
+                 base_url: Optional[str] = None, sleep: Callable[[float], None] = time.sleep, retries: int = 2):
         if provider not in DEFAULT_MODELS:
             raise LLMError(f"不支援的 provider：{provider}")
         self.provider, self.api_key, self.transport = provider, api_key, transport
         self.model = model or DEFAULT_MODELS[provider]
         self.base_url = (base_url or DEFAULT_BASE[provider]).rstrip("/")
+        self.sleep, self.retries = sleep, retries
+        self.json_mode = provider == "openai"          # 要求 JSON 物件輸出；伺服器不支援時自動關掉
+        self.usage_log: List[Dict[str, Any]] = []          # 每次呼叫的 token 與耗時（供費用與評測）
 
     def complete(self, system: str, user: str) -> str:
         return self.chat(system, [{"role": "user", "content": user}])
 
+    # ---- 用量 ----
+    def usage(self, since: int = 0) -> Dict[str, Any]:
+        cs = self.usage_log[since:]
+        return {"calls": len(cs), "tokens_in": sum(c["in"] for c in cs), "tokens_out": sum(c["out"] for c in cs),
+                "seconds": round(sum(c["secs"] for c in cs), 2), "retries": sum(c["retries"] for c in cs)}
+
+    def _send(self, url: str, headers: dict, body: dict) -> dict:
+        """送出一次請求；暫時性錯誤（429／5xx／連線）最多重試 self.retries 次，指數退避並遵守 Retry-After。"""
+        tries = 0
+        while True:
+            try:
+                return self.transport(url, headers, body)
+            except LLMError as e:
+                if e.code not in RETRY_CODES or tries >= self.retries:
+                    raise
+                tries += 1
+                self.sleep(min(20.0, e.retry_after if e.retry_after is not None else 1.5 * 2 ** (tries - 1)))
+                self._last_retries = tries
+
     def chat(self, system: str, messages: List[Dict[str, str]]) -> str:
+        t0 = time.perf_counter()
+        self._last_retries = 0
         if self.provider == "openai":
-            data = self.transport(
-                f"{self.base_url}/chat/completions",
-                {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"},
-                {"model": self.model, "messages": [{"role": "system", "content": system}] + list(messages)},
+            body: Dict[str, Any] = {"model": self.model, "messages": [{"role": "system", "content": system}] + list(messages)}
+            headers = {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
+            url = f"{self.base_url}/chat/completions"
+            if self.json_mode:
+                body["response_format"] = {"type": "json_object"}
+            try:
+                data = self._send(url, headers, body)
+            except LLMError as e:
+                if self.json_mode and e.code == 400 and "response_format" in str(e).lower():
+                    self.json_mode = False                       # 這個模型／代理不支援：之後不再送這個參數
+                    body.pop("response_format", None)
+                    data = self._send(url, headers, body)
+                else:
+                    raise
+            try:
+                msg = data["choices"][0]["message"]
+                text = msg.get("content") or ""
+                if not text and msg.get("refusal"):
+                    text = str(msg["refusal"])
+            except (KeyError, IndexError, TypeError, AttributeError):
+                raise LLMError("OpenAI 回應格式無法解析", 502)
+            u = data.get("usage") or {}
+            tin, tout = int(u.get("prompt_tokens") or 0), int(u.get("completion_tokens") or 0)
+        else:
+            data = self._send(
+                f"{self.base_url}/messages",
+                {"x-api-key": self.api_key, "anthropic-version": "2023-06-01", "Content-Type": "application/json"},
+                {"model": self.model, "max_tokens": 1024, "system": system, "messages": list(messages)},
             )
             try:
-                return data["choices"][0]["message"]["content"] or ""
-            except (KeyError, IndexError, TypeError):
-                raise LLMError("OpenAI 回應格式無法解析")
-        data = self.transport(
-            f"{self.base_url}/messages",
-            {"x-api-key": self.api_key, "anthropic-version": "2023-06-01", "Content-Type": "application/json"},
-            {"model": self.model, "max_tokens": 1024, "system": system, "messages": list(messages)},
-        )
-        try:
-            return "".join(b.get("text", "") for b in data["content"] if b.get("type") == "text")
-        except (KeyError, TypeError):
-            raise LLMError("Anthropic 回應格式無法解析")
+                text = "".join(b.get("text", "") for b in data["content"] if b.get("type") == "text")
+            except (KeyError, TypeError):
+                raise LLMError("Anthropic 回應格式無法解析", 502)
+            u = data.get("usage") or {}
+            tin, tout = int(u.get("input_tokens") or 0), int(u.get("output_tokens") or 0)
+        self.usage_log.append({"in": tin, "out": tout, "secs": time.perf_counter() - t0, "retries": self._last_retries})
+        return text
 
 
 def detect_client(cfg: Dict, env: Optional[Dict[str, str]] = None, key: Optional[str] = None) -> Optional[LLMClient]:

@@ -1,6 +1,7 @@
 import { h, icon, clear, fmtDate } from "./dom.js";
 import { get } from "./api.js";
 import { stars } from "./dom.js";
+import { go } from "./router.js";
 import { kpi, heat, bars, skeleton, empty } from "./widgets.js";
 
 const VZ = { AC: "通過", WA: "答案錯誤", PE: "格式錯誤", TLE: "超過時間", RE: "執行錯誤", CE: "語法錯誤", MLE: "記憶體超過" };
@@ -8,7 +9,7 @@ const VC = { AC: "var(--ok)", WA: "var(--bad)", PE: "var(--warn)", TLE: "var(--w
 
 export async function mountStats(view) {
   view.append(h("div", { class: "page" }, h("div", { class: "card pad" }, skeleton(5))));
-  let s, cal; try { [s, cal] = await Promise.all([get("/api/stats"), get("/api/calibration")]); } catch (e) { clear(view); view.append(h("div", { class: "page" }, empty("alert", e.message))); return; }
+  let s, cal, wk; try { [s, cal, wk] = await Promise.all([get("/api/stats"), get("/api/calibration"), get("/api/weakness")]); } catch (e) { clear(view); view.append(h("div", { class: "page" }, empty("alert", e.message))); return; }
   clear(view);
   const rows = (o) => Object.entries(o).sort((a, b) => b[1] - a[1]).map(([k, n]) => ({ label: VZ[k] || k, n, color: VC[k] }));
   const rt = s.review_attempts;
@@ -25,6 +26,7 @@ export async function mountStats(view) {
       h("section", { class: "card pad" }, h("div", { class: "card-h" }, h("h3", { text: "判題結果（累計）" })), Object.keys(s.verdicts_total).length ? bars(rows(s.verdicts_total)) : empty("chart", "還沒有提交")),
       h("section", { class: "card pad" }, h("div", { class: "card-h" }, h("h3", { text: "判題結果（本週）" })), Object.keys(s.verdicts_week).length ? bars(rows(s.verdicts_week)) : empty("chart", "本週還沒有提交")),
       h("section", { class: "card pad" }, h("div", { class: "card-h" }, h("h3", { text: "提示使用" })), Object.keys(s.hints_by_level).length ? bars(Object.entries(s.hints_by_level).map(([k, n]) => ({ label: "L" + k, n, color: "var(--warn)" }))) : empty("bulb", "沒用過提示 👏"))),
+    weakCard(wk),
     calibration(cal),
     h("section", { class: "card pad mt" }, h("div", { class: "card-h" }, h("h3", { text: "考試紀錄" })),
       s.exams.length ? h("table", { class: "t" }, h("thead", null, h("tr", null, ["日期", "類型", "答對", "罰時", ""].map((t) => h("th", { text: t })))),
@@ -42,4 +44,24 @@ function calibration(c) {
         h("tbody", null, c.rows.slice(0, 12).map((r) => h("tr", null, h("td", null, h("span", { class: "mono", text: r.id }), " ", r.title), h("td", { text: `${stars(r.listed)}${r.source === "official" ? "（官方）" : ""}` }), h("td", { text: stars(r.mine) }),
           h("td", { class: "small", text: `${r.effort_min} 分・${r.attempts} 次・${r.hints} 提示` }), h("td", null, h("span", { class: "pill " + (lab[r.label] || ""), text: r.label }))))))),
     ] : empty("chart", "解出幾題之後，這裡會顯示每題對你的實際難度。"));
+}
+
+const LV = { weak: ["bad", "弱點"], watch: ["warn", "留意"], ok: ["ok", "穩"], unknown: ["", "資料不足"] };
+export function weakRows(wk) {
+  return h("div", { class: "col" }, wk.families.filter((r) => r.n).map((r) => {
+    const [tone, label] = LV[r.level] || ["", ""];
+    return h("div", { class: "weakrow" }, h("span", { class: "wname", text: r.name }), h("span", { class: "pill " + tone, text: label }),
+      h("div", { class: "tr", title: `分數 ${r.score}（越高越卡）` }, h("i", { style: { "--p": Math.round(100 * r.score) + "%", "--c": tone === "bad" ? "var(--bad)" : tone === "warn" ? "var(--warn)" : "var(--ok)" } })),
+      h("span", { class: "muted xs wmeta", text: `${r.n} 題・首次通過 ${Math.round(100 * r.first_try_rate)}%・提示 ${r.avg_hints}` }));
+  }));
+}
+export function weakSuggest(wk) {
+  return wk.suggestions.length ? h("div", { class: "mt" }, h("h4", { text: "建議加練" }), h("ul", { class: "list" }, wk.suggestions.map((w) => h("li", null, h("button", { class: "li", onclick: () => go("/practice/" + w.id) },
+    h("span", { class: "mono", text: w.id }), h("span", { class: "grow", text: w.title }), h("span", { class: "tag", text: w.family_name }), h("span", { class: "stars", text: stars(w.difficulty) }))))))
+    : (wk.flagged.length ? h("p", { class: "muted small mt", text: "這些主題目前沒有可練的未完成題。可以到『考試』頁匯入更多歷屆題。" }) : null);
+}
+function weakCard(wk) {
+  return h("section", { class: "card pad mt" }, h("div", { class: "card-h" }, h("h3", { text: "主題弱點" }), wk.weak.length ? h("span", { class: "pill bad", text: `${wk.weak.length} 個弱點` }) : null),
+    wk.problems_seen ? [h("p", { class: "muted small", text: "依你每題的失敗次數、提示、放棄與重練失敗算出『卡關程度』，每個主題至少要有 3 題紀錄才會下結論。今日計畫會自動多排弱主題的題。" }), weakRows(wk), weakSuggest(wk)]
+      : empty("chart", wk.note || "還沒有紀錄。"));
 }

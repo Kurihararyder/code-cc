@@ -79,7 +79,7 @@ def prepare(path: Path):
     if not gxx:
         return None, None, "找不到 g++。請先安裝（Linux/Mac 通常內建；Windows 可裝 MSYS2/MinGW），或改用 Python"
     tmp = Path(tempfile.mkdtemp(prefix="cpe-build-"))
-    exe = tmp / "prog"
+    exe = tmp / ("prog.exe" if os.name == "nt" else "prog")
     p = subprocess.run([gxx, "-O2", "-std=c++17", "-o", str(exe), str(path)], capture_output=True, timeout=120)
     if p.returncode != 0:
         shutil.rmtree(tmp, ignore_errors=True)
@@ -126,16 +126,35 @@ def _win_limit(proc, mem_mb: int) -> None:
         class EXT(ctypes.Structure):
             _fields_ = [("Basic", BASIC), ("Io", IOC), ("ProcessMemoryLimit", ctypes.c_size_t), ("JobMemoryLimit", ctypes.c_size_t),
                         ("PeakProcessMemoryUsed", ctypes.c_size_t), ("PeakJobMemoryUsed", ctypes.c_size_t)]
-        k32 = ctypes.windll.kernel32
+        k32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        k32.CreateJobObjectW.restype = w.HANDLE
+        k32.CreateJobObjectW.argtypes = [ctypes.c_void_p, w.LPCWSTR]
+        k32.SetInformationJobObject.argtypes = [w.HANDLE, ctypes.c_int, ctypes.c_void_p, w.DWORD]
+        k32.AssignProcessToJobObject.argtypes = [w.HANDLE, w.HANDLE]
+        k32.TerminateJobObject.argtypes = [w.HANDLE, ctypes.c_uint]
+        k32.CloseHandle.argtypes = [w.HANDLE]
         job = k32.CreateJobObjectW(None, None)
+        if not job:
+            return
         info = EXT()
         info.Basic.LimitFlags = 0x100 | 0x2000          # PROCESS_MEMORY | KILL_ON_JOB_CLOSE
         info.ProcessMemoryLimit = mem_mb * 1048576
-        k32.SetInformationJobObject(job, 9, ctypes.byref(info), ctypes.sizeof(info))
-        k32.AssignProcessToJobObject(job, int(proc._handle))
-        proc._cpe_job = job                              # 保持參照，行程結束後才關閉
+        ok1 = k32.SetInformationJobObject(job, 9, ctypes.byref(info), ctypes.sizeof(info))
+        ok2 = k32.AssignProcessToJobObject(job, int(proc._handle))
+        proc._cpe_job = (k32, job)                       # 行程結束後要關閉（KILL_ON_JOB_CLOSE 會一併收掉殘留的子行程）
+        proc._cpe_job_ok = bool(ok1 and ok2)
     except Exception:
         pass
+
+
+def _win_close(proc) -> None:
+    job = getattr(proc, "_cpe_job", None)
+    if job:
+        try:
+            job[0].CloseHandle(job[1])
+        except Exception:
+            pass
+        proc._cpe_job = None
 
 
 def _kill(proc) -> None:
@@ -143,6 +162,9 @@ def _kill(proc) -> None:
         if os.name == "posix":
             os.killpg(proc.pid, signal.SIGKILL)
         else:
+            job = getattr(proc, "_cpe_job", None)
+            if job:
+                job[0].TerminateJobObject(job[1], 1)          # 連同子行程一起收掉
             proc.kill()
     except (ProcessLookupError, PermissionError, OSError):
         pass
@@ -206,6 +228,8 @@ def run_program(path: Path, stdin_text: str, timeout: float, cmd=None, mem_mb: i
                         proc.wait()
                         break
             elapsed = time.perf_counter() - start
+            if os.name != "posix":
+                _win_close(proc)
         rc = proc.returncode
         if fout.stat().st_size >= cap:                    # 寫到上限就被作業系統擋下（Python 會得到 OSError）
             ole = True

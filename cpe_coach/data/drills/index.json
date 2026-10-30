@@ -12,7 +12,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Greeting",
+  "topic_en": "Input/Output"
  },
  {
   "id": "d002",
@@ -27,7 +29,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Sums of Many Pairs",
+  "topic_en": "Input/Output, EOF"
  },
  {
   "id": "d003",
@@ -42,7 +46,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Rectangle",
+  "topic_en": "Arithmetic"
  },
  {
   "id": "d004",
@@ -57,7 +63,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Celsius to Fahrenheit",
+  "topic_en": "Arithmetic, formatting"
  },
  {
   "id": "d005",
@@ -72,7 +80,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Odd or Even",
+  "topic_en": "Conditions"
  },
  {
   "id": "d006",
@@ -87,7 +97,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Maximum of Three",
+  "topic_en": "Conditions"
  },
  {
   "id": "d007",
@@ -102,7 +114,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Leap Year",
+  "topic_en": "Conditions"
  },
  {
   "id": "d008",
@@ -117,7 +131,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Grade",
+  "topic_en": "Conditions"
  },
  {
   "id": "d009",
@@ -132,7 +148,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Sum from 1 to n",
+  "topic_en": "Loops"
  },
  {
   "id": "d010",
@@ -147,7 +165,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Factorial",
+  "topic_en": "Loops"
  },
  {
   "id": "d011",
@@ -162,7 +182,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Multiplication Table",
+  "topic_en": "Loops, formatting"
  },
  {
   "id": "d012",
@@ -177,7 +199,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Sum of Digits",
+  "topic_en": "Loops, digits"
  },
  {
   "id": "d013",
@@ -192,7 +216,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Reverse an Integer",
+  "topic_en": "Strings, digits"
  },
  {
   "id": "d014",
@@ -207,7 +233,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Count the Vowels",
+  "topic_en": "Strings"
  },
  {
   "id": "d015",
@@ -222,7 +250,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Palindrome",
+  "topic_en": "Strings"
  },
  {
   "id": "d016",
@@ -237,7 +267,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Caesar Cipher",
+  "topic_en": "Strings"
  },
  {
   "id": "d017",
@@ -252,7 +284,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Sequence Statistics",
+  "topic_en": "Lists"
  },
  {
   "id": "d018",
@@ -267,7 +301,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Sorting",
+  "topic_en": "Lists, sorting"
  },
  {
   "id": "d019",
@@ -282,7 +318,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Remove Duplicates",
+  "topic_en": "Lists, sets"
  },
  {
   "id": "d020",
@@ -297,7 +335,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Word Frequency",
+  "topic_en": "dict, sorting"
  },
  {
   "id": "d021",
@@ -312,7 +352,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Primality Test",
+  "topic_en": "Math, loops"
  },
  {
   "id": "d022",
@@ -327,7 +369,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "GCD and LCM",
+  "topic_en": "Math, functions"
  },
  {
   "id": "d023",
@@ -342,7 +386,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Fibonacci",
+  "topic_en": "Loops, functions"
  },
  {
   "id": "d024",
@@ -357,7 +403,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Star Pyramid",
+  "topic_en": "Loops, formatting"
  },
  {
   "id": "d025",
@@ -372,7 +420,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Number of Divisors",
+  "topic_en": "Math, functions"
  },
  {
   "id": "d026",
@@ -387,7 +437,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Matrix Transpose",
+  "topic_en": "2D lists"
  },
  {
   "id": "d027",
@@ -402,7 +454,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Decimal to Binary",
+  "topic_en": "Number bases"
  },
  {
   "id": "d028",
@@ -417,7 +471,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Two Sum",
+  "topic_en": "set, performance"
  },
  {
   "id": "d029",
@@ -432,7 +488,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Anagrams",
+  "topic_en": "Strings, dict"
  },
  {
   "id": "d030",
@@ -447,7 +505,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Simple Bank",
+  "topic_en": "Parsing, state"
  },
  {
   "id": "d031",
@@ -462,7 +522,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Until 0 0",
+  "topic_en": "Input format"
  },
  {
   "id": "d032",
@@ -477,7 +539,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Number of Cases First",
+  "topic_en": "Input format"
  },
  {
   "id": "d033",
@@ -492,7 +556,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Blank-Line-Separated Groups",
+  "topic_en": "Input format"
  },
  {
   "id": "d034",
@@ -507,7 +573,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Case Format and Blank Lines",
+  "topic_en": "Output format"
  },
  {
   "id": "d035",
@@ -522,7 +590,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Division and Decimal Places",
+  "topic_en": "Floating-point format"
  },
  {
   "id": "d036",
@@ -537,7 +607,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Big Sum and Product",
+  "topic_en": "Big integers"
  },
  {
   "id": "d037",
@@ -552,7 +624,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Base Conversion",
+  "topic_en": "Number bases"
  },
  {
   "id": "d038",
@@ -567,7 +641,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Prime Counting Queries",
+  "topic_en": "Sieve of primes"
  },
  {
   "id": "d039",
@@ -582,7 +658,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Roman Numerals",
+  "topic_en": "Strings, mapping"
  },
  {
   "id": "d040",
@@ -597,7 +675,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Day of the Week",
+  "topic_en": "Dates"
  },
  {
   "id": "d041",
@@ -612,7 +692,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Robot on a Grid",
+  "topic_en": "Simulation, coordinates"
  },
  {
   "id": "d042",
@@ -627,7 +709,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Spiral Matrix",
+  "topic_en": "2D simulation"
  },
  {
   "id": "d043",
@@ -642,7 +726,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Run-Length Compression",
+  "topic_en": "Strings"
  },
  {
   "id": "d044",
@@ -657,7 +743,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Left-to-Right Expression",
+  "topic_en": "Parsing"
  },
  {
   "id": "d045",
@@ -672,7 +760,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "24-Hour to 12-Hour Clock",
+  "topic_en": "String formatting"
  },
  {
   "id": "d046",
@@ -687,7 +777,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Range Sum Queries",
+  "topic_en": "Prefix sums"
  },
  {
   "id": "d047",
@@ -702,7 +794,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "First Position Not Less Than x",
+  "topic_en": "Binary search"
  },
  {
   "id": "d048",
@@ -717,7 +811,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Pairs With Sum at Most K",
+  "topic_en": "Sorting + two pointers"
  },
  {
   "id": "d049",
@@ -732,7 +828,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Student Ranking",
+  "topic_en": "Custom sorting"
  },
  {
   "id": "d050",
@@ -747,7 +845,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Bracket Matching",
+  "topic_en": "stack"
  },
  {
   "id": "d051",
@@ -762,7 +862,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Josephus Problem",
+  "topic_en": "queue, patterns"
  },
  {
   "id": "d052",
@@ -777,7 +879,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Merge Cost",
+  "topic_en": "heap, greedy"
  },
  {
   "id": "d053",
@@ -792,7 +896,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Sliding Window Maximum",
+  "topic_en": "deque, monotonic queue"
  },
  {
   "id": "d054",
@@ -807,7 +913,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Activity Selection",
+  "topic_en": "Greedy"
  },
  {
   "id": "d055",
@@ -822,7 +930,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Assign Cookies",
+  "topic_en": "Greedy + sorting"
  },
  {
   "id": "d056",
@@ -837,7 +947,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "All Permutations",
+  "topic_en": "Recursion"
  },
  {
   "id": "d057",
@@ -852,7 +964,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "N-Queens Count",
+  "topic_en": "Backtracking"
  },
  {
   "id": "d058",
@@ -867,7 +981,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Subset Sum Count",
+  "topic_en": "Enumeration, bit operations"
  },
  {
   "id": "d059",
@@ -882,7 +998,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "The Lonely Number",
+  "topic_en": "Bit operations"
  },
  {
   "id": "d060",
@@ -897,7 +1015,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Shortest Path in a Maze",
+  "topic_en": "BFS"
  },
  {
   "id": "d061",
@@ -912,7 +1032,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Union-Find: Components",
+  "topic_en": "Union-find"
  },
  {
   "id": "d062",
@@ -927,7 +1049,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Lexicographically Smallest Topological Order",
+  "topic_en": "Topological sort"
  },
  {
   "id": "d063",
@@ -942,7 +1066,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Dijkstra Shortest Path",
+  "topic_en": "Shortest paths"
  },
  {
   "id": "d064",
@@ -957,7 +1083,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Minimum Spanning Tree",
+  "topic_en": "MST"
  },
  {
   "id": "d065",
@@ -972,7 +1100,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Floyd–Warshall All-Pairs Shortest Paths",
+  "topic_en": "Shortest paths"
  },
  {
   "id": "d066",
@@ -987,7 +1117,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Coin Combinations",
+  "topic_en": "DP (counting)"
  },
  {
   "id": "d067",
@@ -1002,7 +1134,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Fewest Coins",
+  "topic_en": "DP (optimisation)"
  },
  {
   "id": "d068",
@@ -1017,7 +1151,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "0/1 Knapsack",
+  "topic_en": "DP (knapsack)"
  },
  {
   "id": "d069",
@@ -1032,7 +1168,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Longest Increasing Subsequence",
+  "topic_en": "DP + binary search"
  },
  {
   "id": "d070",
@@ -1047,7 +1185,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Longest Common Subsequence",
+  "topic_en": "DP (2D)"
  },
  {
   "id": "d071",
@@ -1062,7 +1202,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Maximum Subarray Sum",
+  "topic_en": "DP (Kadane)"
  },
  {
   "id": "d072",
@@ -1077,7 +1219,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Minimum Path Sum in a Grid",
+  "topic_en": "DP (grid)"
  },
  {
   "id": "d073",
@@ -1092,7 +1236,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Matrix Chain Multiplication",
+  "topic_en": "Interval DP"
  },
  {
   "id": "d074",
@@ -1107,7 +1253,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Travelling Salesman (Small)",
+  "topic_en": "Bitmask DP"
  },
  {
   "id": "d075",
@@ -1122,7 +1270,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Binomial Coefficient Modulo p",
+  "topic_en": "Number theory, precomputation"
  },
  {
   "id": "d076",
@@ -1137,7 +1287,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Longest Common Subsequence (Large)",
+  "topic_en": "DP, performance"
  },
  {
   "id": "d077",
@@ -1152,7 +1304,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Prime Count (Large)",
+  "topic_en": "Sieve, performance"
  },
  {
   "id": "d078",
@@ -1167,7 +1321,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Knapsack (Large)",
+  "topic_en": "DP, performance"
  },
  {
   "id": "d079",
@@ -1182,7 +1338,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Floyd (Large)",
+  "topic_en": "Shortest paths, performance"
  },
  {
   "id": "d080",
@@ -1197,7 +1355,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Convex Hull",
+  "topic_en": "Computational geometry"
  },
  {
   "id": "d081",
@@ -1212,7 +1372,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Segment Intersection",
+  "topic_en": "Computational geometry"
  },
  {
   "id": "d082",
@@ -1227,7 +1389,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Polygon Area",
+  "topic_en": "Computational geometry"
  },
  {
   "id": "d083",
@@ -1242,7 +1406,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Shortest Period",
+  "topic_en": "Strings (KMP failure function)"
  },
  {
   "id": "d084",
@@ -1257,7 +1423,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Longest Palindromic Substring",
+  "topic_en": "Strings, performance"
  },
  {
   "id": "d085",
@@ -1272,7 +1440,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Maximum Independent Set in a Tree",
+  "topic_en": "Tree DP"
  },
  {
   "id": "d086",
@@ -1287,7 +1457,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Inversions",
+  "topic_en": "Divide and conquer / BIT"
  },
  {
   "id": "d087",
@@ -1302,7 +1474,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Range Minimum",
+  "topic_en": "Sparse table / segment tree"
  },
  {
   "id": "d088",
@@ -1317,7 +1491,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Negative Edges and Negative Cycles",
+  "topic_en": "Bellman-Ford"
  },
  {
   "id": "d089",
@@ -1332,7 +1508,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Strongly Connected Components",
+  "topic_en": "SCC"
  },
  {
   "id": "d090",
@@ -1347,7 +1525,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Maximum Flow (Optional)",
+  "topic_en": "Network flow"
  },
  {
   "id": "d091",
@@ -1362,7 +1542,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Grid Paths With Obstacles",
+  "topic_en": "DP (counting)"
  },
  {
   "id": "d092",
@@ -1377,7 +1559,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Stone Game",
+  "topic_en": "Game DP"
  },
  {
   "id": "d093",
@@ -1392,7 +1576,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Euler's Totient",
+  "topic_en": "Number theory"
  },
  {
   "id": "d094",
@@ -1407,7 +1593,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Digit DP",
+  "topic_en": "Digit DP"
  },
  {
   "id": "d095",
@@ -1422,7 +1610,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": false
+  "reserve": false,
+  "title_en": "Expression Evaluation",
+  "topic_en": "Parsing, recursive descent"
  },
  {
   "id": "e101",
@@ -1437,7 +1627,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": true
+  "reserve": true,
+  "title_en": "Score Ranking",
+  "topic_en": "Sorting, output format"
  },
  {
   "id": "e102",
@@ -1452,7 +1644,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": true
+  "reserve": true,
+  "title_en": "Password Strength",
+  "topic_en": "Strings"
  },
  {
   "id": "e103",
@@ -1467,7 +1661,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": true
+  "reserve": true,
+  "title_en": "Parking Fee",
+  "topic_en": "Time calculation"
  },
  {
   "id": "e201",
@@ -1482,7 +1678,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": true
+  "reserve": true,
+  "title_en": "Minimum Gap",
+  "topic_en": "Sorting"
  },
  {
   "id": "e202",
@@ -1497,7 +1695,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": true
+  "reserve": true,
+  "title_en": "Job Scheduling",
+  "topic_en": "Greedy + heap"
  },
  {
   "id": "e203",
@@ -1512,7 +1712,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": true
+  "reserve": true,
+  "title_en": "Generate Parentheses",
+  "topic_en": "Backtracking"
  },
  {
   "id": "e301",
@@ -1527,7 +1729,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": true
+  "reserve": true,
+  "title_en": "Nearest Exit",
+  "topic_en": "Multi-source BFS"
  },
  {
   "id": "e302",
@@ -1542,7 +1746,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": true
+  "reserve": true,
+  "title_en": "Longest Path in a DAG",
+  "topic_en": "Topological sort + DP"
  },
  {
   "id": "e303",
@@ -1557,7 +1763,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": true
+  "reserve": true,
+  "title_en": "Split Into Two Piles",
+  "topic_en": "Knapsack"
  },
  {
   "id": "e401",
@@ -1572,7 +1780,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": true
+  "reserve": true,
+  "title_en": "Subarrays With Sum K",
+  "topic_en": "Prefix sums + dict"
  },
  {
   "id": "e402",
@@ -1587,7 +1797,9 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": true
+  "reserve": true,
+  "title_en": "Largest Rectangle in a Histogram",
+  "topic_en": "Monotonic stack"
  },
  {
   "id": "e403",
@@ -1602,6 +1814,8 @@
   "url": null,
   "official_one_star": false,
   "drill": true,
-  "reserve": true
+  "reserve": true,
+  "title_en": "Roads That May Be Free",
+  "topic_en": "Layered shortest path"
  }
 ]

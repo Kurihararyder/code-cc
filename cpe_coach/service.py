@@ -282,21 +282,29 @@ def lint(code: str) -> List[Dict[str, Any]]:
     return uniq
 
 
+def statement_for(ws: Workspace, pid: str) -> str:
+    """題目敘述的唯一來源：內建練習題依語言設定即時組出（切換語言立刻生效）；你自己匯入的題目讀 statements/。"""
+    txt = ws.root / "statements" / f"{pid}.txt"
+    if bank_mod.is_drill(pid) and not txt.exists():                 # 你用 cpe import 覆蓋過的內建題才讀檔
+        return bank_mod.drill_statement(pid, bank_mod.resolve_lang(ws, pid))
+    for ext in ("md", "txt"):
+        f = ws.root / "statements" / f"{pid}.{ext}"
+        if f.exists():
+            return f.read_text(encoding="utf-8")
+    return ""
+
+
 # ---------- 單題畫面資料 ----------
 def problem_view(ws: Workspace, bank: Dict[str, dict], pid: str) -> Dict[str, Any]:
     p = bank_mod.resolve(bank, pid)
     sol = solution_file(ws, pid)
     st = ws.state()
     sp = st["problems"].get(pid)
-    stmt = ""
-    for ext in ("md", "txt"):
-        f = ws.root / "statements" / f"{pid}.{ext}"
-        if f.exists():
-            stmt = f.read_text(encoding="utf-8")
-            break
-    if not stmt and bank_mod.is_drill(pid):
-        stmt = (bank_mod.DRILLS / pid / "statement.md").read_text(encoding="utf-8")
-    return {"id": pid, "title": p.get("title", pid), "topic": p.get("topic", ""), "difficulty": p.get("difficulty", 1),
+    stmt = statement_for(ws, pid)
+    drill = bank_mod.is_drill(pid)
+    return {"id": pid, "title": p.get("title", pid), "title_en": p.get("title_en"),
+            "lang_mode": bank_mod.resolve_lang(ws, pid) if drill else ("en" if statement_is_english(stmt) else "zh"),
+            "has_english": bank_mod.has_english(pid), "lang_setting": ws.config().get("statement_lang", "auto"), "topic": p.get("topic", ""), "difficulty": p.get("difficulty", 1),
             "url": p.get("url"), "statement": stmt, "code": sol.read_text(encoding="utf-8") if sol.exists() else None,
             "lang": "cpp" if sol.suffix == ".cpp" else "py", "file": str(sol.relative_to(ws.root)) if sol.exists() else None,
             "tests": len(find_cases(ws.tests / pid)),
@@ -333,6 +341,12 @@ def parse_samples(text: str) -> List[tuple]:
             body.pop(0)
         while body and not body[-1].strip():
             body.pop()
+        if body and body[0].strip().startswith("```"):          # Markdown 的程式碼區塊圍欄不是資料
+            body.pop(0)
+            for j in range(len(body) - 1, -1, -1):
+                if body[j].strip().startswith("```"):
+                    body = body[:j]
+                    break
         blocks.append((kind, "\n".join(body)))
     out, pending = [], None
     for kind, body in blocks:

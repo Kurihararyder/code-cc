@@ -5,6 +5,7 @@ import { stageColor } from "./state.js";
 import { progress, skeleton, empty, notify, startGate } from "./widgets.js";
 import { inline } from "./md.js";
 import { engPanel } from "./engtasks.js";
+import { weakRows, weakSuggest } from "./stats.js";
 
 export async function mountCourse(view, params) {
   view.append(h("div", { class: "page" }, h("div", { class: "card pad" }, skeleton(6))));
@@ -55,6 +56,7 @@ async function openUnit(n) {
       sec("要學的", D.learn),
       D.drills.length ? h("div", { class: "mt" }, h("h4", { text: "必做練習" }), h("ul", { class: "list" }, D.drills.map(probRow))) : null,
       D.anchors.length ? h("div", { class: "mt" }, h("h4", { text: "真題（選做）" }), h("ul", { class: "list" }, D.anchors.map(probRow)), h("p", { class: "muted xs", text: "真題需要自己匯入範例：cpe import <題號> <題目文字檔>" })) : null,
+      D.weak ? weakBlock(D.weak, close) : null,
       D.past_pool ? pastPool(D.past_pool, close) : null,
       g ? h("div", { class: "callout mt" }, icon("target"), h("div", null, h("b", { text: "單元檢核" }), h("div", { class: "small", text: g.type === "mock" ? `模擬考（${g.kind}），至少答對 ${g.need} 題` : `${g.minutes} 分鐘、不看提示，${g.problems.map((p) => p.id).join("、")}，至少答對 ${g.need} 題${g.lang === "cpp" ? "（C++）" : ""}` }))) : h("div", { class: "callout mt" }, icon("flag" in {} ? "flag" : "target"), h("span", { text: "這個單元的檢核是實際報考 CPE。" })),
       sec("常見陷阱", D.pitfalls), sec("自我檢查（不看資料回答）", D.check), sec("要讀的章節", D.read), sec("延伸題庫", D.pool),
@@ -72,4 +74,10 @@ function pastPool(pp, close) {
   return h("div", { class: "mt" }, h("h4", { text: "歷屆題庫" }), h("p", { class: "muted xs", text: pp.label + (pp.items.length ? `（已匯入 ${pp.items.length} 題，${pp.ready} 題可練，${pp.solved} 題已解）` : "") }),
     pp.items.length ? h("ul", { class: "list" }, rows) : h("p", { class: "small muted", text: "還沒有匯入符合的歷屆題。到『考試』頁匯入歷屆清單與題目文字後，這裡會自動列出。" }),
     pp.items.length > 12 ? h("p", { class: "muted xs", text: `另有 ${pp.items.length - 12} 題` }) : null);
+}
+
+function weakBlock(wk, close) {
+  const body = wk.problems_seen ? [weakRows(wk), h("div", { onclick: (e) => { if (e.target.closest("button.li")) close(); } }, weakSuggest(wk))]
+    : [h("p", { class: "small muted", text: "還沒有足夠的紀錄可以診斷。先照前面的單元練習，回來這裡就會依你的弱點排出加練題。" })];
+  return h("div", { class: "mt" }, h("h4", { text: "依你的紀錄診斷出的弱點" }), body);
 }

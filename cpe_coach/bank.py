@@ -46,6 +46,47 @@ def is_drill(pid: str) -> bool:
     return (DRILLS / pid / "statement.md").exists()
 
 
+# ---------- 題目語言：階段 0 中文 → 階段 1 中英對照 → 之後純英文（考場是英文） ----------
+LANG_MODES = ("auto", "zh", "bi", "en")
+LANG_ZH = {"zh": "中文", "bi": "中英對照", "en": "English"}
+_stage_cache: Dict[str, int] = {}
+
+
+def has_english(pid: str) -> bool:
+    return (DRILLS / pid / "statement.en.md").exists()
+
+
+def _course_stage(pid: str) -> int:
+    if not _stage_cache:
+        for p in _load(DRILLS / "index.json"):
+            _stage_cache[p["id"]] = int(p.get("course_stage", 1))
+    return _stage_cache.get(pid, 1)
+
+
+def auto_mode(pid: str) -> str:
+    st = _course_stage(pid)
+    return "zh" if st <= 0 else "bi" if st == 1 else "en"
+
+
+def resolve_lang(ws: Workspace, pid: str) -> str:
+    """這一題現在該用哪種語言顯示：真實考場一律英文；否則依設定，auto 時依階段逐步過渡。"""
+    if not has_english(pid):
+        return "zh"
+    ex = ws.exam()
+    if ex and ex.get("real"):
+        return "en"
+    mode = ws.config().get("statement_lang", "auto")
+    return auto_mode(pid) if mode not in ("zh", "bi", "en") else mode
+
+
+def drill_statement(pid: str, mode: str) -> str:
+    zh = (DRILLS / pid / "statement.md").read_text(encoding="utf-8")
+    if mode == "zh" or not has_english(pid):
+        return zh
+    en = (DRILLS / pid / "statement.en.md").read_text(encoding="utf-8")
+    return en if mode == "en" else en.rstrip() + "\n\n---\n\n### 中文對照\n\n" + zh
+
+
 def install_drill(ws: Workspace, pid: str) -> bool:
     """把內建練習題的題目敘述與測資複製到工作區。已存在的測資不會被覆蓋。回傳是否新安裝。"""
     src = DRILLS / pid
@@ -55,7 +96,7 @@ def install_drill(ws: Workspace, pid: str) -> bool:
     dst_stmt = ws.root / "statements" / f"{pid}.md"
     dst_tests = ws.tests / pid
     fresh = not dst_tests.exists() or not any(dst_tests.glob("*.in"))
-    shutil.copyfile(src / "statement.md", dst_stmt)
+    dst_stmt.write_text(drill_statement(pid, resolve_lang(ws, pid)), encoding="utf-8")
     if fresh:
         dst_tests.mkdir(parents=True, exist_ok=True)
         for f in (src / "tests").iterdir():

@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional
 
 from . import bank as bank_mod
 from . import course as course_mod
-from . import backup, calibrate, eng, hints, mock, pastexams, roadmap, service, srs, stats, vocab
+from . import aieval, backup, calibrate, eng, fuzz as fuzz_mod, hints, mock, pastexams, roadmap, service, srs, stats, vocab, weakness
 from . import plan as plan_mod
 from .service import add_test, fail_path, parse_samples, solution_file, trunc
 from .judge import AC, VERDICT_ZH, find_cases, judge, stress
@@ -282,15 +282,28 @@ def cmd_new(ws: Workspace, args) -> int:
 
 
 def cmd_statement(ws: Workspace, args) -> int:
-    f = ws.root / "statements" / f"{args.id}.md"
-    if not f.exists() and bank_mod.is_drill(args.id):
+    if bank_mod.is_drill(args.id):
         bank_mod.install_drill(ws, args.id)
-    for ext in ("md", "txt"):
-        f = ws.root / "statements" / f"{args.id}.{ext}"
-        if f.exists():
-            print(f.read_text(encoding="utf-8"))
-            return 0
-    raise ValueError(f"沒有 {args.id} 的題目敘述。外部題目請用 cpe import {args.id} <檔案> 存入")
+    text = service.statement_for(ws, args.id)
+    if not text:
+        raise ValueError(f"沒有 {args.id} 的題目敘述。外部題目請用 cpe import {args.id} <檔案> 存入")
+    if args.lang:
+        if not bank_mod.is_drill(args.id):
+            raise ValueError("只有內建練習題有多種語言版本")
+        text = bank_mod.drill_statement(args.id, args.lang)
+    print(text)
+    return 0
+
+
+def cmd_lang(ws: Workspace, args) -> int:
+    cfg = ws.config()
+    if args.mode:
+        cfg["statement_lang"] = args.mode
+        ws.save_config(cfg)
+    mode = cfg.get("statement_lang", "auto")
+    print(f"內建題目語言：{mode}" + {"auto": "（階段 0 中文 → 階段 1 中英對照 → 階段 2 起英文）", "zh": "（全部中文）", "bi": "（全部中英對照）", "en": "（全部英文）"}[mode])
+    print("真實考場模式（cpe mock start --real）一律英文。")
+    return 0
 
 
 def cmd_import(ws: Workspace, args) -> int:
@@ -373,6 +386,48 @@ def cmd_stress(ws: Workspace, args) -> int:
     print(f"✗ seed={seed} 不一致（{v}）。已存成 tests/{args.id}/{name}，之後 cpe test 會一起跑。")
     print("輸入：\n" + trunc(inp, 300) + "\n暴力解：\n" + trunc(out_b, 200) + "\n你的解：\n" + trunc(out_s, 200))
     return 1
+
+
+def cmd_fuzz(ws: Workspace, args) -> int:
+    sol = solution_file(ws, args.id)
+    try:
+        r = fuzz_mod.fuzz(sol, Path(args.brute), ws.tests / args.id, args.n, args.seed, args.max, float(ws.config()["timeout_sec"]),
+                          int(ws.config().get("memory_mb", 1024)))
+    except fuzz_mod.FuzzError as e:
+        raise ValueError(str(e))
+    print(f"變異 {r['tried']} 組（暴力解自己跑不動而略過 {r['skipped']} 組），種子輸入 {r['seeds']} 組。")
+    if not r["found"]:
+        print("✓ 沒有發現你的解和暴力解不一致。這只代表『範例附近的變化』沒問題，不代表一定正確；還是要自己想邊界。")
+        return 0
+    print(f"✗ 找到 {len(r['found'])} 組不一致（已盡量縮小）。請先確認輸入符合題目限制：")
+    for k, f in enumerate(r["found"], 1):
+        print(f"\n[{k}] {f['verdict']}\n輸入：\n{trunc(f['input'], 300)}暴力解：\n{trunc(f['brute_out'], 200)}\n你的解：\n{trunc(f['sol_out'], 200)}")
+    if args.save:
+        names = fuzz_mod.save(ws, args.id, r["found"])
+        print(f"\n已存成 tests/{args.id}/{'、'.join(names)}。之後 cpe test 會一起跑；若某組輸入其實不合法，直接刪掉那兩個檔案。")
+    else:
+        print("\n加 --save 可以把這些存成測資。")
+    return 1
+
+
+def cmd_ai_eval(ws: Workspace, args) -> int:
+    llm = detect_client(ws.config())
+    if llm is None:
+        raise ValueError("沒有設定 API 金鑰（環境變數 OPENAI_API_KEY，或 ANTHROPIC_API_KEY）。")
+    kinds = tuple(k for k in args.kinds.split(",") if k)
+    if not set(kinds) <= set(aieval.KINDS):
+        raise ValueError("--kinds 只能是 explain,question,mismatch")
+    print(f"將對 {llm.provider} 的模型 {llm.model} 做約 {args.n}～{int(args.n * 2.2)} 次 API 呼叫（每次約一兩千 token，會產生費用）。")
+    if not args.yes:
+        print("確認要執行請加 --yes。（用的是暫存工作區，不會動到你的進度。）")
+        return 0
+    rep = aieval.run_eval(llm, args.n, kinds, not args.no_reply, args.price_in, args.price_out, progress=lambda m: print("  " + m, flush=True))
+    print("\n" + aieval.format_report(rep))
+    out = Path(args.out) if args.out else ws.meta / "eval" / time.strftime("ai-eval-%Y%m%d-%H%M%S.json")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(rep, ensure_ascii=False, indent=1), encoding="utf-8")
+    print(f"\n完整報告（含每一則回答，不含金鑰）：{out}")
+    return 0
 
 
 def get_llm(ws: Workspace):
@@ -625,6 +680,30 @@ def cmd_plan(ws: Workspace, args) -> int:
     return 0
 
 
+def cmd_weak(ws: Workspace, args) -> int:
+    bank = bank_mod.load_bank(ws)
+    a = weakness.analyze(ws, bank)
+    if not a["problems_seen"]:
+        print(a["note"])
+        return 0
+    LV = {"weak": "弱點", "watch": "留意", "ok": "穩", "unknown": "資料不足", "none": ""}
+    print("主題弱點（分數越高越卡；至少 3 題有紀錄才下結論）")
+    for r in a["families"]:
+        if not r["n"]:
+            continue
+        print(f"  {r['name']:<12} {LV[r['level']]:<4} 分數 {r['score']:.2f}　{r['n']} 題有紀錄、首次通過率 {round(100 * r['first_try_rate'])}%、平均提示 {r['avg_hints']}、放棄 {r['gave_up']}")
+    sug = weakness.suggestions(ws, bank, course_mod.load(), a, per_family=3)
+    if sug:
+        print("\n建議加練：")
+        for w in sug:
+            print(f"  {w['id']:<10} {w['title']}　（{w['family_name']}，★{w['difficulty']}）")
+    elif a["flagged"]:
+        print("\n弱主題目前沒有可練的未完成題。可以匯入更多題（cpe past / cpe import）。")
+    else:
+        print("\n目前沒有明顯的弱主題。")
+    return 0
+
+
 def cmd_calibrate(ws: Workspace, args) -> int:
     c = calibrate.calibrate(ws, bank_mod.load_bank(ws))
     if not c["rows"]:
@@ -693,8 +772,11 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("id")
     s.add_argument("--fresh", action="store_true", help="舊檔備份後從空白重寫")
     s.add_argument("--lang", choices=["py", "cpp"], help="語言（預設 py）")
-    s = sub.add_parser("statement", help="顯示題目敘述")
+    s = sub.add_parser("statement", help="顯示題目敘述（內建題可用 --lang 切換中文／中英對照／英文）")
     s.add_argument("id")
+    s.add_argument("--lang", choices=["zh", "bi", "en"], help="只這次用這個語言顯示")
+    s = sub.add_parser("lang", help="內建題的題目語言：auto（階段 0 中文、階段 1 中英對照、之後英文）／zh／bi／en")
+    s.add_argument("mode", nargs="?", choices=list(bank_mod.LANG_MODES))
     s = sub.add_parser("import", help="從題目文字檔匯入敘述與範例測資（Sample Input/Output、範例輸入/輸出）")
     s.add_argument("id")
     s.add_argument("file")
@@ -711,6 +793,21 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--brute", required=True, help="暴力解")
     s.add_argument("-n", type=int, default=200)
 
+    s = sub.add_parser("fuzz", help="範例變異對拍：用你的暴力解當標準答案，自動找出你的解答的錯並存成測資（不需要寫產生器）")
+    s.add_argument("id")
+    s.add_argument("--brute", required=True, help="暴力解檔案（要先通過所有現有測資）")
+    s.add_argument("-n", type=int, default=300, help="嘗試次數")
+    s.add_argument("--seed", type=int, default=1)
+    s.add_argument("--max", type=int, default=3, help="最多收集幾組差異")
+    s.add_argument("--save", action="store_true", help="把差異存成 tests/<id>/fuzzNN")
+    s = sub.add_parser("ai-eval", help="用你的 API 金鑰評測詢問系統：JSON 遵守率、引用驗證率、規則遵守、用量與費用")
+    s.add_argument("-n", type=int, default=24, help="詢問次數（預設 24）")
+    s.add_argument("--kinds", default="explain,question,mismatch")
+    s.add_argument("--no-reply", action="store_true", help="不測追問回覆")
+    s.add_argument("--price-in", type=float, help="每百萬輸入 token 的美元單價（用來估算費用）")
+    s.add_argument("--price-out", type=float, help="每百萬輸出 token 的美元單價")
+    s.add_argument("--out", help="報告輸出路徑")
+    s.add_argument("--yes", action="store_true", help="確認會花費 API 額度")
     s = sub.add_parser("hint", help="提示階梯 L0–L4")
     s.add_argument("id")
     s.add_argument("-l", "--level", type=int, choices=range(5), metavar="0-4")
@@ -756,6 +853,7 @@ def build_parser() -> argparse.ArgumentParser:
     s = sub.add_parser("plan", help="今天 N 分鐘的自動排程")
     s.add_argument("-m", "--minutes", type=int, default=30)
     sub.add_parser("calibrate", help="用你的實際解題紀錄看題目對你多難")
+    sub.add_parser("weak", help="依主題診斷弱點，並建議加練的題")
     s = sub.add_parser("external", help="記錄你用了外部 AI（如 ChatGPT 網頁）")
     s.add_argument("id")
     s = sub.add_parser("export", help="匯出備份（zip）")
@@ -791,7 +889,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             "roadmap": cmd_roadmap, "stage": cmd_stage, "today": cmd_today, "next": cmd_next, "new": cmd_new,
             "addtest": cmd_addtest, "test": cmd_test, "stress": cmd_stress, "hint": cmd_hint,
             "giveup": cmd_giveup, "solution": cmd_solution, "review": cmd_review, "mock": cmd_mock,
-            "stats": cmd_stats, "add": cmd_add, "bank": cmd_bank, "eng": cmd_eng, "external": cmd_external, "web": cmd_web, "export": cmd_export, "past": cmd_past, "vocab": cmd_vocab, "plan": cmd_plan, "calibrate": cmd_calibrate,
+            "stats": cmd_stats, "add": cmd_add, "bank": cmd_bank, "eng": cmd_eng, "external": cmd_external, "web": cmd_web, "export": cmd_export, "past": cmd_past, "vocab": cmd_vocab, "plan": cmd_plan, "calibrate": cmd_calibrate, "lang": cmd_lang, "fuzz": cmd_fuzz, "ai-eval": cmd_ai_eval, "weak": cmd_weak,
         }[args.cmd]
         if args.cmd == "web":                       # 長時間執行：不要整個程序持有鎖，由每個請求自己加鎖
             return handler(ws, args)

@@ -40,9 +40,10 @@ export function render(src) {
       const ol = h("ol"); while (i < L.length && /^\s*\d+[.)]\s+/.test(L[i])) ol.append(h("li", null, inline(L[i++].replace(/^\s*\d+[.)]\s+/, "")))); frag.append(ol); continue;
     }
     if (/^>\s?/.test(ln)) { const buf = []; while (i < L.length && /^>\s?/.test(L[i])) buf.push(L[i++].replace(/^>\s?/, "")); frag.append(h("blockquote", { class: "quote" }, inline(buf.join(" ")))); continue; }
+    if (/^\s*-{3,}\s*$/.test(ln)) { frag.append(h("hr")); i++; continue; }
     if (!ln.trim()) { i++; continue; }
     const buf = [ln]; i++;
-    while (i < L.length && L[i].trim() && !/^(```|#{1,4}\s|\s*[-*]\s|\s*\d+[.)]\s|>)/.test(L[i])) buf.push(L[i++]);
+    while (i < L.length && L[i].trim() && !/^(```|#{1,4}\s|\s*[-*]\s|\s*\d+[.)]\s|>|\s*-{3,}\s*$)/.test(L[i])) buf.push(L[i++]);
     frag.append(h("p", null, inline(buf.join("\n"))));
   }
   return frag;

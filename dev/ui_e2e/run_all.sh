@@ -1,0 +1,21 @@
+#!/bin/bash
+# 一次跑完所有介面測試（本機與 CI 共用）。需要 Node、playwright（含 chromium）、python3。
+# 每個腳本前都重建全新工作區；任何 FAIL、或腳本沒印出任何 PASS（代表中途當掉）都算失敗。
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(cd "$HERE/../.." && pwd)"
+E2E_DIR="${E2E_DIR:-/tmp/cpe-e2e}"; mkdir -p "$E2E_DIR"
+export E2E_DIR
+python3 "$ROOT/dev/fake_llm.py" 8792 >"$E2E_DIR/llm.log" 2>&1 &
+LLM=$!
+cleanup() { kill "$LLM" 2>/dev/null; [ -f "$E2E_DIR/web.pid" ] && kill "$(cat "$E2E_DIR/web.pid")" 2>/dev/null; }
+trap cleanup EXIT
+sleep 1
+status=0
+for t in ui gate mobile a11y exam learn; do
+  "$HERE/fresh.sh" >/dev/null || { echo "fresh.sh 失敗"; exit 1; }
+  echo "=== $t"
+  (cd "$E2E_DIR" && timeout 600 node "$HERE/$t.js" 2>&1) | tee "$E2E_DIR/$t.log"
+  if grep -q "^FAIL" "$E2E_DIR/$t.log" || ! grep -q "^PASS" "$E2E_DIR/$t.log"; then echo "✗ $t 失敗"; status=1; fi
+done
+[ $status -eq 0 ] && echo "✓ 全部介面測試通過" || echo "✗ 有介面測試失敗"
+exit $status

@@ -123,7 +123,10 @@ def evaluate_gate(ws: Workspace, course: Dict[str, Any], summary: Dict[str, Any]
 
 
 def _english(ws: Workspace, pid: str) -> bool:
+    """這題能不能用英文題目出（內建練習題有英文版就可以；匯入的題目看文字內容）。"""
     from .service import statement_is_english
+    if bank_mod.is_drill(pid) and not (ws.root / "statements" / f"{pid}.txt").exists():
+        return bank_mod.has_english(pid)
     for x in ("txt", "md"):
         f = ws.root / "statements" / f"{pid}.{x}"
         if f.exists():
@@ -133,17 +136,24 @@ def _english(ws: Workspace, pid: str) -> bool:
 
 def start_mock(ws: Workspace, bank: Dict[str, dict], kind: str, lang: str = "py", every_stage: bool = False, real: bool = False) -> Dict[str, Any]:
     """模擬考／每週測驗。只會出已有測資的題目（內建練習題，或你匯入過的題）。
-    real=True：比照考場，只出有英文題目文字的題（內建練習題是中文，所以會被排除）。"""
+    real=True：比照考場，只出有英文題目文字的題（內建練習題有英文版，題目一律用英文顯示）。"""
     cap = 9 if every_stage else max(int(ws.config()["stage"]), 1)
     avail = {pid: p for pid, p in bank.items() if bank_mod.is_drill(pid) or any((ws.tests / pid).glob("*.in"))}
     if real:
-        avail = {pid: p for pid, p in avail.items() if not bank_mod.is_drill(pid) and _english(ws, pid)}
+        avail = {pid: p for pid, p in avail.items() if _english(ws, pid)}
         need = 7 if kind == "mock" else 3
+        if kind == "weekly":                                # 每週重寫只出『已通過』的題：要有足夠的已通過英文題
+            done = [pid for pid, sp in ws.state()["problems"].items() if sp.get("first_pass") is not None and pid in avail]
+            if len(done) < need:
+                raise ValueError(f"『比照考場』的每週重寫需要至少 {need} 題「已通過、且有英文題目文字」的題目，目前只有 {len(done)} 題。")
         if len(avail) < need:
             raise ValueError(f"『比照考場』需要至少 {need} 題「有英文題目文字、也有測資」的題目，目前只有 {len(avail)} 題。"
                              "請先匯入歷屆題目（cpe past statements <資料夾>），或取消『比照考場』。")
         cap = 9
     exam = mock.start(ws, avail, kind, lang=lang, max_stage=cap)
+    if real:
+        exam["real"] = True                             # 先存旗標，再安裝題目，題目才會用英文
+        ws.save_exam(exam)
     for pid in exam["problems"]:
         bank_mod.install_drill(ws, pid)
     return exam

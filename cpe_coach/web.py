@@ -19,7 +19,7 @@ from urllib.parse import parse_qs, urlparse
 from . import ask as ask_mod
 from . import bank as bank_mod
 from . import course as course_mod
-from . import backup, calibrate, dashboard, eng, hints, mock, pastexams, service, srs, vocab
+from . import backup, calibrate, dashboard, eng, fuzz as fuzz_mod, hints, mock, pastexams, service, srs, vocab, weakness
 from . import plan as plan_mod
 from .llm import detect_client
 from .store import Workspace, WorkspaceError
@@ -103,7 +103,7 @@ class App:
     def settings(self) -> Dict[str, Any]:
         ws = self.ws()
         cfg = ws.config()
-        return {"timeout_sec": cfg["timeout_sec"], "start_date": cfg["start_date"], "stage": cfg["stage"],
+        return {"timeout_sec": cfg["timeout_sec"], "start_date": cfg["start_date"], "stage": cfg["stage"], "statement_lang": cfg.get("statement_lang", "auto"),
                 "model": cfg.get("model"), "ai": self.ai_info(ws), "g++": bool(shutil.which("g++")),
                 "workspace": str(ws.root)}
 
@@ -140,6 +140,33 @@ class App:
         if "code" in body:
             self.save(body)
         return service.trace_program(ws, body["id"])
+
+    def fuzz(self, body: Dict[str, Any]) -> Dict[str, Any]:
+        """範例變異對拍：用你寫的暴力解當標準答案，找出你的解答的錯，可選擇存成測資。"""
+        ws = self.ws()
+        pid = body["id"]
+        if ws.exam():
+            raise ValueError("考試中不能對拍。")
+        if "code" in body:
+            self.save(body)
+        brute = (body.get("brute") or "").strip()
+        if not brute:
+            raise ValueError("請貼上你的暴力解程式碼")
+        d = ws.meta / "fuzz"
+        d.mkdir(exist_ok=True)
+        bf = d / f"{pid}_brute.py"
+        bf.write_text(brute + "\n", encoding="utf-8")
+        sol = service.solution_file(ws, pid)
+        if not sol.exists():
+            raise ValueError("還沒有你的解答檔")
+        rounds = max(20, min(2000, int(body.get("rounds") or 300)))
+        cfg = ws.config()
+        try:
+            r = fuzz_mod.fuzz(sol, bf, ws.tests / pid, rounds, int(body.get("seed") or 1), 3, float(cfg["timeout_sec"]), int(cfg.get("memory_mb", 1024)))
+        except fuzz_mod.FuzzError as e:
+            raise ValueError(str(e))
+        saved = fuzz_mod.save(ws, pid, r["found"]) if r["found"] and body.get("save") else []
+        return dict(r, saved=saved, tests=len(service.find_cases(ws.tests / pid)))
 
     def ask(self, body: Dict[str, Any]) -> Dict[str, Any]:
         ws = self.ws()
@@ -237,6 +264,12 @@ class App:
         ws = self.ws()
         return calibrate.calibrate(ws, bank_mod.load_bank(ws))
 
+    def weakness(self) -> Dict[str, Any]:
+        ws = self.ws()
+        bank, c = bank_mod.load_bank(ws), course_mod.load()
+        a = weakness.analyze(ws, bank, c)
+        return dict(a, suggestions=weakness.suggestions(ws, bank, c, a, per_family=3))
+
     def eng_list(self) -> Dict[str, Any]:
         return {"tasks": eng.tasks(self.ws())}
 
@@ -290,6 +323,10 @@ class App:
             cfg["start_date"] = body["start_date"]
         if "model" in body:
             cfg["model"] = (body["model"] or "").strip() or None
+        if "statement_lang" in body:
+            if body["statement_lang"] not in bank_mod.LANG_MODES:
+                raise ValueError("題目語言只能是 auto／zh／bi／en")
+            cfg["statement_lang"] = body["statement_lang"]
         ws.save_config(cfg)
         if "key" in body:
             self.key = (body["key"] or "").strip() or None
@@ -303,9 +340,9 @@ def make_handler(app: App):
            "/api/problem": lambda q: app.problem(q["id"]), "/api/chat": lambda q: app.chat(q["id"]),
            "/api/search": lambda q: app.search(q.get("q", "")), "/api/settings": lambda q: app.settings(),
            "/api/past": lambda q: app.past_list(), "/api/vocab": lambda q: app.vocab_list(),
-           "/api/plan": lambda q: app.plan(int(q.get("minutes", "30"))), "/api/calibration": lambda q: app.calibration(),
+           "/api/plan": lambda q: app.plan(int(q.get("minutes", "30"))), "/api/calibration": lambda q: app.calibration(), "/api/weakness": lambda q: app.weakness(),
            "/api/eng": lambda q: app.eng_list()}
-    POST = {"/api/new": app.new, "/api/save": app.save, "/api/test": app.test, "/api/trace": app.trace, "/api/ask": app.ask,
+    POST = {"/api/new": app.new, "/api/save": app.save, "/api/test": app.test, "/api/trace": app.trace, "/api/fuzz": app.fuzz, "/api/ask": app.ask,
             "/api/hint": app.hint, "/api/giveup": app.giveup, "/api/solution": app.solution, "/api/gate": app.gate_start,
             "/api/mock": app.mock_start, "/api/exam/finish": app.exam_finish, "/api/course/goto": app.course_goto,
             "/api/course/next": app.course_next, "/api/settings": app.set_settings, "/api/past/import": app.past_import,

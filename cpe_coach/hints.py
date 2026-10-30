@@ -39,11 +39,8 @@ def check_gate(ws: Workspace, p: Dict[str, Any], level: int) -> None:
 
 
 def _statement(ws: Workspace, pid: str) -> str:
-    for ext in ("md", "txt"):
-        f = ws.root / "statements" / f"{pid}.{ext}"
-        if f.exists():
-            return f.read_text(encoding="utf-8")
-    return ""
+    from .service import statement_for
+    return statement_for(ws, pid)
 
 
 def static_hint(problem: Dict[str, Any], level: int, last_failure: Optional[Dict[str, Any]]) -> Optional[str]:

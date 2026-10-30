@@ -5,7 +5,7 @@ import { go } from "./router.js";
 import { pref } from "./state.js";
 import { skeleton, empty, startMockDialog } from "./widgets.js";
 
-const KIND = { review: ["重練", "bad"], continue: ["續做", "warn"], new: ["新題", "accent"], past: ["歷屆", "info"], gate: ["檢核", "ok"], weekly: ["每週測驗", "info"], eng: ["工程", ""], exam: ["考試", "bad"] };
+const KIND = { review: ["重練", "bad"], continue: ["續做", "warn"], new: ["新題", "accent"], past: ["歷屆", "info"], weak: ["弱點", "bad"], gate: ["檢核", "ok"], weekly: ["每週測驗", "info"], eng: ["工程", ""], exam: ["考試", "bad"] };
 const BUDGETS = [15, 30, 60, 90];
 
 export function planCard() {
@@ -32,7 +32,7 @@ function item(it, n) {
   const go_ = async () => {
     try {
       if (it.kind === "review") { try { await post("/api/new", { id: it.id, fresh: true }); } catch { /* 沒有舊檔也沒關係 */ } go("/practice/" + it.id); }
-      else if (it.id && ["continue", "new", "past"].includes(it.kind)) go("/practice/" + it.id);
+      else if (it.id && ["continue", "new", "past", "weak"].includes(it.kind)) go("/practice/" + it.id);
       else if (it.kind === "gate") go("/course");
       else if (it.kind === "weekly") startMockDialog();
       else if (it.kind === "eng") go("/course/eng");

@@ -132,27 +132,69 @@ def build_user_message(ctx: Dict[str, str], kind: str, source: str, selection: s
 
 
 # ---------- 解析與驗證 ----------
-def parse_reply(raw: str) -> Dict[str, Any]:
-    m = re.search(r"\{.*\}", raw, re.S)
+def _json_candidates(raw: str):
+    """從模型的回應裡依序找出所有能解析的 JSON 物件：容許 ``` 圍欄、前後贅字、前後還有別的大括號。"""
+    dec = json.JSONDecoder()
+    text = raw.strip()
+    i = text.find("{")
+    while i != -1:
+        try:
+            obj, end = dec.raw_decode(text, i)
+            if isinstance(obj, dict):
+                yield obj
+            i = text.find("{", end)
+        except json.JSONDecodeError:
+            i = text.find("{", i + 1)
+
+
+def _salvage_message(raw: str) -> Optional[str]:
+    """JSON 被截斷或壞掉時，至少把 "message" 欄位撈出來（不含引用，所以會標示無法驗證）。"""
+    m = re.search(r'"message"\s*:\s*"((?:[^"\\]|\\.)*)"', raw, re.S)
     if m:
         try:
-            d = json.loads(m.group(0))
-            if isinstance(d, dict) and isinstance(d.get("message"), str):
-                ev = d.get("evidence") if isinstance(d.get("evidence"), list) else []
-                return {"type": str(d.get("type", "")), "message": d["message"].strip(),
-                        "evidence": [e for e in ev if isinstance(e, dict)], "parsed": True}
+            return json.loads('"' + m.group(1) + '"')
         except json.JSONDecodeError:
-            pass
-    return {"type": "", "message": raw.strip(), "evidence": [], "parsed": False}
+            return m.group(1)
+    return None
+
+
+def _as_int(v: Any) -> Optional[int]:
+    try:
+        return int(v) if v is not None and not isinstance(v, bool) else None
+    except (TypeError, ValueError):
+        return None
+
+
+def parse_reply(raw: str) -> Dict[str, Any]:
+    for d in _json_candidates(raw or ""):
+        if isinstance(d.get("message"), str):
+            ev = d.get("evidence") if isinstance(d.get("evidence"), list) else []
+            clean = []
+            for e in ev:
+                if isinstance(e, dict) and isinstance(e.get("quote"), str):
+                    clean.append({"source": str(e.get("source", "")).strip().lower(), "line": _as_int(e.get("line")), "quote": e["quote"]})
+            return {"type": str(d.get("type", "")).strip().lower(), "message": d["message"].strip(), "evidence": clean, "parsed": True}
+    salvaged = _salvage_message(raw or "")
+    if salvaged is not None:
+        return {"type": "", "message": salvaged.strip(), "evidence": [], "parsed": False, "salvaged": True}
+    return {"type": "", "message": (raw or "").strip(), "evidence": [], "parsed": False}
 
 
 def _norm(s: str) -> str:
     return " ".join(s.split())
 
 
+_LINENO = re.compile(r"^\s*\d{1,4}\s*\|\s?", re.M)
+
+
+def _clean_quote(quote: str) -> str:
+    """模型常把提示裡的行號前綴（`  3| `）一起抄下來，這不是原文的一部分，先去掉。"""
+    return _LINENO.sub("", quote).strip().strip("`").strip()
+
+
 def _find(src: str, quote: str, sources: Dict[str, str]):
     """在指定來源找引用；回傳 (ok, 行號或 None)。"""
-    text, q = sources.get(src, ""), _norm(quote)
+    text, q = sources.get(src, ""), _norm(_clean_quote(quote))
     if len(q) < 2 or not text:
         return False, None
     if src == "code":
@@ -170,7 +212,7 @@ def verify_evidence(evidence: List[Dict[str, Any]], sources: Dict[str, str]) -> 
     out = []
     for e in evidence:
         src, quote = str(e.get("source", "")), str(e.get("quote", ""))
-        item = {"source": src, "quote": quote[:200], "line": e.get("line"), "ok": False}
+        item = {"source": src, "quote": _clean_quote(quote)[:200], "line": _as_int(e.get("line")), "ok": False}
         ok, hits = _find(src, quote, sources)
         if not ok:
             alts = [(k, _find(k, quote, sources)) for k in sources if k != src]
@@ -181,7 +223,7 @@ def verify_evidence(evidence: List[Dict[str, Any]], sources: Dict[str, str]) -> 
         if ok:
             item["ok"] = True
             if src == "code" and hits:
-                item["line"] = e.get("line") if e.get("line") in hits else hits[0]
+                item["line"] = item["line"] if item["line"] in hits else hits[0]
             elif src != "code":
                 item["line"] = None
         out.append(item)
@@ -238,6 +280,7 @@ def ask(ws: Workspace, bank: Dict[str, dict], pid: str, llm: Optional[LLMClient]
             p["attempts_since_hint"] = 0
         ws.save_state(st)
 
+    calls_before = len(getattr(llm, "usage_log", []))
     system = RULES + "\n\n" + INQUIRY_RULES
     history = [{"role": m["role"], "content": m["content"]} for m in th["messages"]][-9:]
     try:
@@ -253,6 +296,8 @@ def ask(ws: Workspace, bank: Dict[str, dict], pid: str, llm: Optional[LLMClient]
             checked2 = verify_evidence(parsed2["evidence"], sources)
             if parsed2["parsed"] and checked2 and sum(c["ok"] for c in checked2) >= sum(c["ok"] for c in checked):
                 raw, parsed, checked = raw2, parsed2, checked2
+        if not parsed["message"].strip():
+            raise LLMError("AI 回了空白內容", 502)
     except LLMError as e:
         if not thread:                                    # 呼叫失敗：不留下半成品，也不算提示
             chat["threads"].remove(th)
@@ -268,11 +313,14 @@ def ask(ws: Workspace, bank: Dict[str, dict], pid: str, llm: Optional[LLMClient]
     message = strip_long_code(parsed["message"], 4)
     good = [c for c in checked if c["ok"]]
     verified = bool(good) and len(good) == len(checked)
-    result = {"type": parsed["type"], "message": message, "evidence": checked, "verified": verified,
+    result = {"type": parsed["type"], "message": message, "evidence": checked, "verified": verified, "parsed": parsed["parsed"],
               "warning": None if (verified or kind == "explain" and good) else "⚠ 這次回答沒有完整可驗證的引用，請半信半疑，並以測試結果為準。"}
     th["messages"].append({"role": "assistant", "content": raw, "display": message, "evidence": checked,
                            "verified": verified, "warning": result["warning"], "type": parsed["type"]})
     save_chat(ws, pid, chat)
+    usage = llm.usage(calls_before) if hasattr(llm, "usage") else {}
+    result["usage"] = usage
     ws.log("ask", problem=pid, ask_kind=th["kind"], source=th["source"], thread=th["id"], reply=bool(thread),
-           verified=verified, model=llm.model)
+           verified=verified, model=llm.model, tokens_in=usage.get("tokens_in", 0), tokens_out=usage.get("tokens_out", 0),
+           calls=usage.get("calls", 1), retried_verify=bool(usage.get("calls", 1) > 1))
     return {"thread": th["id"], "reply": result, "kind": th["kind"]}
