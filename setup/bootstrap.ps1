@@ -44,7 +44,7 @@ function Refresh-Path {
 }
 
 function Test-PythonOk($exe) {
-    if (-not $exe -or -not (Test-Path $exe)) { return $false }
+    if (-not $exe -or -not (Test-Path -LiteralPath $exe)) { return $false }
     try {
         $v = & $exe -c "import sys; print('%d.%d' % sys.version_info[:2])" 2>$null
         return ($v -and ([version]$v -ge [version]"3.9"))
@@ -83,8 +83,8 @@ function Find-Python {
     }
     $roots = @("$env:LOCALAPPDATA\Programs\Python", $env:ProgramFiles, ${env:ProgramFiles(x86)})
     foreach ($r in $roots) {
-        if ($r -and (Test-Path $r)) {
-            Get-ChildItem $r -Directory -Filter "Python3*" -ErrorAction SilentlyContinue | Sort-Object Name -Descending | ForEach-Object {
+        if ($r -and (Test-Path -LiteralPath $r)) {
+            Get-ChildItem -LiteralPath $r -Directory -Filter "Python3*" -ErrorAction SilentlyContinue | Sort-Object { if ($_.Name -match '^Python(\d)(\d+)') { [int]$Matches[1] * 1000 + [int]$Matches[2] } else { 0 } } -Descending | ForEach-Object {
                 [void]$cands.Add((Join-Path $_.FullName "python.exe"))
             }
         }
@@ -127,16 +127,16 @@ function Install-Python {
 
 function Get-Bundle {
     $root = Split-Path -Parent $PSScriptRoot
-    if (Test-Path (Join-Path $root "cpe_coach\launcher\__main__.py")) { return $root }
+    if (Test-Path -LiteralPath (Join-Path $root "cpe_coach\launcher\__main__.py")) { return $root }
     $url = if ($env:CPE_ARCHIVE_URL) { $env:CPE_ARCHIVE_URL } else { "https://github.com/$Repo/archive/refs/heads/$Branch.zip" }
     $tmp = Join-Path $env:TEMP "cpe-coach-setup\src"
     Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue
     New-Item -ItemType Directory -Force $tmp | Out-Null
     Say "下載程式…（$url）"
     Invoke-WebRequest -UseBasicParsing -Uri $url -OutFile (Join-Path $tmp "src.zip")
-    Expand-Archive -Path (Join-Path $tmp "src.zip") -DestinationPath (Join-Path $tmp "x") -Force
+    Expand-Archive -LiteralPath (Join-Path $tmp "src.zip") -DestinationPath (Join-Path $tmp "x") -Force
     $d = Get-ChildItem (Join-Path $tmp "x") -Directory | Select-Object -First 1
-    if (-not $d -or -not (Test-Path (Join-Path $d.FullName "cpe_coach\launcher\__main__.py"))) { throw "下載的壓縮檔裡找不到安裝精靈" }
+    if (-not $d -or -not (Test-Path -LiteralPath (Join-Path $d.FullName "cpe_coach\launcher\__main__.py"))) { throw "下載的壓縮檔裡找不到安裝精靈" }
     return $d.FullName
 }
 
@@ -164,7 +164,7 @@ function Main {
 
     if ($CheckOnly) {
         $root = Split-Path -Parent $PSScriptRoot
-        if (-not (Test-Path (Join-Path $root "cpe_coach\launcher\__main__.py"))) {
+        if (-not (Test-Path -LiteralPath (Join-Path $root "cpe_coach\launcher\__main__.py"))) {
             Say "· 這裡沒有程式資料夾；正式安裝時會從 GitHub 下載。"
             return 0
         }

@@ -12,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from launcher_helpers import HAVE_GIT, TempDir, bump_version, clean_registry, copy_app_tree, free_port, isolated_env, make_origin, wait_for  # noqa: E402
 
 from cpe_coach import __version__  # noqa: E402
+from cpe_coach.web import LocalServer  # noqa: E402
 from cpe_coach.launcher import config as cfgmod  # noqa: E402
 from cpe_coach.launcher import engine, server  # noqa: E402
 from cpe_coach.launcher.engine import InstallOptions, Reporter  # noqa: E402
@@ -166,7 +167,7 @@ class StartStop(ServerBase):
                 self.send_header("Content-Length", str(len(body)))
                 self.end_headers()
                 self.wfile.write(body)
-        httpd = http.server.HTTPServer(("127.0.0.1", self.port), H)
+        httpd = LocalServer(("127.0.0.1", self.port), H)
         threading.Thread(target=httpd.serve_forever, daemon=True).start()
         self.addCleanup(httpd.server_close)
         self.addCleanup(httpd.shutdown)

@@ -191,7 +191,7 @@ def _log_tail(path: Path, n: int = 600) -> str:
         return ""
 
 
-def start(cfg: LauncherConfig, plat: Plat, wait: float = 25.0, log: Callable[[str], None] = lambda s: None,
+def start(cfg: LauncherConfig, plat: Plat, wait: float = 45.0, log: Callable[[str], None] = lambda s: None,
           is_free: Callable[[int], bool] = port_is_free) -> Status:
     """啟動服務並等到真的連得上；已經在跑就直接回傳。失敗丟 ServerError（附上紀錄檔的結尾）。"""
     st = status(cfg, plat)

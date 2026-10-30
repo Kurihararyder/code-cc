@@ -10,6 +10,7 @@ import os
 import re
 import secrets
 import signal
+import socketserver
 import threading
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -282,13 +283,24 @@ def make_handler(app: App):
     return H
 
 
+class LocalServer(ThreadingHTTPServer):
+    """HTTPServer.server_bind 會對位址做反向 DNS 查詢（socket.getfqdn）只為了記下主機名稱；我們只聽 127.0.0.1，用不到，
+    而某些 macOS（包含 GitHub 的 macOS 虛擬機）這個查詢會卡 30 秒，網頁服務就遲遲起不來。直接略過。"""
+
+    def server_bind(self) -> None:
+        socketserver.TCPServer.server_bind(self)
+        host, port = self.server_address[:2]
+        self.server_name = str(host)
+        self.server_port = port
+
+
 def _stop_on_sigterm(signum, frame) -> None:
     raise KeyboardInterrupt
 
 
 def serve(root: Path, port: int = 8765, open_browser: bool = True, announce=print) -> None:
     app = App(root, port)
-    httpd = ThreadingHTTPServer(("127.0.0.1", port), make_handler(app))
+    httpd = LocalServer(("127.0.0.1", port), make_handler(app))
     url = f"http://127.0.0.1:{port}/"
     announce(f"CPE 教練網頁介面：{url}　（Ctrl+C 結束）")
     if open_browser:

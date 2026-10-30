@@ -27,6 +27,24 @@ jobs:
       - name: Unit tests
         run: python -m unittest discover -s tests -v
 
+  diagnose:
+    name: platform diagnostics on ${{ matrix.os }} (timings and capabilities; finishes in about a minute)
+    runs-on: ${{ matrix.os }}
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Name resolution, web service start time, ways to create .lnk (prints only)
+        run: python dev/ci_diagnose.py
+      - name: Shortcut tests (real PowerShell on Windows)
+        run: python -m unittest tests.test_launcher_shortcuts -v
+
   installer-gui:
     name: installer GUI on a virtual screen (Linux, Python ${{ matrix.python }})
     runs-on: ubuntu-latest

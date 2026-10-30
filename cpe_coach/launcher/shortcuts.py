@@ -4,6 +4,7 @@
 """
 from __future__ import annotations
 
+import json
 import os
 import plistlib
 import re
@@ -22,8 +23,13 @@ from .osinfo import Plat, pythonw_for
 
 Runner = Callable[..., Tuple[int, str]]
 Log = Callable[[str], None]
-LNK_SCRIPT = ("$s=(New-Object -ComObject WScript.Shell).CreateShortcut($env:CPE_LNK);$s.TargetPath=$env:CPE_TARGET;"
-              "$s.Arguments=$env:CPE_ARGS;$s.WorkingDirectory=$env:CPE_WD;$s.IconLocation=$env:CPE_ICON;$s.Description=$env:CPE_DESC;$s.Save()")
+# 一次建立所有 .lnk（PowerShell 每啟動一次要 1 秒左右，四個捷徑只啟動一次）。值用環境變數裡的 JSON 傳，腳本裡只有單引號，不會有引號跳脫的問題。
+# 注意：Windows PowerShell 5.1 的 ConvertFrom-Json 不會把最上層的陣列展開，所以包成 {"items": [...]} 再取 .items。
+LNK_SCRIPT = ("$ErrorActionPreference='Stop';$sh=New-Object -ComObject WScript.Shell;$n=0;"
+              "foreach($i in (ConvertFrom-Json $env:CPE_LNKS).items){"
+              "try{$s=$sh.CreateShortcut($i.lnk);$s.TargetPath=$i.target;$s.Arguments=$i.args;$s.WorkingDirectory=$i.wd;"
+              "$s.IconLocation=$i.icon;$s.Description=$i.desc;$s.Save();Write-Output ('OK '+$n)}"
+              "catch{Write-Output ('FAIL '+$n+' : '+$_.Exception.Message)};$n++}")
 
 
 # ---------- 路徑 ----------
@@ -259,12 +265,28 @@ def uninstall_entry_exists(plat: Plat) -> bool:
 
 
 # ---------- 捷徑檔 ----------
-def make_lnk(plat: Plat, lnk: Path, target: str, args: str, workdir: str, icon: str, desc: str, run: Runner = run_cmd) -> bool:
-    """Windows 的 .lnk。用環境變數傳值給 PowerShell，避免引號與中文路徑的跳脫問題。失敗回傳 False。"""
-    lnk.parent.mkdir(parents=True, exist_ok=True)
-    env = dict(os.environ, CPE_LNK=str(lnk), CPE_TARGET=target, CPE_ARGS=args, CPE_WD=workdir, CPE_ICON=icon, CPE_DESC=desc)
-    rc, _ = run(["powershell", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", LNK_SCRIPT], 60, env)
-    return rc == 0 and lnk.exists()
+def make_lnks(items: List[Dict[str, str]], run: Runner = run_cmd, log: Log = lambda s: None) -> List[bool]:
+    """Windows 的 .lnk，一次建立全部。每一項是 {lnk, target, args, wd, icon, desc}；回傳每一項是否真的建立出來。
+    PowerShell 失敗時把它的輸出寫進紀錄（不然只知道失敗、不知道為什麼）。"""
+    if not items:
+        return []
+    for it in items:
+        lnk = Path(it["lnk"])
+        lnk.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            if lnk.is_file():
+                lnk.unlink()                            # 重新安裝：先刪掉舊的，之後才分得出這次有沒有建立成功
+        except OSError:
+            pass
+    env = dict(os.environ, CPE_LNKS=json.dumps({"items": items}))
+    rc, out = run(["powershell", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", LNK_SCRIPT], 90, env)
+    out = out.replace("\r", "")
+    failed = {int(m.group(1)): m.group(2) for m in re.finditer(r"^FAIL (\d+) : (.*)$", out, re.M)}
+    made = [Path(it["lnk"]).is_file() and i not in failed for i, it in enumerate(items)]
+    if not all(made):
+        why = "; ".join(sorted(set(failed.values())))[:300] if failed else out.strip()[-300:]
+        log(f"PowerShell 沒能建立 .lnk 捷徑（結束碼 {rc}）：{why or '沒有任何輸出'}")
+    return made
 
 
 def make_cmd_launcher(path: Path, gui_python: str, script: str, arg: str = "", encoding: Optional[str] = None) -> None:
@@ -327,23 +349,31 @@ def create_all(cfg: LauncherConfig, plat: Plat, desktop: bool = True, menu: bool
 
     if plat.is_windows:
         icon = str(assets / "icon.ico")
-
-        def lnk(folder: Path, title: str, arg: str, desc: str) -> Optional[Path]:
-            f = folder / f"{title}.lnk"
-            if make_lnk(plat, f, gui, (f'"{script}" ' + arg).strip(), cfg.app_dir, icon, desc, run):
-                return f
-            fb = folder / f"{title}.cmd"
-            make_cmd_launcher(fb, gui, script, arg)
-            log(f"{title} 改用 .cmd 捷徑（PowerShell 無法建立 .lnk）")
-            return fb
-
+        specs: List[Tuple[Path, str, str, str]] = []                                  # (資料夾, 名稱, 啟動參數, 說明)
         if desktop:
-            attempt("桌面捷徑", lambda: lnk(plat.desktop_dir, name, "", f"{name}控制台"))
+            specs.append((plat.desktop_dir, name, "", f"{name}控制台"))
         if menu:
             folder = plat.menu_dir / name
-            attempt("開始功能表（控制台）", lambda: lnk(folder, f"{name}（控制台）", "", f"{name}控制台：開啟、關閉、更新、解除安裝"))
-            attempt("開始功能表（開始學習）", lambda: lnk(folder, f"{name}　開始學習", "open", "直接開啟學習畫面"))
-            attempt("開始功能表（解除安裝）", lambda: lnk(folder, f"解除安裝 {name}", "uninstall", f"解除安裝 {name}"))
+            specs += [(folder, f"{name}（控制台）", "", f"{name}控制台：開啟、關閉、更新、解除安裝"),
+                      (folder, f"{name}　開始學習", "open", "直接開啟學習畫面"),
+                      (folder, f"解除安裝 {name}", "uninstall", f"解除安裝 {name}")]
+        items = [{"lnk": str(f / f"{t}.lnk"), "target": gui, "args": (f'"{script}" ' + a).strip(), "wd": cfg.app_dir, "icon": icon, "desc": d} for f, t, a, d in specs]
+        try:
+            made_lnk = make_lnks(items, run, log)
+        except (OSError, subprocess.SubprocessError) as e:
+            log(f"捷徑沒有建立成功：{e}")
+            made_lnk = [False] * len(items)
+        for (folder, title, arg, _desc), it, ok in zip(specs, items, made_lnk):
+            if ok:
+                created.append(it["lnk"])
+                continue
+
+            def cmd_fallback(folder=folder, title=title, arg=arg) -> Optional[Path]:
+                fb = folder / f"{title}.cmd"
+                make_cmd_launcher(fb, gui, script, arg)
+                log(f"{title} 改用 .cmd 捷徑（沒辦法建立 .lnk）")
+                return fb
+            attempt(title, cmd_fallback)
         return created
 
     shim = bin_dir(plat) / "cpe-panel"

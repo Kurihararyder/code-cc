@@ -14,6 +14,9 @@ from pathlib import Path
 from typing import Callable, Dict, Optional
 
 REPO = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO))
+
+from cpe_coach.web import LocalServer  # noqa: E402  不做反向 DNS 查詢（macOS 上會卡 30 秒）
 GIT_ENV = dict(os.environ, GIT_AUTHOR_NAME="t", GIT_AUTHOR_EMAIL="t@example.com", GIT_COMMITTER_NAME="t", GIT_COMMITTER_EMAIL="t@example.com")
 HAVE_GIT = shutil.which("git") is not None
 COPY_ROOT_FILES = ["CHANGELOG.md", "cpe-panel.pyw"]
@@ -99,7 +102,7 @@ class FileServer:
                 self.send_header("Content-Length", str(len(body)))
                 self.end_headers()
                 self.wfile.write(body)
-        self.httpd = http.server.ThreadingHTTPServer(("127.0.0.1", 0), H)
+        self.httpd = LocalServer(("127.0.0.1", 0), H)
         self.port = self.httpd.server_address[1]
         threading.Thread(target=self.httpd.serve_forever, daemon=True).start()
 

@@ -10,6 +10,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+for _stream in (sys.stdout, sys.stderr):                    # Windows 的 CI 預設 cp1252，印不出 ✓ 與中文
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
+
 from cpe_coach.launcher import config, server, shortcuts  # noqa: E402
 from cpe_coach.launcher.osinfo import detect  # noqa: E402
 

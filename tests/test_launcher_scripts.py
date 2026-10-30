@@ -21,6 +21,12 @@ class Formats(unittest.TestCase):
         raw.decode("ascii")                                                         # cmd 讀取非 ASCII 的批次檔容易亂碼：訊息都放在 PowerShell 裡
         self.assertNotIn(b"\n", raw.replace(b"\r\n", b""))
 
+    def test_bat_has_no_parenthesised_blocks_because_a_folder_like_Downloads_1_would_break_them(self):
+        lines = (REPO / "install-windows.bat").read_bytes().decode("ascii").splitlines()
+        code = [ln for ln in lines if ln.strip() and not ln.lower().startswith("rem ")]
+        self.assertFalse([ln for ln in code if ln.strip() == ")" or ln.rstrip().endswith("(")], code)
+        self.assertTrue(any(ln.startswith(":local") for ln in code))
+
     def test_powershell_script_has_a_bom_so_windows_powershell_reads_the_chinese_text(self):
         raw = (REPO / "setup" / "bootstrap.ps1").read_bytes()
         self.assertTrue(raw.startswith(b"\xef\xbb\xbf"))
@@ -130,6 +136,20 @@ class WindowsCheckMode(unittest.TestCase):
         r = self.ps("-Command", "$e=$null;$t=$null;[void][System.Management.Automation.Language.Parser]::ParseFile('%s',[ref]$t,[ref]$e);"
                     "if($e.Count){$e|ForEach-Object{Write-Output $_.Message};exit 1}" % (REPO / "setup" / "bootstrap.ps1"))
         self.assertEqual(r.returncode, 0, r.stdout.decode("utf-8", "replace"))
+
+    def test_check_only_from_a_folder_with_spaces_parentheses_and_chinese_in_its_name(self):
+        """使用者把壓縮檔下載兩次，資料夾就會叫「code-cc (1)」；中文資料夾也很常見。"""
+        import shutil
+        t = TempDir()
+        self.addCleanup(t.cleanup)
+        folder = t.path / "下載 (1) & 備份"
+        (folder / "setup").mkdir(parents=True)
+        shutil.copy2(REPO / "install-windows.bat", folder / "install-windows.bat")
+        shutil.copy2(REPO / "setup" / "bootstrap.ps1", folder / "setup" / "bootstrap.ps1")
+        r = subprocess.run(["cmd", "/c", str(folder / "install-windows.bat"), "-CheckOnly"], capture_output=True, timeout=180, stdin=subprocess.DEVNULL, cwd=str(t.path))
+        out = r.stdout.decode("utf-8", "replace") + r.stderr.decode("utf-8", "replace")
+        self.assertEqual(r.returncode, 0, out)
+        self.assertIn("Python", out)
 
     def test_check_only_through_the_bat_file(self):
         r = subprocess.run(["cmd", "/c", str(REPO / "install-windows.bat"), "-CheckOnly"], capture_output=True, timeout=180, stdin=subprocess.DEVNULL)

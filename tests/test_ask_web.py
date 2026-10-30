@@ -5,7 +5,6 @@ import threading
 import unittest
 import urllib.error
 import urllib.request
-from http.server import ThreadingHTTPServer
 from pathlib import Path
 
 from cpe_coach import ask, bank, service, web
@@ -194,7 +193,7 @@ class WebBase(unittest.TestCase):
         Workspace.create(Path(cls.tmp.name), "2026-11-01")
         s = socket.socket(); s.bind(("127.0.0.1", 0)); cls.port = s.getsockname()[1]; s.close()
         cls.app = web.App(Path(cls.tmp.name), cls.port)
-        cls.httpd = ThreadingHTTPServer(("127.0.0.1", cls.port), web.make_handler(cls.app))
+        cls.httpd = web.LocalServer(("127.0.0.1", cls.port), web.make_handler(cls.app))
         threading.Thread(target=cls.httpd.serve_forever, daemon=True).start()
 
     @classmethod
@@ -484,6 +483,19 @@ class WebApiTests(WebBase):
         code, r = self.post("/api/test", {"id": "d006", "code": "def f(:\n"})
         self.assertEqual(r["verdict"], "CE")
         self.assertEqual(r["error_line"], 1)
+
+
+class LocalServerTests(unittest.TestCase):
+    def test_binding_does_not_do_a_reverse_dns_lookup(self):
+        """標準的 HTTPServer 啟動時會 getfqdn（反向 DNS 查詢）；某些 macOS 上要卡 30 秒。我們只聽 127.0.0.1，不需要。"""
+        from http.server import BaseHTTPRequestHandler
+        from unittest import mock
+        with mock.patch("socket.getfqdn", side_effect=AssertionError("不該做反向 DNS 查詢")), \
+                mock.patch("socket.gethostbyaddr", side_effect=AssertionError("不該做反向 DNS 查詢")):
+            httpd = web.LocalServer(("127.0.0.1", 0), BaseHTTPRequestHandler)
+        self.addCleanup(httpd.server_close)
+        self.assertEqual(httpd.server_name, "127.0.0.1")
+        self.assertEqual(httpd.server_port, httpd.server_address[1])
 
 
 class ServiceTests(unittest.TestCase):
