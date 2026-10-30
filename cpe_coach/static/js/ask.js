@@ -8,6 +8,13 @@ export const KIND = {
   question: { label: "考我這一段", sub: "AI 針對這一段出題・算 L2 提示", icon: "sparkle" },
   mismatch: { label: "預期和實際不同", sub: "針對失敗測資的差異・算 L4 提示", icon: "neq" },
 };
+const DICT = "https://dictionary.cambridge.org/dictionary/english-chinese-traditional/";
+export const dictUrl = (w) => DICT + encodeURIComponent(w.toLowerCase());
+// 選到的是單一英文單字（去掉頭尾標點）→ 回傳該字，否則 null。
+export function singleWord(text) {
+  const w = text.trim().replace(/^["'(\[]+|[.,;:!?)"'\]]+$/g, "");
+  return /^[A-Za-z][A-Za-z'’-]{1,29}$/.test(w) ? w : null;
+}
 const SRC = { statement: "題目", code: "程式", output: "測試結果", trace: "追蹤" };
 
 export function domSelection(root) {
@@ -84,9 +91,15 @@ export class AskUI {
         icon(m.icon, "lg"), h("div", null, h("b", { text: m.label }), h("span", { text: dis ? "🔒 " + why[k] : m.sub })));
     });
     const q = sel.text.trim().replace(/\s+/g, " ");
+    const word = sel.source === "statement" ? singleWord(sel.text) : null;   // 字典只對題目文字提供（程式裡的識別字不是要查的單字）
+    const dict = word ? [
+      h("button", { class: "opt", onclick: () => { this.hide(); window.open(dictUrl(word), "_blank", "noopener,noreferrer"); } },
+        icon("book", "lg"), h("div", null, h("b", { text: `查字典：${word}` }), h("span", { text: "Cambridge 英漢（新分頁）" }))),
+      h("button", { class: "opt", onclick: async () => { this.hide(); try { const r = await post("/api/vocab/add", { word, problem: this.ctx.getId() }); toast(`已加入單字本：${r.word}`, "ok", 2200); } catch (e) { toast(e.message, "bad"); } } },
+        icon("list", "lg"), h("div", null, h("b", { text: "加入單字本" }), h("span", { text: "之後可在『考試』頁複習、匯出" })))] : [];
     this.pop = h("div", { class: "pop", role: "dialog", "aria-label": "要問這一段嗎？" },
       h("div", { class: "muted xs", text: `要問這一段嗎？${sel.line_start ? `（第 ${sel.line_start}${sel.line_end > sel.line_start ? "–" + sel.line_end : ""} 行）` : `（${SRC[sel.source] || ""}）`}` }),
-      h("div", { class: "q", text: q.length > 120 ? q.slice(0, 120) + "…" : q }), h("div", { class: "opts" }, opts), note);
+      h("div", { class: "q", text: q.length > 120 ? q.slice(0, 120) + "…" : q }), h("div", { class: "opts" }, dict, opts), note);
     document.body.append(this.pop);
     const r = sel.rect, pw = 300, ph = this.pop.offsetHeight, vw = innerWidth, vh = innerHeight;
     let left = Math.min(Math.max(8, r.left), vw - pw - 8), top = r.bottom + 10, up = false;

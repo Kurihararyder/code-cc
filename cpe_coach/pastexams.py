@@ -218,6 +218,31 @@ def pool(ws: Workspace, bank: Dict[str, dict], lo: float = 0, hi: float = 100) -
     return out
 
 
+# 單元 → 要從匯入的歷屆題裡挑哪個答對率範圍（%）。階段 5 的單元用歷屆題當主要練習材料。
+UNIT_POOLS = {
+    15: (30.0, 100.0, "歷屆全體答對率 30% 以上（一～二顆星）"),
+    16: (15.0, 30.0, "歷屆全體答對率 15%–30%"),
+    25: (5.0, 15.0, "歷屆全體答對率 5%–15%（階段 2 驗收的延伸）"),
+    47: (0.5, 5.0, "歷屆全體答對率 0.5%–5%（三～四顆星入門）"),
+    48: (5.0, 100.0, "歷屆全體答對率 5% 以上（先把容易拿的分數練熟）"),
+    49: (5.0, 20.0, "歷屆全體答對率 5%–20%（弱點修補）"),
+    50: (0.0, 5.0, "歷屆全體答對率 5% 以下（攻堅）"),
+    51: (0.0, 100.0, "所有歷屆題（也可以直接整場模擬）"),
+}
+
+
+def unit_pool(ws: Workspace, bank: Dict[str, dict], n: int) -> Optional[Dict[str, Any]]:
+    """這個單元建議用的歷屆題（只列已經匯入、有答對率資料的）。"""
+    spec = UNIT_POOLS.get(n)
+    if spec is None:
+        return None
+    lo, hi, label = spec
+    st = ws.state()["problems"]
+    items = [dict(p, solved=bool(st.get(p["id"], {}).get("first_pass"))) for p in pool(ws, bank, lo, hi if hi >= 100 else hi - 1e-9)]
+    return {"lo": lo, "hi": hi, "label": label, "items": items, "ready": sum(1 for p in items if p["has_tests"]),
+            "solved": sum(1 for p in items if p["solved"])}
+
+
 def percentile(solved: int, dist: Dict[int, float]) -> Dict[str, float]:
     """歷年考生中，答對題數 ≥ solved 的比例（前 X%）與 < solved 的比例（超過 X% 的人）。"""
     top = sum(v for k, v in dist.items() if k >= solved)

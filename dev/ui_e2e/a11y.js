@@ -17,7 +17,7 @@ const { chromium } = require('playwright');
     });
     console.log((issues.length ? 'FAIL ' : 'PASS ') + name + (issues.length ? '\n  ' + [...new Set(issues)].slice(0, 6).join('\n  ') : '')); bad += issues.length;
   };
-  for (const [n, h] of [['首頁', '#/home'], ['練習', '#/practice/d001'], ['課程', '#/course'], ['統計', '#/stats'], ['設定', '#/settings']]) {
+  for (const [n, h] of [['首頁', '#/home'], ['練習', '#/practice/d001'], ['課程', '#/course'], ['考試', '#/exam'], ['工程任務', '#/course/eng'], ['統計', '#/stats'], ['設定', '#/settings']]) {
     await p.goto('http://127.0.0.1:8793/' + h); await p.waitForTimeout(900); await scan(n);
   }
   // 鍵盤：Tab 的第一個焦點應是「跳到主要內容」

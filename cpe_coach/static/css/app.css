@@ -333,3 +333,26 @@ table.trace td:first-child{color:var(--text-3)}
   .drawer{width:100%}
 }
 @media (max-width:520px){.kpis{grid-template-columns:1fr 1fr}.units{grid-template-columns:1fr}.btn.lg{width:100%}.page-head h1{font-size:22px}.bar-row{grid-template-columns:70px 1fr 38px}}
+
+/* ============ 考試頁、計分板、今日計畫、工程任務 ============ */
+.tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table.t td,table.t th{vertical-align:middle}
+table.t tfoot td{border-top:1px solid var(--border);padding:8px 10px}
+.linkish{border:0;background:none;padding:0;color:var(--text);cursor:pointer;text-align:left;font:inherit;font-weight:550}
+.linkish:hover{color:var(--accent);text-decoration:underline}
+.sb{white-space:nowrap;font-family:var(--mono);font-size:13px;border-radius:6px}
+.sb.ac{background:var(--ok-soft);color:var(--ok)}.sb.wrong{background:var(--bad-soft);color:var(--bad)}.sb.open{color:var(--text-3)}
+.mb{margin-bottom:12px}
+.plan{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.plan .li{padding:9px 10px}
+.plan li.done .li{opacity:.62}.plan li.done .grow>span{text-decoration:line-through}
+.checks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.checks li{display:flex;gap:10px;align-items:flex-start}.checks li .ic{width:18px;height:18px;margin-top:2px;flex:none;stroke-width:2.6}
+.checks li.ok .ic{color:var(--ok)}.checks li.bad .ic{color:var(--bad)}
+.checkmsg{margin:4px 0 0;white-space:pre-wrap;word-break:break-word;background:var(--surface-2);border-radius:8px;padding:8px 10px;max-height:180px;overflow:auto;font-size:12px}
+.callout.info{background:var(--info-soft)}
+.seg[role="tablist"] button[aria-selected="true"]{background:var(--surface);color:var(--text);box-shadow:var(--shadow-1);font-weight:600}
+@media (max-width:900px){.navbtn{font-size:10.5px;min-width:0}.navbtn span:not(.dot){white-space:nowrap}}
+.scoreboard th:nth-child(1){width:44px}.scoreboard th:nth-child(3){width:90px}.scoreboard th:nth-child(4){width:150px}
+.card-h{flex-wrap:wrap}.card-h h3{white-space:nowrap}
+@media (max-width:520px){.card-h .grow{display:none}.tablewrap table.t{min-width:520px}}

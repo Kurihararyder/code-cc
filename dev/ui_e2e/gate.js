@@ -24,7 +24,7 @@ let PAGE;
   await p.click('.modal-f .primary'); await p.waitForSelector('.examcard'); log(true, '檢核開始 → 首頁出現考試面板（倒數計時）');
   log(await p.locator('#examChip').count() === 1, '頂列出現考試倒數');
   await p.screenshot({ path: 'shots/g2-exam.png' });
-  await p.click('.examcard .pchip >> nth=0'); await p.waitForSelector('.editor'); await p.waitForTimeout(300);
+  await p.click('.examcard .scoreboard .linkish >> nth=0'); await p.waitForSelector('.editor'); await p.waitForTimeout(300);
   const id0 = await p.evaluate(() => location.hash.split('/').pop()); log(['d004', 'd002'].includes(id0), '從考試面板開啟題目 ' + id0);
   log((await p.locator('.pill.bad', { hasText: '考試中' }).count()) === 1, '題目頁標示「考試中」');
   // 考試中 AI 鎖定

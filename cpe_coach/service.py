@@ -369,15 +369,20 @@ class _TextOnly(html.parser.HTMLParser):
             self.parts.append(data)
 
 
+def html_to_text(text: str) -> str:
+    t = _TextOnly()
+    t.feed(text)
+    return re.sub(r"\n{3,}", "\n\n", "".join(t.parts))
+
+
+def looks_like_html(text: str) -> bool:
+    return bool(re.search(r"<(html|body|div|p|pre|br|table|h[1-6])[\s>/]", text[:4000], re.I))
+
+
 def read_statement_file(path: Path) -> str:
     """讀題目檔；.html 會先轉成純文字（保留 pre 內的換行）。"""
     text = path.read_text(encoding="utf-8", errors="replace")
-    if path.suffix.lower() in (".html", ".htm"):
-        t = _TextOnly()
-        t.feed(text)
-        text = "".join(t.parts)
-        text = re.sub(r"\n{3,}", "\n\n", text)
-    return text
+    return html_to_text(text) if path.suffix.lower() in (".html", ".htm") else text
 
 
 def add_test(ws: Workspace, pid: str, inp: str, out: str) -> str:
@@ -394,6 +399,8 @@ def add_test(ws: Workspace, pid: str, inp: str, out: str) -> str:
 
 def import_statement(ws: Workspace, pid: str, text: str) -> int:
     """存下題目文字並把範例建成測資 sample01…（重新匯入會取代舊的 sample*，不會重複）。回傳範例組數。"""
+    if looks_like_html(text):                      # 從網頁複製／上傳的 HTML：先轉成純文字
+        text = html_to_text(text)
     (ws.root / "statements").mkdir(exist_ok=True)
     (ws.root / "statements" / f"{pid}.txt").write_text(text, encoding="utf-8")
     d = ws.tests / pid

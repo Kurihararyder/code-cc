@@ -288,6 +288,57 @@ class WebApiTests(WebBase):
         code, text = self.req(path)
         return code, json.loads(text)
 
+    def test_plan_calibration_eng_endpoints(self):
+        code, p = self.get("/api/plan?minutes=30")
+        self.assertEqual(code, 200)
+        self.assertEqual(p["minutes"], 30)
+        self.assertEqual(self.get("/api/plan?minutes=5")[1]["minutes"], 10)          # 下限
+        self.assertEqual(self.get("/api/plan?minutes=99999")[1]["minutes"], 480)     # 上限
+        self.assertEqual(self.get("/api/plan?minutes=abc")[0], 400)
+        code, c = self.get("/api/calibration")
+        self.assertEqual((code, c["rows"]), (200, []))
+        code, t = self.get("/api/eng")
+        self.assertEqual(len(t["tasks"]), 11)
+        code, r = self.post("/api/eng/start", {"n": 3})
+        self.assertEqual(code, 200)
+        self.assertIn("eng/solhelp.py", r["created"])
+        code, r = self.post("/api/eng/verify", {"n": 2, "evidence": "https://example.com/nope"})
+        self.assertEqual((code, r["ok"]), (200, False))
+        self.assertEqual(self.post("/api/eng/start", {"n": 99})[0], 400)
+        self.assertEqual(self.post("/api/eng/verify", {})[0], 400)
+
+    def test_past_and_vocab_endpoints(self):
+        code, r = self.post("/api/past/import", {"text": "2024-02-02,1,10055,Hashmat,61.2\n2024-02-02,2,,Odd,1"})
+        self.assertEqual((code, r["problems"]), (200, 2))
+        self.assertEqual(self.post("/api/past/import", {"text": "nonsense"})[0], 400)
+        code, P = self.get("/api/past")
+        e = next(x for x in P["exams"] if x["date"] == "2024-02-02")
+        self.assertEqual([p["id"] for p in e["problems"]], ["uva10055", "cpe20240202q2"])
+        self.assertFalse(e["complete"])
+        html = "<html><body><p>Read two numbers and print the absolute difference of them on one line, nothing else is needed. " * 2 + "</p><h3>Sample Input</h3><pre>5 3\n</pre><h3>Sample Output</h3><pre>2\n</pre></body></html>"
+        code, r = self.post("/api/past/statement", {"id": "uva10055", "text": html})
+        self.assertEqual((code, r["samples"], r["english"]), (200, 1, True))
+        self.assertEqual(self.post("/api/past/statement", {"id": "../evil", "text": "x"})[0], 400)
+        e = next(x for x in self.get("/api/past")[1]["exams"] if x["date"] == "2024-02-02")
+        self.assertTrue(e["problems"][0]["has_tests"] and e["problems"][0]["english"])
+        self.assertEqual(self.post("/api/past/start", {"date": "2024-02-02"})[0], 400)      # 另一題沒有測資
+        code, r = self.post("/api/past/start", {"date": "2024-02-02", "partial": True})
+        self.assertEqual((code, r["exam"]["past"], len(r["exam"]["board"]["rows"])), (200, "2024-02-02", 1))
+        self.assertEqual(self.post("/api/vocab/add", {"word": "absolute", "problem": "uva10055"})[0], 200)   # 考試中字典與單字本仍可用
+        self.assertEqual(self.post("/api/vocab/add", {"word": "two words"})[0], 400)
+        self.assertEqual([w["word"] for w in self.get("/api/vocab")[1]["words"]], ["absolute"])
+        code, r = self.post("/api/exam/finish", {})
+        self.assertEqual(code, 200)
+        self.assertEqual(r["summary"]["past"], "2024-02-02")
+
+    def test_backup_download(self):
+        r = urllib.request.Request(f"http://127.0.0.1:{self.port}/api/backup", headers={"Host": f"127.0.0.1:{self.port}", "X-CPE-Token": self.app.token})
+        with urllib.request.urlopen(r) as resp:
+            data = resp.read()
+            self.assertEqual((resp.status, resp.headers["Content-Type"]), (200, "application/zip"))
+        self.assertTrue(data.startswith(b"PK"))
+        self.assertEqual(self.req("/api/backup", token=False)[0], 403)
+
     def test_static_files_safe(self):
         code, _ = self.req("/static/css/app.css", token=False)
         self.assertEqual(code, 200)

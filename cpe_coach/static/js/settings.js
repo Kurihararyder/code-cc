@@ -1,5 +1,5 @@
 import { h, icon, clear, toast } from "./dom.js";
-import { get, post } from "./api.js";
+import { get, post, download } from "./api.js";
 import { S, pref, applyTheme } from "./state.js";
 import { refreshState, paintTop } from "./shell.js";
 import { skeleton, empty } from "./widgets.js";
@@ -31,6 +31,10 @@ export async function mountSettings(view) {
       h("div", { class: "col" }, h("div", { class: "row wrap" }, h("span", { class: "grow", text: "外觀" }), theme), h("div", { class: "row wrap" }, h("span", { class: "grow", text: "編輯器字體大小（px）" }), fs))),
     h("section", { class: "card pad mt" }, h("div", { class: "card-h" }, h("h3", { text: "學習" })),
       h("div", { class: "col" }, h("label", { class: "field" }, "每筆測資時限（秒）", timeout, h("small", { text: "Python 比 C++ 慢；本機電腦慢時可以調高。" })), h("label", { class: "field" }, "課程開始日期", start, h("small", { text: "用來計算『依課表你應該在第幾週』。" }))), h("div", { class: "mt" }, h("button", { class: "btn primary", onclick: saveLearn }, "儲存"))),
+    h("section", { class: "card pad mt" }, h("div", { class: "card-h" }, h("h3", { text: "備份與搬家" })),
+      h("p", { class: "muted small", text: "把所有進度、解答、測資、對話與單字本打包成一個 zip。換電腦時：cpe restore <檔案> --dir <新資料夾>。系統也會每小時自動留一份進度快照（.cpe/backups，保留最近 24 份）。" }),
+      h("div", { class: "row wrap" }, h("button", { class: "btn", onclick: async (e) => { const b = e.currentTarget; b.disabled = true; try { await download("/api/backup", "cpe-backup.zip"); toast("已下載備份", "ok", 2500); } catch (err) { toast(err.message, "bad"); } finally { b.disabled = false; } } }, icon("save"), "下載備份 (.zip)")),
+      h("p", { class: "muted xs mt", text: "備份不包含 API 金鑰（金鑰只存在記憶體）。" })),
     h("section", { class: "card pad mt" }, h("div", { class: "card-h" }, h("h3", { text: "環境" })),
       h("dl", { class: "dl" }, h("dt", { text: "工作區" }), h("dd", { class: "mono small", text: st.workspace }), h("dt", { text: "g++（C++ 判題）" }), h("dd", null, st["g++"] ? h("span", { class: "ok", text: "已安裝" }) : h("span", { class: "warn", text: "找不到。階段 4 起需要安裝（Windows 可裝 MSYS2/MinGW）" })), h("dt", { text: "快速鍵" }), h("dd", null, h("kbd", { text: "?" }), " 查看全部"))),
   ));

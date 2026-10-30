@@ -8,9 +8,10 @@ import { mountWorkspace } from "./workspace.js";
 import { mountCourse } from "./course.js";
 import { mountStats } from "./stats.js";
 import { mountSettings } from "./settings.js";
+import { mountExam } from "./exam.js";
 
 applyTheme();
-route("home", mountHome); route("practice", mountWorkspace); route("course", mountCourse); route("stats", mountStats); route("settings", mountSettings);
+route("home", mountHome); route("practice", mountWorkspace); route("course", mountCourse); route("exam", mountExam); route("stats", mountStats); route("settings", mountSettings);
 
 document.addEventListener("keydown", (e) => {
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openPalette(); return; }

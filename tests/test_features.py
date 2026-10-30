@@ -179,6 +179,46 @@ class PastStartTests(unittest.TestCase):
         self.assertEqual(sorted(ex["problems"]), ["uva20001", "uva20002", "uva20003"])
 
 
+class UnitPoolTests(unittest.TestCase):
+    def test_unit_pool_ranges_and_exclusive_upper_bound(self):
+        tmp, ws, _ = make_ws()
+        with tmp:
+            pastexams.import_manifest(ws, "2022-05-01,1,30001,Easy,45\n2022-05-01,2,30002,Edge,30\n2022-05-01,3,30003,Mid,20\n2022-05-01,4,30004,Hard,0.8")
+            b = bank_mod.load_bank(ws)
+            ids15 = [p["id"] for p in pastexams.unit_pool(ws, b, 15)["items"] if p["id"].startswith("uva3000")]
+            ids16 = [p["id"] for p in pastexams.unit_pool(ws, b, 16)["items"] if p["id"].startswith("uva3000")]
+            self.assertEqual(ids15, ["uva30001", "uva30002"])               # 單元 15：≥ 30%
+            self.assertEqual(ids16, ["uva30003"])                           # 單元 16：15%–30%，30% 屬於單元 15，不重複
+            self.assertEqual([p["id"] for p in pastexams.unit_pool(ws, b, 50)["items"] if p["id"].startswith("uva3000")], ["uva30004"])
+            self.assertIsNone(pastexams.unit_pool(ws, b, 3))
+
+    def test_every_imported_problem_is_reachable_from_some_unit(self):
+        """『每一題歷屆題都要用進去』：任何答對率都至少落在一個單元的建議範圍內。"""
+        for acc in (100, 45, 30, 22, 15, 9, 5, 4.9, 2, 0.5, 0.09, 0):
+            hits = [n for n, (lo, hi, _) in pastexams.UNIT_POOLS.items() if lo <= acc <= (hi if hi >= 100 else hi - 1e-9)]
+            self.assertTrue(hits, f"答對率 {acc}% 沒有單元會用到")
+
+    def test_plan_offers_past_problem_when_unit_drills_done(self):
+        tmp, ws, clock = make_ws()
+        with tmp:
+            pastexams.import_manifest(ws, "2022-05-01,1,30001,Easy,45")
+            d = ws.tests / "uva30001"
+            d.mkdir(parents=True)
+            (d / "s.in").write_text("1\n")
+            (d / "s.out").write_text("1\n")
+            c = course.load()
+            st = ws.state()
+            st["course"]["unit"] = 15
+            u = course.get_unit(c, 15)
+            for pid in u["drills"]:
+                st["problems"][pid] = dict(new_problem_state(), first_pass=clock.t - DAY, last_pass=clock.t - DAY, passes=1, attempts=1)
+            ws.save_state(st)
+            for pid in u["drills"]:
+                ws.log("test", problem=pid, verdict="AC", lang="py")
+            items = plan_mod.build(ws, 90)["items"]
+            self.assertIn("uva30001", [i["id"] for i in items if i["kind"] == "past"])
+
+
 class VocabTests(unittest.TestCase):
     def test_add_remove_csv_and_dedupe(self):
         tmp, ws, _ = make_ws()

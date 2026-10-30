@@ -1,5 +1,6 @@
 import { h, icon, clear, fmtDate } from "./dom.js";
 import { get } from "./api.js";
+import { stars } from "./dom.js";
 import { kpi, heat, bars, skeleton, empty } from "./widgets.js";
 
 const VZ = { AC: "通過", WA: "答案錯誤", PE: "格式錯誤", TLE: "超過時間", RE: "執行錯誤", CE: "語法錯誤", MLE: "記憶體超過" };
@@ -7,7 +8,7 @@ const VC = { AC: "var(--ok)", WA: "var(--bad)", PE: "var(--warn)", TLE: "var(--w
 
 export async function mountStats(view) {
   view.append(h("div", { class: "page" }, h("div", { class: "card pad" }, skeleton(5))));
-  let s; try { s = await get("/api/stats"); } catch (e) { clear(view); view.append(h("div", { class: "page" }, empty("alert", e.message))); return; }
+  let s, cal; try { [s, cal] = await Promise.all([get("/api/stats"), get("/api/calibration")]); } catch (e) { clear(view); view.append(h("div", { class: "page" }, empty("alert", e.message))); return; }
   clear(view);
   const rows = (o) => Object.entries(o).sort((a, b) => b[1] - a[1]).map(([k, n]) => ({ label: VZ[k] || k, n, color: VC[k] }));
   const rt = s.review_attempts;
@@ -24,8 +25,21 @@ export async function mountStats(view) {
       h("section", { class: "card pad" }, h("div", { class: "card-h" }, h("h3", { text: "判題結果（累計）" })), Object.keys(s.verdicts_total).length ? bars(rows(s.verdicts_total)) : empty("chart", "還沒有提交")),
       h("section", { class: "card pad" }, h("div", { class: "card-h" }, h("h3", { text: "判題結果（本週）" })), Object.keys(s.verdicts_week).length ? bars(rows(s.verdicts_week)) : empty("chart", "本週還沒有提交")),
       h("section", { class: "card pad" }, h("div", { class: "card-h" }, h("h3", { text: "提示使用" })), Object.keys(s.hints_by_level).length ? bars(Object.entries(s.hints_by_level).map(([k, n]) => ({ label: "L" + k, n, color: "var(--warn)" }))) : empty("bulb", "沒用過提示 👏"))),
+    calibration(cal),
     h("section", { class: "card pad mt" }, h("div", { class: "card-h" }, h("h3", { text: "考試紀錄" })),
-      s.exams.length ? h("table", { class: "t" }, h("thead", null, h("tr", null, ["日期", "類型", "答對", "罰時"].map((t) => h("th", { text: t })))),
-        h("tbody", null, [...s.exams].reverse().map((e) => h("tr", null, h("td", { class: "mono", text: e.date }), h("td", { text: { mock: "全真模擬", short: "短測驗", weekly: "每週重寫", gate: "單元檢核" }[e.kind] || e.kind }), h("td", { text: `${e.solved}/${e.total}` }), h("td", { text: `${e.penalty} 分` }))))) : empty("target", "還沒有考試紀錄。到「今日」按「模擬考」試試。")));
+      s.exams.length ? h("table", { class: "t" }, h("thead", null, h("tr", null, ["日期", "類型", "答對", "罰時", ""].map((t) => h("th", { text: t })))),
+        h("tbody", null, [...s.exams].reverse().map((e) => h("tr", null, h("td", { class: "mono", text: e.date }), h("td", { text: { mock: "全真模擬", short: "短測驗", weekly: "每週重寫", gate: "單元檢核" }[e.kind] || e.kind }), h("td", { text: `${e.solved}/${e.total}` }), h("td", { text: `${e.penalty} 分` }), h("td", { class: "small muted", text: e.percentile ? `超過約 ${e.percentile.beats}% 考生` : (e.past ? "歷屆 " + e.past : "") }))))) : empty("target", "還沒有考試紀錄。到「考試」頁開始一場。")));
   view.append(page);
+}
+
+function calibration(c) {
+  const lab = { "比標示難": "bad", "比標示簡單": "ok", "接近標示": "" };
+  return h("section", { class: "card pad mt" }, h("div", { class: "card-h" }, h("h3", { text: "難度校準：這些題對你實際多難" }), c.enough ? h("span", { class: "pill info", text: `速度係數 ×${c.factor}` }) : null),
+    c.rows.length ? [
+      h("p", { class: "muted small", text: "用你『到第一次通過為止』的實際投入（工作分鐘 + 每多一次嘗試 4 分 + 每次提示 6 分）換算成星等，和題目標示（官方答對率或我的估計）並排。資料點少、也受當天狀態影響，只當參考。" + (c.note ? " " + c.note : "") }),
+      h("div", { class: "row wrap small mb" }, Object.entries(c.by_star).map(([k, v]) => h("span", { class: "pill", text: `標示 ${stars(+k)}：${v.n} 題，中位數 ${v.median} 分（預設 ${v.prior}）` }))),
+      h("div", { class: "tablewrap" }, h("table", { class: "t" }, h("thead", null, h("tr", null, ["題目", "標示", "對你", "投入", ""].map((t) => h("th", { text: t })))),
+        h("tbody", null, c.rows.slice(0, 12).map((r) => h("tr", null, h("td", null, h("span", { class: "mono", text: r.id }), " ", r.title), h("td", { text: `${stars(r.listed)}${r.source === "official" ? "（官方）" : ""}` }), h("td", { text: stars(r.mine) }),
+          h("td", { class: "small", text: `${r.effort_min} 分・${r.attempts} 次・${r.hints} 提示` }), h("td", null, h("span", { class: "pill " + (lab[r.label] || ""), text: r.label }))))))),
+    ] : empty("chart", "解出幾題之後，這裡會顯示每題對你的實際難度。"));
 }

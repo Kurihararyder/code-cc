@@ -19,3 +19,13 @@ export async function api(path, body) {
 }
 export const get = (p, params) => api(params ? p + "?" + new URLSearchParams(params) : p);
 export const post = (p, b = {}) => api(p, b);
+
+// 下載二進位檔（備份 zip）：要帶 token，所以不能用一般連結。
+export async function download(path, filename) {
+  let r;
+  try { r = await fetch(path, { headers: { "X-CPE-Token": token } }); } catch { setOffline(true); throw new ApiError("連線中斷", 0); }
+  if (!r.ok) throw new ApiError("下載失敗（HTTP " + r.status + "）", r.status);
+  const url = URL.createObjectURL(await r.blob());
+  const a = document.createElement("a"); a.href = url; a.download = filename; document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+}

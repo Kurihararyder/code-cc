@@ -4,6 +4,7 @@ import { go } from "./router.js";
 import { S, pref, stageColor } from "./state.js";
 import { kpi, progress, heat, skeleton, empty, examPanel, startGate, startMockDialog, notify } from "./widgets.js";
 import { refreshState } from "./shell.js";
+import { planCard } from "./plan.js";
 
 const greet = () => { const hr = new Date().getHours(); return hr < 5 ? "夜深了" : hr < 12 ? "早安" : hr < 18 ? "午安" : "晚安"; };
 
@@ -23,6 +24,7 @@ function build(d) {
     h("div", { class: "row" }, h("button", { class: "btn", onclick: startMockDialog }, icon("target"), "模擬考"))));
   if (d.exam) page.append(examPanel(d.exam));
 
+  if (!d.exam) page.append(planCard());
   if (u) {
     const pace = u.pace > 0 ? h("span", { class: "pill warn", text: `落後課表 ${u.pace} 個單元` }) : u.pace < 0 ? h("span", { class: "pill ok", text: `超前課表 ${-u.pace} 個單元` }) : h("span", { class: "pill info", text: "進度與課表同步" });
     page.append(h("section", { class: "card hero mt", "aria-label": "目前單元" },

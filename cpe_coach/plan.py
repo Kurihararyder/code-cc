@@ -5,11 +5,11 @@ import time
 from typing import Any, Dict, List
 
 from . import bank as bank_mod
-from . import calibrate, course as course_mod, eng, mock, srs
+from . import calibrate, course as course_mod, eng, mock, pastexams, srs
 from .store import Workspace
 
 DAY = 86400.0
-KIND_ZH = {"review": "重練", "continue": "續做", "new": "新題", "gate": "檢核", "weekly": "每週測驗", "eng": "工程", "exam": "考試"}
+KIND_ZH = {"review": "重練", "continue": "續做", "new": "新題", "gate": "檢核", "weekly": "每週測驗", "eng": "工程", "exam": "考試", "past": "歷屆"}
 
 
 def _today(ws: Workspace) -> str:
@@ -46,10 +46,15 @@ def build(ws: Workspace, minutes: int = 30) -> Dict[str, Any]:
             spent = ef.get(pid, {}).get("active_min", 0)
             pool.append(item("continue", pid, bank_mod.resolve(bank, pid)["title"], calibrate.est_minutes(bank, pid, ef, factor, spent=min(spent, 15)),
                              "你已經試過了，先把它做完", pid in ac_today))
-        if u["gate"] and not todo:                                         # 3. 檢核
+        pp = pastexams.unit_pool(ws, bank, u["n"])                         # 3. 這個單元的歷屆題（有測資、還沒解過的，由易到難）
+        if pp and not todo:
+            nxt = [p for p in pp["items"] if p["has_tests"] and not p["solved"]][:2]
+            for p in nxt:
+                pool.append(item("past", p["id"], p["title"], calibrate.est_minutes(bank, p["id"], ef, factor), f"歷屆題（全體答對率 {p['accuracy']:g}%）", p["id"] in ac_today))
+        if u["gate"] and not todo:                                         # 4. 檢核
             mins = u["gate"].get("minutes", 90 if u["gate"].get("kind") == "short" else 180)
             (pool if minutes >= mins else later).append(item("gate", None, f"單元 {u['n']} 檢核", mins, "必做練習都完成了" + ("" if minutes >= mins else "；需要連續 %d 分鐘，建議另外安排" % mins)))
-        for pid in [x for x in todo if x not in started]:                  # 4. 新題
+        for pid in [x for x in todo if x not in started]:                  # 3b. 新題
             pool.append(item("new", pid, bank_mod.resolve(bank, pid)["title"], calibrate.est_minutes(bank, pid, ef, factor), f"單元 {u['n']} 必做", pid in ac_today))
     solved = srs.counts(st)["solved"]                                      # 5. 每週無 AI 測驗
     wk = [e for e in events if e["kind"] == "exam_start" and e.get("exam_kind") == "weekly"]
@@ -79,6 +84,8 @@ def build(ws: Workspace, minutes: int = 30) -> Dict[str, Any]:
             it = dict(it, over=True, why=it["why"] + "（預估超過今天的時間，可以只做一半，明天接著做）")
             chosen.append(it)
             used += it["est"]
+        else:
+            later.append(dict(it, why=it["why"] + "（今天的時間放不下）"))
     done_min = sum(i["est"] for i in chosen if i["done"])
     return {"minutes": minutes, "items": chosen, "later": later, "total_est": used, "done_min": done_min, "factor": factor, "date": today,
             "calibrated": cal["enough"]}

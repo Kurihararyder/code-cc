@@ -167,7 +167,8 @@ def cmd_today(ws: Workspace, args) -> int:
     open_eng = [t for t in roadmap.ENGINEERING if t["min_stage"] <= stage and t["n"] not in st["eng_done"]]
     if open_eng:
         print(f"\n🛠 工程能力（每週撥 20–30% 時間）：#{open_eng[0]['n']} {open_eng[0]['task']}")
-    print("\n開始：cpe new <題號> → 寫程式 → cpe test <題號>。卡住再 cpe hint <題號>。")
+    print("\n只有一點時間？cpe plan -m 30 會依你的進度排出今天 30 分鐘要做的事。")
+    print("開始：cpe new <題號> → 寫程式 → cpe test <題號>。卡住再 cpe hint <題號>。")
     return 0
 
 

@@ -5,7 +5,7 @@ import { S, emit, pref, applyTheme, stageColor } from "./state.js";
 import { go, where } from "./router.js";
 import { openPalette } from "./palette.js";
 
-const NAV = [["home", "今日", "home"], ["practice", "練習", "code"], ["course", "課程", "map"], ["stats", "統計", "chart"], ["settings", "設定", "settings"]];
+const NAV = [["home", "今日", "home"], ["practice", "練習", "code"], ["course", "課程", "map"], ["exam", "考試", "target"], ["stats", "統計", "chart"], ["settings", "設定", "settings"]];
 let tick = null;
 
 export function buildShell() {
@@ -32,7 +32,7 @@ export function paintTop() {
     h("div", { class: "crumb grow" }, u ? [h("span", { class: "stagedot", style: { "--sc": stageColor(u.stage) } }),
       h("span", { class: "hide-m muted", text: `單元 ${u.n}/${u.total}` }), h("b", { text: u.title }), h("span", { class: "hide-m muted", text: `· 第 ${u.weeks[0]}${u.weeks[1] > u.weeks[0] ? "–" + u.weeks[1] : ""} 週` })]
       : h("b", { text: "課程已完成 🎓" })),
-    S.exam ? h("button", { class: "pill bad", id: "examChip", onclick: () => go("/home"), title: "考試進行中" }, icon("clock"), h("span", { id: "examLeft", text: fmtDur(examLeft()) })) : null,
+    S.exam ? h("button", { class: "pill bad", id: "examChip", onclick: () => go("/exam"), title: "考試進行中" }, icon("clock"), h("span", { id: "examLeft", text: fmtDur(examLeft()) })) : null,
     h("button", { class: "pill " + (S.ai.available ? "ok" : "warn"), onclick: () => go("/settings"), title: S.ai.available ? "AI 就緒" : "尚未設定 API 金鑰" },
       h("span", { class: "led" + (S.ai.available ? " on" : "") }), h("span", { class: "hide-m", text: S.ai.available ? S.ai.model : "AI 未設定" })),
     h("button", { class: "searchbtn", onclick: openPalette, "aria-label": "搜尋與指令" }, icon("search"), h("span", { class: "t", text: "搜尋題目與指令" }), h("kbd", { text: navigator.platform.includes("Mac") ? "⌘K" : "Ctrl K" })),

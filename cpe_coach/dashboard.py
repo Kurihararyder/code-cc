@@ -161,7 +161,8 @@ def unit_detail(ws: Workspace, bank: Dict[str, dict], course: Dict[str, Any], n:
             "read": u.get("read", []), "pool": u["pool"], "eng": u["eng"],
             "resources": [course["resources"][r] for r in u["resources"]],
             "drills": [prob(d, "必做") for d in u["drills"]], "anchors": [prob(a, "真題") for a in u["anchors"]],
-            "gate": gate, "status": "done" if n in st["course"]["done"] else ("current" if n == st["course"]["unit"] else "upcoming")}
+            "gate": gate, "past_pool": pastexams.unit_pool(ws, bank, n),
+            "status": "done" if n in st["course"]["done"] else ("current" if n == st["course"]["unit"] else "upcoming")}
 
 
 def stats_view(ws: Workspace) -> Dict[str, Any]:
