@@ -50,6 +50,19 @@ def _git(root: Path, *args: str, timeout: int = 60) -> Tuple[int, str]:
     return p.returncode, (p.stdout + p.stderr).decode("utf-8", "replace").strip()
 
 
+def purge_bytecode(root: Path) -> None:
+    """刪掉 __pycache__。.pyc 只用『修改時間（秒）加檔案大小』判斷過期：同一秒內改回來、大小又一樣（例如版本號 2.4.1 ↔ 2.4.2）的檔案，舊的 .pyc 會被誤認為有效。"""
+    for d in (root / "cpe_coach").rglob("__pycache__"):
+        shutil.rmtree(str(d), ignore_errors=True)
+
+
+def reset_to(root: Path, commit: str) -> Tuple[int, str]:
+    """退回到指定的 commit（只在更新後驗證失敗時用；更新前工作樹是乾淨的，所以不會弄丟東西）。"""
+    r = _git(root, "reset", "--hard", commit)
+    purge_bytecode(root)
+    return r
+
+
 def changelog_since(text: str, old: str, new: str) -> str:
     """CHANGELOG.md 裡版本號 > old 且 <= new 的段落（標題格式：## 2.4.0（日期））。"""
     parts = re.split(r"(?m)^(?=## \d)", text)
@@ -102,8 +115,37 @@ def inspect(root: Path) -> Dict[str, Any]:
     return info
 
 
+def managed_update(root: Path, check_only: bool) -> Optional[Dict[str, Any]]:
+    """用安裝精靈裝的（下載 zip 或複製資料夾）沒有 .git：更新交給精靈的引擎處理。不是這種安裝就回傳 None。"""
+    try:
+        from .launcher import config as launcher_config
+        from .launcher import engine
+        from .launcher.envcheck import Ctx
+        from .launcher.osinfo import detect
+        plat = detect()
+        cfg = launcher_config.load(plat.launcher_home)
+    except Exception:
+        return None
+    if cfg is None or Path(cfg.app_dir).resolve() != Path(root).resolve():
+        return None
+    base: Dict[str, Any] = {"root": str(root), "version": cfg.version, "branch": cfg.branch, "commit": str(cfg.source.get("sha") or "")[:7],
+                            "upstream": f"GitHub（{cfg.branch}，下載 zip）", "commits": [], "ahead": 0, "behind": 0}
+    r = engine.check_update(cfg) if check_only else engine.update(cfg, plat, Ctx(plat=plat))
+    st = r["status"]
+    if st == "available":
+        return dict(base, status="available", behind=1)
+    if st == "updated":
+        return dict(base, **{k: r[k] for k in ("old_version", "new_version", "notes")}, status="updated", old_commit=base["commit"],
+                    new_commit=str((r.get("source") or {}).get("sha") or "")[:7])
+    return dict(base, status=st, reason=r.get("reason", ""))
+
+
 def apply(root: Path, check_only: bool = False) -> Dict[str, Any]:
     """回傳 {status, ...}。status：unavailable／up_to_date／available（只檢查）／blocked／updated／rolled_back。"""
+    if not (root / ".git").exists():
+        managed = managed_update(root, check_only)
+        if managed is not None:
+            return managed
     info = inspect(root)
     if not info["ok"]:
         return dict(info, status="unavailable")
@@ -122,10 +164,10 @@ def apply(root: Path, check_only: bool = False) -> Dict[str, Any]:
     if rc != 0:
         return dict(info, status="blocked", reason="無法 fast-forward 更新：" + out[-300:])
     env = dict(os.environ, PYTHONPATH=str(root))
-    chk = subprocess.run([sys.executable, "-c", "import cpe_coach.cli, cpe_coach; print(cpe_coach.__version__)"], cwd=str(root), env=env,
+    chk = subprocess.run([sys.executable, "-B", "-c", "import cpe_coach.cli, cpe_coach; print(cpe_coach.__version__)"], cwd=str(root), env=env,
                          capture_output=True, timeout=60)
     if chk.returncode != 0:
-        _git(root, "reset", "--hard", old)             # 更新前工作樹是乾淨的，所以退回不會弄丟任何東西
+        reset_to(root, old)
         return dict(info, status="rolled_back", reason="新版程式無法載入，已自動退回更新前的版本（" + old + "）：" +
                     chk.stderr.decode("utf-8", "replace").strip()[-300:])
     new_version = chk.stdout.decode("utf-8", "replace").strip() or read_version(root) or old_version

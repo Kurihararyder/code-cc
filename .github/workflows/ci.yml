@@ -23,9 +23,120 @@ jobs:
         if: matrix.os == 'ubuntu-latest' && matrix.python == '3.12'
         run: |
           python -m pip install pyflakes
-          python -m pyflakes cpe_coach tests
+          python -m pyflakes cpe_coach tests dev/launcher_screens.py dev/ci_installer_check.py dev/make_icons.py
       - name: Unit tests
         run: python -m unittest discover -s tests -v
+
+  installer-gui:
+    name: installer GUI on a virtual screen (Linux, Python ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.9", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install Xvfb, Tk, a CJK font and ImageMagick
+        run: sudo apt-get update && sudo apt-get install -y xvfb python3-tk fonts-noto-cjk imagemagick
+      - name: GUI tests (wizard, control panel, uninstall - real windows, buttons pressed by the tests)
+        env:
+          CPE_REQUIRE_GUI: "1"
+        run: xvfb-run -a -s "-screen 0 1280x800x24" python -X faulthandler -m unittest tests.test_launcher_gui -v
+      - name: Screenshots of every screen
+        run: xvfb-run -a -s "-screen 0 1280x800x24" python dev/launcher_screens.py "$RUNNER_TEMP/launcher-screens"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: launcher-screens-py${{ matrix.python }}
+          path: ${{ runner.temp }}/launcher-screens
+          if-no-files-found: ignore
+
+  installer-e2e:
+    name: installer end-to-end on ${{ matrix.os }} (double-click scripts, default locations)
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # ---- Linux / macOS ----
+      - name: Check mode (no changes)
+        if: runner.os != 'Windows'
+        run: |
+          if [ "$RUNNER_OS" = "macOS" ]; then sh install-macos.command --check; else sh install-linux.sh --check; fi
+      - name: Install with the shell bootstrap (no questions, source = this checkout)
+        if: runner.os != 'Windows'
+        run: |
+          mkdir -p "$HOME/Desktop"
+          sh setup/bootstrap.sh --yes --source bundle --dir "$HOME/cpe-app" --workspace "$HOME/cpe-ws"
+      - name: Verify the install, start and stop the service
+        if: runner.os != 'Windows'
+        run: python dev/ci_installer_check.py installed
+      - name: Uninstall from the installed copy, verify nothing is left but the progress folder
+        if: runner.os != 'Windows'
+        run: |
+          python "$HOME/cpe-app/cpe-panel.pyw" uninstall --yes --text
+          python dev/ci_installer_check.py removed "$HOME/cpe-ws"
+      - name: Install from GitHub itself (real network, git clone of this branch)
+        if: runner.os != 'Windows' && github.event_name == 'push'
+        env:
+          CPE_REPO_SLUG: ${{ github.repository }}
+          CPE_INSTALL_BRANCH: ${{ github.ref_name }}
+        run: |
+          sh setup/bootstrap.sh --yes --source git --dir "$HOME/cpe-app2" --workspace "$HOME/cpe-ws2"
+          python dev/ci_installer_check.py installed
+          python "$HOME/cpe-app2/cpe-panel.pyw" uninstall --yes --text
+          python dev/ci_installer_check.py removed "$HOME/cpe-ws2"
+
+      # ---- Windows ----
+      - name: Check mode (no changes)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          & .\install-windows.bat -CheckOnly
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Install with the .bat (no questions, source = this checkout)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          & .\install-windows.bat -Yes --source bundle --dir "$env:USERPROFILE\cpe-app" --workspace "$env:USERPROFILE\cpe-ws"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Verify the install (real shortcuts, registry and PATH), start and stop the service
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          python dev/ci_installer_check.py installed
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Uninstall from the installed copy, verify nothing is left but the progress folder
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          python "$env:USERPROFILE\cpe-app\cpe-panel.pyw" uninstall --yes --text
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python dev/ci_installer_check.py removed "$env:USERPROFILE\cpe-ws"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Install from GitHub itself (real network, zip download of this branch)
+        if: runner.os == 'Windows' && github.event_name == 'push'
+        shell: pwsh
+        env:
+          CPE_REPO_SLUG: ${{ github.repository }}
+          CPE_INSTALL_BRANCH: ${{ github.ref_name }}
+        run: |
+          & .\install-windows.bat -Yes --source zip --dir "$env:USERPROFILE\cpe-app2" --workspace "$env:USERPROFILE\cpe-ws2"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python dev/ci_installer_check.py installed
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python "$env:USERPROFILE\cpe-app2\cpe-panel.pyw" uninstall --yes --text
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python dev/ci_installer_check.py removed "$env:USERPROFILE\cpe-ws2"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
   ui:
     name: browser UI tests (Playwright, Linux)

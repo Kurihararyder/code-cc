@@ -54,6 +54,12 @@ def cmd_gpt_prompt(args) -> int:
     return 0
 
 
+def cmd_panel(args) -> int:
+    """不需要工作區：控制台管的是程式本身（開啟／關閉學習服務、更新、備份、修復、解除安裝）。"""
+    from .launcher.__main__ import run
+    return run([args.cmd] + (["--text"] if getattr(args, "text", False) else []))
+
+
 def cmd_update(args) -> int:
     """不需要工作區：更新的是程式本身。"""
     from . import __version__, updater

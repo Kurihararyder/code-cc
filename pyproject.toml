@@ -13,10 +13,10 @@ readme = "README.md"
 cpe = "cpe_coach.cli:main"
 
 [tool.setuptools]
-packages = ["cpe_coach"]
+packages = ["cpe_coach", "cpe_coach.launcher"]
 
 [tool.setuptools.dynamic]
 version = {attr = "cpe_coach.__version__"}
 
 [tool.setuptools.package-data]
-cpe_coach = ["data/*.json", "data/*.md", "static/*.html", "static/*.svg", "static/css/*.css", "static/js/*.js", "data/drills/index.json", "data/drills/*/statement.md", "data/drills/*/statement.en.md", "data/drills/*/tests/*"]
+cpe_coach = ["data/*.json", "data/*.md", "static/*.html", "static/*.svg", "static/css/*.css", "static/js/*.js", "data/drills/index.json", "data/drills/*/statement.md", "data/drills/*/statement.en.md", "data/drills/*/tests/*", "launcher/assets/*"]

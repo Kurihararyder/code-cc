@@ -13,12 +13,19 @@
 
 **完整的安裝、使用與更新教學（Windows／macOS／Linux）：[INSTALL.md](INSTALL.md)。** 最短版本：
 
+1. 下載並解壓縮：<https://github.com/Kurihararyder/code-cc/archive/refs/heads/claude/clever-archimedes-ekcn2m.zip>
+2. 雙擊 **`install-windows.bat`**（macOS：右鍵 → 打開 `install-macos.command`；Linux：`sh install-linux.sh`）。它會自動檢測環境、缺 Python 會問你要不要自動安裝，然後打開**安裝精靈**。
+3. 精靈裝完後，桌面與開始功能表會有「CPE 教練」——那是**控制台**：按「▶ 開啟」開始學習、「■ 關閉」結束，也能在裡面更新、備份、修復、解除安裝。
+
+![控制台](docs/screens/launcher-panel.png)
+
+終端機愛好者：`cpe panel`（控制台）、`cpe doctor`（環境與安裝診斷）、`cpe web`（直接開網頁服務）、`cpe update`（更新）。不想用精靈、要自己管：
+
 ```bash
 git clone -b claude/clever-archimedes-ekcn2m https://github.com/Kurihararyder/code-cc.git
 cd code-cc && python -m pip install -e .     # 之後就有 cpe 指令（也可以用 python -m cpe_coach）
 cd .. && cpe init my-cpe && cd my-cpe        # 學習進度放在這個工作區，和程式資料夾分開
 cpe web                                      # 網頁介面；終端機版：cpe today、cpe course
-cpe update                                   # 之後要更新程式時（進度不受影響）；更新內容見 CHANGELOG.md
 ```
 
 ## 網頁介面（建議用這個）

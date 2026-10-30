@@ -10,7 +10,7 @@ import tempfile
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, NamedTuple, Optional
+from typing import List, Mapping, NamedTuple, Optional
 
 AC, WA, PE, TLE, RE, CE, MLE = "AC", "WA", "PE", "TLE", "RE", "CE", "MLE"
 VERDICT_ZH = {
@@ -71,16 +71,38 @@ def syntax_error(path: Path) -> Optional[str]:
     return None
 
 
+def gpp_candidates(env: Optional[Mapping[str, str]] = None, windows: Optional[bool] = None) -> List[Path]:
+    """Windows：MSYS2／MinGW 常常裝了 g++ 卻沒加進 PATH，找幾個固定的位置。其他系統回傳空的。"""
+    if not (os.name == "nt" if windows is None else windows):
+        return []
+    env = os.environ if env is None else env
+    roots = [Path(env.get("MSYS2_ROOT", r"C:\msys64")), Path(r"C:\msys32"), Path(r"C:\mingw64"), Path(r"C:\MinGW"), Path(r"C:\ProgramData\mingw64\mingw64")]
+    return [r / sub for r in roots for sub in ("ucrt64/bin", "mingw64/bin", "clang64/bin", "bin")]
+
+
+def find_gpp() -> Optional[str]:
+    found = shutil.which("g++")
+    if found:
+        return found
+    for d in gpp_candidates():
+        f = d / "g++.exe"
+        if f.exists():
+            return str(f)
+    return None
+
+
 def prepare(path: Path):
     """回傳 (指令列, 暫存目錄或 None, 錯誤訊息)。.cpp 會先編譯。"""
     if path.suffix != ".cpp":
         return [sys.executable, str(path)], None, None
-    gxx = shutil.which("g++")
+    gxx = find_gpp()
     if not gxx:
-        return None, None, "找不到 g++。請先安裝（Linux/Mac 通常內建；Windows 可裝 MSYS2/MinGW），或改用 Python"
+        return None, None, "找不到 g++。C++ 題目才需要它：到控制台『維護 → 環境檢測』可以自動安裝（Windows 會裝 MSYS2），或自己安裝後再試；也可以改用 Python"
     tmp = Path(tempfile.mkdtemp(prefix="cpe-build-"))
     exe = tmp / ("prog.exe" if os.name == "nt" else "prog")
-    p = subprocess.run([gxx, "-O2", "-std=c++17", "-o", str(exe), str(path)], capture_output=True, timeout=120)
+    flags = ["-O2", "-std=c++17"] + (["-static"] if os.name == "nt" else [])      # Windows：靜態連結，執行時才不會找不到 MSYS2 的 DLL
+    env = dict(os.environ, PATH=os.path.dirname(gxx) + os.pathsep + os.environ.get("PATH", "")) if os.name == "nt" else None
+    p = subprocess.run([gxx] + flags + ["-o", str(exe), str(path)], capture_output=True, timeout=120, env=env)
     if p.returncode != 0:
         shutil.rmtree(tmp, ignore_errors=True)
         err = p.stderr.decode("utf-8", "replace").strip().splitlines()

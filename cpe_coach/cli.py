@@ -12,7 +12,7 @@ from . import hints
 from .store import Workspace, WorkspaceError
 from .cli_learn import cmd_addtest, cmd_course, cmd_external, cmd_fuzz, cmd_gate, cmd_giveup, cmd_hint, cmd_import, cmd_init, cmd_lang, cmd_new, cmd_next, cmd_review, cmd_roadmap, cmd_solution, cmd_stage, cmd_statement, cmd_stress, cmd_test, cmd_today
 from .cli_exam import cmd_ai_eval, cmd_calibrate, cmd_eng, cmd_mock, cmd_past, cmd_plan, cmd_stats, cmd_vocab, cmd_weak
-from .cli_admin import cmd_add, cmd_bank, cmd_export, cmd_gpt_prompt, cmd_restore, cmd_update, cmd_web
+from .cli_admin import cmd_add, cmd_bank, cmd_export, cmd_gpt_prompt, cmd_panel, cmd_restore, cmd_update, cmd_web
 
 
 # ---------- 解析 ----------
@@ -133,8 +133,11 @@ def build_parser() -> argparse.ArgumentParser:
     s = sub.add_parser("web", help="啟動本機網頁介面（選取文字 → 問 AI）")
     s.add_argument("--port", type=int, default=8765)
     s.add_argument("--no-open", action="store_true", help="不要自動開瀏覽器")
-    s = sub.add_parser("update", help="更新程式到 GitHub 上最新的版本（用 git clone 安裝時）；不會動到你的學習進度")
+    s = sub.add_parser("update", help="更新程式到 GitHub 上最新的版本（git clone 或安裝精靈裝的都可以）；不會動到你的學習進度")
     s.add_argument("--check", action="store_true", help="只檢查有沒有新版本，不更新")
+    s = sub.add_parser("panel", help="開啟控制台：開啟／關閉學習服務、更新、備份、修復、解除安裝（沒裝過就開安裝精靈）")
+    s.add_argument("--text", action="store_true", help="用文字模式（不開圖形視窗）")
+    sub.add_parser("doctor", help="環境檢測與安裝診斷（Python、git、網路、編譯器、服務狀態…）")
     sub.add_parser("gpt-prompt", help="印出可貼進 ChatGPT 自訂 GPT 的助教規則")
     return ap
 
@@ -155,6 +158,8 @@ def main(argv: Optional[List[str]] = None) -> int:
             return cmd_restore(args)
         if args.cmd == "update":
             return cmd_update(args)
+        if args.cmd in ("panel", "doctor"):
+            return cmd_panel(args)
         ws = Workspace.find()
         handler = {
             "course": cmd_course, "gate": cmd_gate, "statement": cmd_statement, "import": cmd_import,

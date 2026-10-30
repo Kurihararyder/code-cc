@@ -6,9 +6,10 @@ from __future__ import annotations
 
 import datetime as dt
 import json
+import os
 import re
 import secrets
-import shutil
+import signal
 import threading
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -19,7 +20,7 @@ from urllib.parse import parse_qs, urlparse
 from . import ask as ask_mod
 from . import bank as bank_mod
 from . import course as course_mod
-from . import __version__, backup, dashboard, hints, service, srs, updater
+from . import __version__, backup, dashboard, hints, judge, service, srs, updater
 from .llm import detect_client
 from .web_exam import ExamMixin
 from .web_learn import LearnMixin
@@ -106,7 +107,7 @@ class App(PracticeMixin, ExamMixin, LearnMixin):
         ws = self.ws()
         cfg = ws.config()
         return {"timeout_sec": cfg["timeout_sec"], "start_date": cfg["start_date"], "stage": cfg["stage"], "statement_lang": cfg.get("statement_lang", "auto"),
-                "model": cfg.get("model"), "ai": self.ai_info(ws), "g++": bool(shutil.which("g++")),
+                "model": cfg.get("model"), "ai": self.ai_info(ws), "g++": bool(judge.find_gpp()),
                 "workspace": str(ws.root), "version": __version__}
 
 
@@ -234,6 +235,8 @@ def make_handler(app: App):
                     return self._send(200, html.encode("utf-8"), "text/html; charset=utf-8")
                 if u.path.startswith("/static/"):
                     return self._static(u.path)
+                if u.path == "/api/ping":                # 給安裝控制台判斷『這個埠上跑的是不是 CPE 教練、是哪個程序』；不含任何學習資料
+                    return self._json(200, {"app": "cpe-coach", "version": __version__, "pid": os.getpid(), "port": app.port, "workspace": str(app.root)})
                 if self.headers.get("X-CPE-Token") != app.token:
                     return self._fail(403, "bad token")
                 if u.path == "/api/backup":
@@ -279,6 +282,10 @@ def make_handler(app: App):
     return H
 
 
+def _stop_on_sigterm(signum, frame) -> None:
+    raise KeyboardInterrupt
+
+
 def serve(root: Path, port: int = 8765, open_browser: bool = True, announce=print) -> None:
     app = App(root, port)
     httpd = ThreadingHTTPServer(("127.0.0.1", port), make_handler(app))
@@ -289,6 +296,10 @@ def serve(root: Path, port: int = 8765, open_browser: bool = True, announce=prin
             webbrowser.open(url)
         except Exception:
             pass
+    try:
+        signal.signal(signal.SIGTERM, _stop_on_sigterm)       # 控制台按『關閉』時能正常收尾
+    except (ValueError, OSError):
+        pass                                                  # 不在主執行緒（測試）時略過
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:

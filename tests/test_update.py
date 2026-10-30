@@ -4,6 +4,7 @@ import io
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -119,6 +120,15 @@ class UpdateTests(unittest.TestCase):
         self.assertEqual(git(self.clone, "rev-parse", "--short", "HEAD"), old)
         self.assertEqual(updater.read_version(self.clone), "2.0.0")
         self.assertEqual(git(self.clone, "status", "--porcelain", "--untracked-files=no"), "")
+
+    def test_rollback_does_not_leave_stale_bytecode_for_a_same_size_edit(self):
+        """版本號 2.0.0 ↔ 2.1.0 長度一樣、又在同一秒內改回來：舊的 .pyc 會被誤認為有效，退回後實際跑的還是新版（壞掉的）程式。"""
+        self.publish("2.1.0", "same size, broken", extra="raise RuntimeError('boom')\n")
+        r = updater.apply(self.clone)
+        self.assertEqual(r["status"], "rolled_back")
+        self.assertEqual(list((self.clone / "cpe_coach").rglob("*.pyc")), [])             # 驗證時不寫 .pyc；退回後也沒有殘留
+        out = subprocess.run([sys.executable, "-c", "import cpe_coach; print(cpe_coach.__version__)"], cwd=str(self.clone), capture_output=True, env=dict(os.environ, PYTHONPATH=str(self.clone)))
+        self.assertEqual(out.stdout.decode().strip(), "2.0.0", out.stderr.decode())
 
     def test_not_a_git_checkout_and_no_upstream_and_detached(self):
         plain = Path(self.tmp.name) / "plain"
