@@ -43,7 +43,8 @@ class RealRepoTests(unittest.TestCase):
                 bad.append(n)
         self.assertEqual(bad, [])
 
-    @unittest.skipUnless(shutil.which("pdftotext"), "沒有 pdftotext")
+    # 對照組只在我們自己裝 poppler 的環境跑（Linux CI、本機）；Windows 上找到的 pdftotext 不一定是 poppler，輸出不同。雜湊那一項已涵蓋每個平台。
+    @unittest.skipUnless(shutil.which("pdftotext") and sys.platform != "win32", "沒有 poppler 的 pdftotext，或在 Windows")
     def test_samples_agree_with_pdftotext_token_by_token(self):
         """對照組：pdftotext -layout 的 Sample Input／Output 區塊（去掉頁尾），逐個詞比對。"""
         bad = []
