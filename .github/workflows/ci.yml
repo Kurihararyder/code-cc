@@ -171,7 +171,7 @@ jobs:
       - name: Fetch the pinned commit of LuckyPigeon/CPE_Previous_Questions (data only; its solutions are never run)
         shell: bash
         run: |
-          COMMIT=$(python -c "import json;print(json.load(open('cpe_coach/data/cpe_sets.json'))['source']['commit'])")
+          COMMIT=$(python -c "import json;print(json.load(open('cpe_coach/data/cpe_sets.json',encoding='utf-8'))['source']['commit'])")
           mkdir -p "$RUNNER_TEMP/cpeq" && cd "$RUNNER_TEMP/cpeq"
           git init -q . && git remote add origin https://github.com/LuckyPigeon/CPE_Previous_Questions.git
           git fetch -q --depth 1 origin "$COMMIT" && git checkout -q FETCH_HEAD
