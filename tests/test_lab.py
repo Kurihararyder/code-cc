@@ -16,7 +16,8 @@ def run_code(code, stdin=""):
     with tempfile.TemporaryDirectory() as d:
         f = Path(d) / "p.py"
         f.write_text(code + "\n", encoding="utf-8")
-        return run_program(f, stdin, 20.0)
+        r = run_program(f, stdin, 20.0)
+        return r._replace(out=r.out.replace("\r\n", "\n"))                    # Windows 的標準輸出換行是 \r\n
 
 
 class ContentIntegrityTests(unittest.TestCase):
