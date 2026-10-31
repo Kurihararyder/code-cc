@@ -5,7 +5,7 @@ import time
 from typing import Any, Dict, List
 
 from . import bank as bank_mod
-from . import calibrate, course as course_mod, eng, mock, pastexams, srs, weakness
+from . import calibrate, cpeset, course as course_mod, eng, mock, pastexams, srs, weakness
 from .store import Workspace
 
 DAY = 86400.0
@@ -62,6 +62,10 @@ def build(ws: Workspace, minutes: int = 30) -> Dict[str, Any]:
             nxt = [p for p in pp["items"] if p["has_tests"] and not p["solved"]][:2]
             for p in nxt:
                 pool.append(item("past", p["id"], p["title"], calibrate.est_minutes(bank, p["id"], ef, factor), f"歷屆題（全體答對率 {p['accuracy']:g}%）", p["id"] in ac_today))
+        cp = cpeset.unit_pool(ws, bank, u["n"])                            # 3a. 這個單元的 CPE 原題（一星／二星／歷屆題單；匯入後才有測資）
+        if cp and not todo:
+            for p in [p for p in cp["items"] if p["has_tests"] and not p["solved"]][:2]:
+                pool.append(item("past", p["id"], p["title"], calibrate.est_minutes(bank, p["id"], ef, factor), "CPE 原題：" + cp["label"].split("（")[0], p["id"] in ac_today))
         if u["gate"] and not todo:                                         # 4. 檢核
             mins = u["gate"].get("minutes", 90 if u["gate"].get("kind") == "short" else 180)
             (pool if minutes >= mins else later).append(item("gate", None, f"單元 {u['n']} 檢核", mins, "必做練習都完成了" + ("" if minutes >= mins else "；需要連續 %d 分鐘，建議另外安排" % mins)))

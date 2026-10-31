@@ -8,7 +8,7 @@ from pathlib import Path
 
 from . import bank as bank_mod
 from . import course as course_mod
-from . import aieval, calibrate, eng, mock, pastexams, service, stats, vocab, weakness
+from . import aieval, calibrate, cpeimport, cpeset, eng, mock, pastexams, service, stats, vocab, weakness
 from . import plan as plan_mod
 from .llm import detect_client
 from .store import Workspace
@@ -73,7 +73,7 @@ def cmd_past(ws: Workspace, args) -> int:
         folder = Path(args.arg)
         n_files = n_samples = 0
         for f in sorted(folder.iterdir()):
-            m = re.match(r"^(?:uva)?[-_ ]?(\d+)\b.*\.(txt|md|html?)$", f.name, re.I)
+            m = re.match(r"^(?:uva)?[-_ ]?(\d+)\b.*\.(txt|md|html?|pdf)$", f.name, re.I)
             if not m:
                 continue
             pid = f"uva{int(m.group(1))}"
@@ -82,6 +82,10 @@ def cmd_past(ws: Workspace, args) -> int:
             n_samples += k
             print(f"  {pid:<10} {f.name}　範例 {k} 組" + ("" if k else "　⚠ 找不到 Sample Input／Output，請用 cpe addtest 補"))
         print(f"\n處理 {n_files} 個檔案，共建立 {n_samples} 組範例測資。檔名格式：10050.txt、uva10050.html …")
+    elif args.action == "repo":
+        _past_repo(ws, args)
+    elif args.action == "sets":
+        _past_sets(ws, bank)
     elif args.action == "start":
         exam = course_mod.start_past(ws, bank, args.arg, args.lang or "py", args.partial)
         print(f"歷屆整場開始：{args.arg}，{exam['minutes']} 分鐘，{len(exam['problems'])} 題。AI 與提示已鎖定。")
@@ -90,6 +94,33 @@ def cmd_past(ws: Workspace, args) -> int:
             print(f"             檔案：{exam['files'][pid]}　題目：cpe statement {pid}")
         print("寫完用 cpe test <題號>；cpe mock status 看計分板；cpe mock finish 交卷。")
     return 0
+
+
+def _past_repo(ws: Workspace, args) -> None:
+    """把 CPE 原題（社群整理的 GitHub repo：一星題 49、二星題 15、歷屆試題 31）的 PDF 匯入成題目文字與範例測資。"""
+    where = f"讀取 {args.arg}" if args.arg else "從 GitHub 下載（約 6 MB）"
+    print(f"匯入 CPE 原題：{where}…")
+    r = cpeimport.import_from(ws, args.arg, force=args.force, progress=lambda pid, msg: print(f"  {pid:<10} {msg}"))
+    samples = sum(n for _, _, n in r.imported)
+    print(f"\n完成：匯入 {len(r.imported)} 題（範例測資 {samples} 組）；略過已匯入的 {len(r.skipped)} 題；失敗 {len(r.failed)} 題。")
+    for pid, why in r.failed:
+        print(f"  ✗ {pid}：{why}")
+    if r.no_samples:
+        print("  找不到 Sample Input／Output：" + "、".join(r.no_samples) + "（請用 cpe addtest 補）")
+    if r.missing:
+        print("清單裡有、但這份資料沒有 PDF 的題：" + "、".join(r.missing) + "（要練的話自己貼上題目：cpe import <題號> <檔案>）")
+    print("題目文字在 statements/uvaN.txt，原 PDF 也留在 statements/uvaN.pdf（算式、表格、圖擷取不好的地方請對照 PDF）。")
+    print("下一步：cpe past sets 看三個題單；cpe new uva10008 開始練。" + ("　(已匯入的沒有覆蓋；要重做加 --force)" if r.skipped else ""))
+
+
+def _past_sets(ws: Workspace, bank) -> None:
+    s = cpeset.status(ws, bank)
+    for g in s["sets"]:
+        print(f"\n{g['name']}（{g['count']} 題；可練 {g['ready']}、已通過 {g['solved']}）")
+        for r in g["problems"]:
+            flag = ("✓" if r["solved"] else " ") + ("T" if r["has_tests"] else "-") + ("S" if r["has_statement"] else "-")
+            print(f"  [{flag}] {r['id']:<9} {r['title']}" + ("　（該 repo 沒有 PDF）" if r["no_pdf"] and not r["has_statement"] else ""))
+    print(f"\n[已通過/有測資(T)/有題目文字(S)]　共 {s['total']} 題，已可練 {s['ready']} 題。匯入：cpe past repo")
 
 
 def cmd_vocab(ws: Workspace, args) -> int:

@@ -85,6 +85,20 @@ cpe vocab list / cpe vocab export # 單字本
 
 網頁的「考試」頁有同樣的功能（匯入歷屆清單、各題「貼上題目」，貼 HTML 也可以）。**只有題目裡的範例會變成測資**，通過範例不代表一定正確；請再用 `cpe addtest` 補自己的測資。
 
+### CPE 原題：一星題 49、二星題 15、歷屆試題 31
+
+內建收了社群整理的 [CPE_Previous_Questions](https://github.com/LuckyPigeon/CPE_Previous_Questions) 三個題單的**題號與標題**（共 91 題）。題目敘述有版權，所以不放在程式裡；要練的時候，一行指令把 PDF 從 GitHub 下載到你的電腦，轉成題目文字與範例測資：
+
+```bash
+cpe past repo                 # 從 GitHub 下載（約 6 MB）並匯入；已匯入的不會覆蓋
+cpe past repo ~/CPE_Previous_Questions   # 或指定你已經 clone／下載好的資料夾或 .zip
+cpe past repo --force         # 重新轉換
+cpe past sets                 # 三個題單各題的狀態（已通過／有測資／有題目）
+cpe new uva10008              # 開始練
+```
+
+網頁「考試」頁的「CPE 原題」卡片有同樣的按鈕。轉換用內建的 PDF 擷取器（只用標準函式庫）：範例輸入輸出已經逐詞和 poppler 的 `pdftotext -layout` 比對過（89 份 PDF 沒有差異）；**算式、表格、矩陣與圖在題目敘述裡擷取得不完整**，那些題請對照工作區 `statements/uvaN.pdf`。匯入只讀 PDF，不會執行 repo 裡別人寫的解答。只有題目裡的範例會變成測資，請自己再補邊界測資。該 repo 沒有 11332 與 1034 的 PDF，這兩題要自己貼上題目。單元 15／16 把一星題依 UVA 題號分成前 25／後 24 題（官網的順序我沒有拿到）。
+
 ## 題目語言：中文 → 中英對照 → 英文
 
 考場題目是英文。內建 107 題都有英文版（`statement.en.md`，Input／Output／Sample Input／Sample Output 的格式比照 UVA），並依階段逐步過渡：
@@ -196,7 +210,7 @@ cpe mock finish           # 交卷。通過就自動進入下一個單元
 ## 誠實的限制
 
 - **6 題是全國前 1% 的成績。** 課程涵蓋需要的知識並用檢核擋住『以為學會了』，但不能保證你一定達成；**真實 CPE 成績才是最終檢核**。每個階段結尾都安排一次真實報考。卡在平台期延長 6–12 個月很正常。
-- 課程內的難度星等、模擬考是我自己估的；官網連不上，沒能核對『官方一顆星選集 49 題』與 CPE26 選集，請自行到 [CPE 官網](https://cpe.mcu.edu.tw/) 取得後用 `cpe import` 加入。**歷屆題目與官方答對率只有報告列出的那一場**，其餘要照上面「歷屆資料要自己匯入」自己匯入。
+- 課程內的難度星等、模擬考是我自己估的；官網連不上，沒能核對『官方一顆星選集 49 題』與 CPE26 選集，請自行到 [CPE 官網](https://cpe.mcu.edu.tw/) 取得後用 `cpe import` 加入。**官方答對率只有報告列出的那一場**；CPE 原題的題目要用上面的 `cpe past repo` 匯入，其他歷屆題照「歷屆資料要自己匯入」。
 - **Windows 與 macOS：** 全部單元測試（含記憶體限制、輸出限制、C++ 判題、安裝精靈的安裝／更新／修復／解除安裝與圖形視窗）在 GitHub Actions 的 Windows／macOS／Linux × Python 3.9／3.12 上通過；安裝精靈另外在 GitHub 的 Windows（英文版）與 macOS 機器上，用雙擊用的啟動檔從 GitHub 真的下載、安裝、開啟與關閉服務、解除安裝一次，並檢查捷徑、登錄、PATH 都建立與清乾淨。CI 抓到並修掉了這些只有在真的平台上才看得到的問題：macOS 不執行 `RLIMIT_AS`、macOS 的 clang 會把沒被使用的配置整個省掉（測試改成真的使用它）、Windows 預設編碼、macOS 虛擬機上 Python 內建網頁伺服器啟動時的反向 DNS 查詢會卡 35 秒（現在不做這個查詢）、英文版 Windows 的 WScript.Shell 存不了檔名有中文的捷徑（現在直接用系統的 IShellLinkW）。我沒有在真人使用的 Windows／macOS 桌面上用滑鼠點過精靈、控制台與網頁介面；瀏覽器介面測試只在 Linux 的 Chromium 上跑。
 - 難度校準與每日計畫的時間預估是粗略的啟發式，沒有拿多個真實學習者的資料驗證過。
 - `uva…` 真題的題號／標題憑記憶整理（約 120 題），部分沒有內建提示（標為 `unverified`）；請以 vjudge 連結上的題目為準，發現錯誤用 `cpe add` 覆蓋。

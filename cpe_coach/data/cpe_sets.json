@@ -1,0 +1,408 @@
+{
+ "_note": "社群整理的 CPE 題目清單。只收題號與標題（事實）；題目敘述有版權，不內建，匯入時才從 GitHub 下載到使用者自己的電腦。no_pdf：該 repo 裡這題沒有 PDF。",
+ "source": {
+  "repo": "https://github.com/LuckyPigeon/CPE_Previous_Questions",
+  "commit": "6304e15d88a8fe46d875ca878a0ca831c08b4a25",
+  "license": "MIT（repo 本身）；題目敘述的著作權屬於各題作者"
+ },
+ "sets": {
+  "one": {
+   "name": "一星題",
+   "problems": [
+    {
+     "uva": 100,
+     "title": "The 3n + 1 problem"
+    },
+    {
+     "uva": 118,
+     "title": "Mutant Flatworld Explorers"
+    },
+    {
+     "uva": 272,
+     "title": "TEX Quotes"
+    },
+    {
+     "uva": 299,
+     "title": "Train Swapping"
+    },
+    {
+     "uva": 490,
+     "title": "Rotating Sentences"
+    },
+    {
+     "uva": 948,
+     "title": "Fibonaccimal Base"
+    },
+    {
+     "uva": 10008,
+     "title": "What's Cryptanalysis?"
+    },
+    {
+     "uva": 10019,
+     "title": "Funny Encryption Method"
+    },
+    {
+     "uva": 10035,
+     "title": "Primary Arithmetic"
+    },
+    {
+     "uva": 10038,
+     "title": "Jolly Jumpers"
+    },
+    {
+     "uva": 10041,
+     "title": "Vito's family"
+    },
+    {
+     "uva": 10050,
+     "title": "Hartals"
+    },
+    {
+     "uva": 10055,
+     "title": "Hashmat the brave warrior"
+    },
+    {
+     "uva": 10056,
+     "title": "What is the Probability?"
+    },
+    {
+     "uva": 10057,
+     "title": "A mid-summer night's dream"
+    },
+    {
+     "uva": 10062,
+     "title": "Tell me the frequencies!"
+    },
+    {
+     "uva": 10071,
+     "title": "Back to High School Physics"
+    },
+    {
+     "uva": 10093,
+     "title": "An Easy Problem!"
+    },
+    {
+     "uva": 10101,
+     "title": "Bangla Numbers"
+    },
+    {
+     "uva": 10170,
+     "title": "The Hotel with Infinite Rooms"
+    },
+    {
+     "uva": 10189,
+     "title": "Minesweeper"
+    },
+    {
+     "uva": 10190,
+     "title": "Divide, But Not Quite Conquer!"
+    },
+    {
+     "uva": 10193,
+     "title": "All You Need Is Love"
+    },
+    {
+     "uva": 10221,
+     "title": "Satellites"
+    },
+    {
+     "uva": 10222,
+     "title": "Decode the Mad man"
+    },
+    {
+     "uva": 10226,
+     "title": "Hardwood Species"
+    },
+    {
+     "uva": 10235,
+     "title": "Simply Emirp"
+    },
+    {
+     "uva": 10242,
+     "title": "Fourth Point!!"
+    },
+    {
+     "uva": 10252,
+     "title": "Common Permutation"
+    },
+    {
+     "uva": 10268,
+     "title": "498-bis"
+    },
+    {
+     "uva": 10409,
+     "title": "Die Game"
+    },
+    {
+     "uva": 10415,
+     "title": "Eb Alto Saxophone Player"
+    },
+    {
+     "uva": 10420,
+     "title": "List of Conquests"
+    },
+    {
+     "uva": 10642,
+     "title": "Can You Solve It?"
+    },
+    {
+     "uva": 10783,
+     "title": "Odd Sum"
+    },
+    {
+     "uva": 10812,
+     "title": "Beat the Spread!"
+    },
+    {
+     "uva": 10908,
+     "title": "Largest Square"
+    },
+    {
+     "uva": 10922,
+     "title": "2 the 9s"
+    },
+    {
+     "uva": 10929,
+     "title": "You can say 11"
+    },
+    {
+     "uva": 10931,
+     "title": "Parity"
+    },
+    {
+     "uva": 11005,
+     "title": "Cheapest Base"
+    },
+    {
+     "uva": 11063,
+     "title": "B2-Sequence"
+    },
+    {
+     "uva": 11150,
+     "title": "Cola"
+    },
+    {
+     "uva": 11321,
+     "title": "Sort! Sort!! And Sort!!!"
+    },
+    {
+     "uva": 11332,
+     "title": "Summing Digits",
+     "no_pdf": true
+    },
+    {
+     "uva": 11349,
+     "title": "Symmetric Matrix"
+    },
+    {
+     "uva": 11417,
+     "title": "GCD"
+    },
+    {
+     "uva": 11461,
+     "title": "Square Numbers"
+    },
+    {
+     "uva": 12019,
+     "title": "Doom's Day Algorithm"
+    }
+   ]
+  },
+  "two": {
+   "name": "二星題",
+   "problems": [
+    {
+     "uva": 151,
+     "title": "Power Crisis"
+    },
+    {
+     "uva": 1022,
+     "title": "Covering Whole Holes"
+    },
+    {
+     "uva": 1034,
+     "title": "UVA 1034",
+     "no_pdf": true,
+     "title_unknown": true
+    },
+    {
+     "uva": 10004,
+     "title": "Bicoloring"
+    },
+    {
+     "uva": 10009,
+     "title": "All Roads Lead Where?"
+    },
+    {
+     "uva": 10013,
+     "title": "Super long sums"
+    },
+    {
+     "uva": 10020,
+     "title": "Minimal coverage"
+    },
+    {
+     "uva": 10042,
+     "title": "Smith Numbers"
+    },
+    {
+     "uva": 10104,
+     "title": "Euclid Problem"
+    },
+    {
+     "uva": 10106,
+     "title": "Product"
+    },
+    {
+     "uva": 10200,
+     "title": "Prime Time"
+    },
+    {
+     "uva": 10295,
+     "title": "Hay Points"
+    },
+    {
+     "uva": 10298,
+     "title": "Power Strings"
+    },
+    {
+     "uva": 10343,
+     "title": "Base64 Decoding"
+    },
+    {
+     "uva": 10407,
+     "title": "Simple division"
+    }
+   ]
+  },
+  "past": {
+   "name": "歷屆試題",
+   "problems": [
+    {
+     "uva": 255,
+     "title": "Correct Move"
+    },
+    {
+     "uva": 263,
+     "title": "Number Chains"
+    },
+    {
+     "uva": 544,
+     "title": "Heavy Cargo"
+    },
+    {
+     "uva": 679,
+     "title": "Dropping Balls"
+    },
+    {
+     "uva": 846,
+     "title": "Steps"
+    },
+    {
+     "uva": 855,
+     "title": "Lunch in Grid City"
+    },
+    {
+     "uva": 1237,
+     "title": "Expert Enough?"
+    },
+    {
+     "uva": 1316,
+     "title": "Supermarket"
+    },
+    {
+     "uva": 1368,
+     "title": "DNA Consensus String"
+    },
+    {
+     "uva": 1594,
+     "title": "Ducci Sequence"
+    },
+    {
+     "uva": 10010,
+     "title": "Where's Waldorf?"
+    },
+    {
+     "uva": 10036,
+     "title": "Divisibility"
+    },
+    {
+     "uva": 10130,
+     "title": "SuperSale"
+    },
+    {
+     "uva": 10189,
+     "title": "Minesweeper"
+    },
+    {
+     "uva": 10191,
+     "title": "Longest Nap"
+    },
+    {
+     "uva": 10268,
+     "title": "498-bis"
+    },
+    {
+     "uva": 10583,
+     "title": "Ubiquitous Religions"
+    },
+    {
+     "uva": 10813,
+     "title": "Traditional BINGO"
+    },
+    {
+     "uva": 11284,
+     "title": "Shopping Trip"
+    },
+    {
+     "uva": 11349,
+     "title": "Symmetric Matrix"
+    },
+    {
+     "uva": 11417,
+     "title": "GCD"
+    },
+    {
+     "uva": 11456,
+     "title": "Trainsorting"
+    },
+    {
+     "uva": 11498,
+     "title": "Division of Nlogonia"
+    },
+    {
+     "uva": 11541,
+     "title": "Decoding"
+    },
+    {
+     "uva": 11677,
+     "title": "Alarm Clock"
+    },
+    {
+     "uva": 11730,
+     "title": "Number Transformation"
+    },
+    {
+     "uva": 11987,
+     "title": "Almost Union-Find"
+    },
+    {
+     "uva": 12096,
+     "title": "The SetStack Computer"
+    },
+    {
+     "uva": 12820,
+     "title": "Cool Word"
+    },
+    {
+     "uva": 12918,
+     "title": "Lucky Thief"
+    },
+    {
+     "uva": 13257,
+     "title": "License Plates"
+    }
+   ]
+  }
+ }
+}

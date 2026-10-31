@@ -58,6 +58,7 @@ async function openUnit(n) {
       D.anchors.length ? h("div", { class: "mt" }, h("h4", { text: "真題（選做）" }), h("ul", { class: "list" }, D.anchors.map(probRow)), h("p", { class: "muted xs", text: "真題需要自己匯入範例：cpe import <題號> <題目文字檔>" })) : null,
       D.weak ? weakBlock(D.weak, close) : null,
       D.past_pool ? pastPool(D.past_pool, close) : null,
+      D.cpe_pool ? pastPool(D.cpe_pool, close, { title: "CPE 原題", limit: 40, missing: "尚未匯入", empty: "還沒有匯入 CPE 原題。到「考試」頁按『從 GitHub 匯入』（需要連網），這裡就會列出可以練的題。" }) : null,
       g ? h("div", { class: "callout mt" }, icon("target"), h("div", null, h("b", { text: "單元檢核" }), h("div", { class: "small", text: g.type === "mock" ? `模擬考（${g.kind}），至少答對 ${g.need} 題` : `${g.minutes} 分鐘、不看提示，${g.problems.map((p) => p.id).join("、")}，至少答對 ${g.need} 題${g.lang === "cpp" ? "（C++）" : ""}` }))) : h("div", { class: "callout mt" }, icon("flag" in {} ? "flag" : "target"), h("span", { text: "這個單元的檢核是實際報考 CPE。" })),
       sec("常見陷阱", D.pitfalls), sec("自我檢查（不看資料回答）", D.check), sec("要讀的章節", D.read), sec("延伸題庫", D.pool),
       D.resources.length ? h("div", { class: "mt" }, h("h4", { text: "教材" }), h("ul", { class: "small" }, D.resources.map((r) => h("li", null, h("a", { href: r.url, target: "_blank", rel: "noopener noreferrer" }, r.name, " ", icon("external")))))) : null,
@@ -67,13 +68,15 @@ async function openUnit(n) {
   });
 }
 
-function pastPool(pp, close) {
-  const rows = pp.items.slice(0, 12).map((p) => h("li", null, h("button", { class: "li", disabled: !p.has_tests, onclick: () => { close(); go("/practice/" + p.id); } },
+function pastPool(pp, close, o = {}) {
+  const limit = o.limit || 12;
+  const rows = pp.items.slice(0, limit).map((p) => h("li", null, h("button", { class: "li", disabled: !p.has_tests, onclick: () => { close(); go("/practice/" + p.id); } },
     h("span", { class: "status" + (p.solved ? " done" : "") }, p.solved ? icon("check") : null), h("span", { class: "mono", text: p.id }), h("span", { class: "grow", text: p.title }),
-    !p.has_tests ? h("span", { class: "tag", text: "需貼上題目" }) : null, h("span", { class: "muted xs", text: p.accuracy + "%" }), h("span", { class: "stars", text: "★".repeat(p.stars || 1) }))));
-  return h("div", { class: "mt" }, h("h4", { text: "歷屆題庫" }), h("p", { class: "muted xs", text: pp.label + (pp.items.length ? `（已匯入 ${pp.items.length} 題，${pp.ready} 題可練，${pp.solved} 題已解）` : "") }),
-    pp.items.length ? h("ul", { class: "list" }, rows) : h("p", { class: "small muted", text: "還沒有匯入符合的歷屆題。到『考試』頁匯入歷屆清單與題目文字後，這裡會自動列出。" }),
-    pp.items.length > 12 ? h("p", { class: "muted xs", text: `另有 ${pp.items.length - 12} 題` }) : null);
+    !p.has_tests ? h("span", { class: "tag", text: o.missing || "需貼上題目" }) : null, p.accuracy != null ? h("span", { class: "muted xs", text: p.accuracy + "%" }) : null,
+    p.accuracy != null ? h("span", { class: "stars", text: "★".repeat(p.stars || 1) }) : null)));
+  return h("div", { class: "mt" }, h("h4", { text: o.title || "歷屆題庫" }), h("p", { class: "muted xs", text: pp.label + (pp.items.length ? `（共 ${pp.items.length} 題，${pp.ready} 題可練，${pp.solved} 題已解）` : "") }),
+    pp.items.length ? h("ul", { class: "list" }, rows) : h("p", { class: "small muted", text: o.empty || "還沒有匯入符合的歷屆題。到『考試』頁匯入歷屆清單與題目文字後，這裡會自動列出。" }),
+    pp.items.length > limit ? h("p", { class: "muted xs", text: `另有 ${pp.items.length - limit} 題` }) : null);
 }
 
 function weakBlock(wk, close) {

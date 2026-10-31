@@ -9,9 +9,9 @@ import { dictUrl } from "./ask.js";
 export async function mountExam(view) {
   view.append(h("div", { class: "page" }, h("div", { class: "card pad" }, skeleton(5))));
   const paint = async () => {
-    let P, V, st;
-    try { [P, V, st] = await Promise.all([get("/api/past"), get("/api/vocab"), get("/api/state")]); } catch (e) { clear(view); view.append(h("div", { class: "page" }, empty("alert", e.message))); return; }
-    clear(view); view.append(build(P, V.words, st.exam, paint));
+    let P, V, st, C;
+    try { [P, V, st, C] = await Promise.all([get("/api/past"), get("/api/vocab"), get("/api/state"), get("/api/cpe")]); } catch (e) { clear(view); view.append(h("div", { class: "page" }, empty("alert", e.message))); return; }
+    clear(view); view.append(build(P, V.words, st.exam, paint, C));
   };
   await paint();
   const onChange = () => paint();
@@ -20,7 +20,7 @@ export async function mountExam(view) {
   return () => { window.removeEventListener("cpe:changed", onChange); clearInterval(t); };
 }
 
-function build(P, words, exam, repaint) {
+function build(P, words, exam, repaint, C) {
   const page = h("div", { class: "page" });
   page.append(h("div", { class: "page-head" }, h("div", null, h("h1", { text: "考試" }), h("p", { text: "歷屆場次、整場模擬、單字本。考場是 3 小時 7 題，ICPC 計分（罰時 20 分鐘）。" })),
     h("div", { class: "row wrap" }, h("button", { class: "btn", onclick: () => importDialog(repaint) }, icon("list"), "匯入歷屆清單"), h("button", { class: "btn primary", onclick: startMockDialog }, icon("target"), "開始模擬考"))));
@@ -32,6 +32,7 @@ function build(P, words, exam, repaint) {
     h("div", { class: "small", text: "內建資料只包含研究報告明確列出的場次與答對率（沒有題目文字，也沒有測資；題目有版權，不能內建）。要整場模擬，需要你把場次清單與題目文字匯入：先『匯入歷屆清單』，再在各題按『貼上題目』（題目文字裡的 Sample Input／Output 會自動變成測資）。" }),
     h("div", { class: "small", text: P.exams.length ? `目前有題目資料的 ${P.exams.filter((e) => e.problems.length).length} 場，其中 ${allReady} 場已可整場模擬。` : "目前沒有任何場次。" }))));
 
+  page.append(cpeCard(C, repaint));
   P.exams.filter((e) => e.problems.length).forEach((e) => page.append(examCard(e, repaint, !!exam)));
   const bare = P.exams.filter((e) => !e.problems.length);
   if (bare.length) page.append(h("section", { class: "card pad mt" }, h("div", { class: "card-h" }, h("h3", null, icon("chart"), "只有統計數字的場次")),
@@ -52,6 +53,28 @@ function build(P, words, exam, repaint) {
 }
 
 const STATUS = { ac: ["ok", "✓"], wrong: ["bad", "✗"], open: ["", ""] };
+
+// CPE 原題：社群整理的一星 49／二星 15／歷屆 31 題。題目文字不在這個程式裡，按鈕才從 GitHub 下載到你的電腦並轉成題目與範例測資。
+function cpeCard(C, repaint) {
+  const btn = h("button", { class: "btn" + (C.ready ? "" : " primary"), onclick: async () => {
+    btn.disabled = true; const old = btn.textContent; btn.textContent = "下載並轉換中…（約 10 秒）";
+    try {
+      const r = await post("/api/cpe/import", { force: false });
+      const bad = r.failed.length;
+      toast(`匯入 ${r.imported} 題（範例測資 ${r.samples} 組）` + (r.skipped ? `；${r.skipped} 題本來就有` : "") + (bad ? `；${bad} 題失敗` : ""), bad ? "warn" : "ok", 7000);
+      notify(); repaint();
+    } catch (e) { toast(e.message, "bad", 10000); btn.disabled = false; btn.textContent = old; }
+  } }, icon("refresh"), C.ready ? "再匯入（補沒有的）" : "從 GitHub 匯入");
+  const row = (p) => h("li", null, h("button", { class: "li", disabled: !p.has_tests, onclick: () => go("/practice/" + p.id) },
+    h("span", { class: "status" + (p.solved ? " done" : "") }, p.solved ? icon("check") : null), h("span", { class: "mono", text: p.id }), h("span", { class: "grow", text: p.title }),
+    !p.has_tests ? h("span", { class: "tag", text: p.no_pdf ? "該 repo 沒有 PDF，需貼上題目" : "尚未匯入" }) : null));
+  return h("section", { class: "card pad mt", id: "cpeSets" },
+    h("div", { class: "card-h" }, h("h3", null, icon("target"), "CPE 原題"), h("span", { class: "pill " + (C.ready ? "ok" : "info"), text: `可練 ${C.ready}/${C.total}` }), h("span", { class: "grow" }), btn),
+    h("p", { class: "muted small", text: "社群整理的 CPE 題單：一星題、二星題、歷屆試題（UVa 原題，英文）。題目文字有版權，不放在這個程式裡：按『從 GitHub 匯入』才會把 PDF 下載到你的電腦，轉成題目文字與範例測資（原 PDF 也留在工作區的 statements/）。範例只是最基本的測資，通過後請自己再補邊界測資。" }),
+    C.sets.map((g) => h("details", { class: "mt", open: g.key === "one" && g.ready > 0 }, h("summary", { class: "small" }, h("b", { text: g.name }), `　${g.count} 題　可練 ${g.ready}　已通過 ${g.solved}`),
+      h("ul", { class: "list" }, g.problems.map(row)))),
+    h("p", { class: "muted xs mt" }, "清單來源：", h("a", { href: C.source.repo, target: "_blank", rel: "noopener noreferrer" }, "LuckyPigeon/CPE_Previous_Questions ", icon("external")), `（提交 ${String(C.source.commit).slice(0, 7)}）。算式、表格、圖擷取得不好的地方，請開 statements/ 裡的原 PDF 對照。`));
+}
 
 function examCard(e, repaint, busy) {
   const rows = e.problems.map((p) => h("tr", null,

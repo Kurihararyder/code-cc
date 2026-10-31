@@ -7,11 +7,14 @@ E2E_DIR="${E2E_DIR:-/tmp/cpe-e2e}"; mkdir -p "$E2E_DIR"
 export E2E_DIR
 python3 "$ROOT/dev/fake_llm.py" 8792 >"$E2E_DIR/llm.log" 2>&1 &
 LLM=$!
-cleanup() { kill "$LLM" 2>/dev/null; [ -f "$E2E_DIR/web.pid" ] && kill "$(cat "$E2E_DIR/web.pid")" 2>/dev/null; }
+python3 "$HERE/fake_github.py" 8794 >"$E2E_DIR/github.log" 2>&1 &
+GH=$!
+export CPE_QUESTIONS_URL=http://127.0.0.1:8794/archive.zip
+cleanup() { kill "$LLM" "$GH" 2>/dev/null; [ -f "$E2E_DIR/web.pid" ] && kill "$(cat "$E2E_DIR/web.pid")" 2>/dev/null; }
 trap cleanup EXIT
 sleep 1
 status=0
-for t in ui gate mobile a11y exam learn; do
+for t in ui gate mobile a11y exam learn cpe; do
   "$HERE/fresh.sh" >/dev/null || { echo "fresh.sh 失敗"; exit 1; }
   echo "=== $t"
   (cd "$E2E_DIR" && timeout 600 node "$HERE/$t.js" 2>&1) | tee "$E2E_DIR/$t.log"

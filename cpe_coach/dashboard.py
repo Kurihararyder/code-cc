@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 
 from . import bank as bank_mod
 from . import course as course_mod
-from . import mock, pastexams, srs, stats, weakness
+from . import cpeset, mock, pastexams, srs, stats, weakness
 from .judge import VERDICT_ZH
 from .store import Workspace
 
@@ -161,7 +161,7 @@ def unit_detail(ws: Workspace, bank: Dict[str, dict], course: Dict[str, Any], n:
             "read": u.get("read", []), "pool": u["pool"], "eng": u["eng"],
             "resources": [course["resources"][r] for r in u["resources"]],
             "drills": [prob(d, "必做") for d in u["drills"]], "anchors": [prob(a, "真題") for a in u["anchors"]],
-            "gate": gate, "past_pool": pastexams.unit_pool(ws, bank, n),
+            "gate": gate, "past_pool": pastexams.unit_pool(ws, bank, n), "cpe_pool": cpeset.unit_pool(ws, bank, n),
             "weak": (lambda a: dict(a, suggestions=weakness.suggestions(ws, bank, course, a, per_family=3, families=4)))(weakness.analyze(ws, bank, course)) if n == 49 else None,
             "status": "done" if n in st["course"]["done"] else ("current" if n == st["course"]["unit"] else "upcoming")}
 

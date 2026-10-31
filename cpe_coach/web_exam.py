@@ -6,7 +6,7 @@ from typing import Any, Dict
 
 from . import bank as bank_mod
 from . import course as course_mod
-from . import dashboard, mock, pastexams, service, vocab
+from . import cpeimport, cpeset, dashboard, mock, pastexams, service, vocab
 
 
 class ExamMixin:
@@ -54,6 +54,17 @@ class ExamMixin:
             raise ValueError("題號格式不正確")
         n = service.import_statement(ws, pid, body.get("text", ""))
         return {"id": pid, "samples": n, "english": service.statement_is_english(body.get("text", ""))}
+
+    def cpe_status(self) -> Dict[str, Any]:
+        ws = self.ws()
+        return cpeset.status(ws, bank_mod.load_bank(ws))
+
+    def cpe_import(self, body: Dict[str, Any]) -> Dict[str, Any]:
+        """從 GitHub 下載 CPE 原題 repo 的 PDF，轉成題目文字與範例測資（只接受『從 GitHub 下載』；本機資料夾請用 cpe past repo）。"""
+        ws = self.ws()
+        r = cpeimport.import_from(ws, None, force=bool(body.get("force")))
+        return {"imported": len(r.imported), "samples": sum(n for _, _, n in r.imported), "skipped": len(r.skipped), "failed": [{"id": a, "why": b} for a, b in r.failed],
+                "no_samples": r.no_samples, "missing": r.missing}
 
     def past_start(self, body: Dict[str, Any]) -> Dict[str, Any]:
         ws = self.ws()

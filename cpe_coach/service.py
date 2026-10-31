@@ -394,7 +394,10 @@ def looks_like_html(text: str) -> bool:
 
 
 def read_statement_file(path: Path) -> str:
-    """讀題目檔；.html 會先轉成純文字（保留 pre 內的換行）。"""
+    """讀題目檔；.html 會先轉成純文字（保留 pre 內的換行）；.pdf（UVa 的題目 PDF）用內建的擷取器轉成文字。"""
+    if path.suffix.lower() == ".pdf":
+        from . import uvastatement
+        return uvastatement.from_pdf(path.read_bytes()).text
     text = path.read_text(encoding="utf-8", errors="replace")
     return html_to_text(text) if path.suffix.lower() in (".html", ".htm") else text
 

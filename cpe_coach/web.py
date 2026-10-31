@@ -178,13 +178,13 @@ def make_handler(app: App):
            "/api/unit": lambda q: app.unit(int(q["n"]) if "n" in q else None),
            "/api/problem": lambda q: app.problem(q["id"]), "/api/chat": lambda q: app.chat(q["id"]),
            "/api/search": lambda q: app.search(q.get("q", "")), "/api/settings": lambda q: app.settings(),
-           "/api/past": lambda q: app.past_list(), "/api/vocab": lambda q: app.vocab_list(),
+           "/api/past": lambda q: app.past_list(), "/api/cpe": lambda q: app.cpe_status(), "/api/vocab": lambda q: app.vocab_list(),
            "/api/plan": lambda q: app.plan(int(q.get("minutes", "30"))), "/api/calibration": lambda q: app.calibration(), "/api/weakness": lambda q: app.weakness(),
            "/api/eng": lambda q: app.eng_list()}
     POST = {"/api/new": app.new, "/api/save": app.save, "/api/test": app.test, "/api/trace": app.trace, "/api/fuzz": app.fuzz, "/api/ask": app.ask,
             "/api/hint": app.hint, "/api/giveup": app.giveup, "/api/solution": app.solution, "/api/gate": app.gate_start,
             "/api/mock": app.mock_start, "/api/exam/finish": app.exam_finish, "/api/course/goto": app.course_goto,
-            "/api/course/next": app.course_next, "/api/settings": app.set_settings, "/api/past/import": app.past_import,
+            "/api/course/next": app.course_next, "/api/settings": app.set_settings, "/api/past/import": app.past_import, "/api/cpe/import": app.cpe_import,
             "/api/past/statement": app.past_statement, "/api/past/start": app.past_start, "/api/vocab/add": app.vocab_add,
             "/api/vocab/remove": app.vocab_remove, "/api/eng/start": app.eng_start, "/api/eng/verify": app.eng_verify, "/api/key": app.set_key, "/api/ai/test": app.ai_test, "/api/update/check": app.update_check}
 
