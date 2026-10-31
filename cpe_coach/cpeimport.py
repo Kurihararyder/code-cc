@@ -4,9 +4,11 @@
 """
 from __future__ import annotations
 
+import hashlib
 import io
 import os
 import re
+import time
 import urllib.error
 import urllib.request
 import zipfile
@@ -14,7 +16,7 @@ from pathlib import Path
 from typing import Callable, List, NamedTuple, Optional, Tuple
 
 from . import service, uvastatement
-from .cpeset import DIR_TO_KEY, membership, pid_of
+from .cpeset import DIR_TO_KEY, membership, pdf_hashes, pid_of
 from .pastexams import has_statement, has_tests
 from .store import Workspace
 
@@ -81,15 +83,23 @@ def scan_zip(blob: bytes) -> List[Found]:
     return out
 
 
-def download(ref: Optional[str] = None, url: Optional[str] = None, timeout: float = 60.0) -> bytes:
+def download(ref: Optional[str] = None, url: Optional[str] = None, timeout: float = 60.0, retries: int = 3, wait: float = 1.0) -> bytes:
+    """下載 repo 的 zip。網路不穩（逾時、連線中斷、伺服器暫時錯誤 5xx）會重試 retries 次，間隔 wait、2×wait、4×wait 秒；404 這類不會好的錯誤不重試。"""
     ref = ref or os.environ.get("CPE_QUESTIONS_REF") or DEFAULT_REF
     url = url or os.environ.get("CPE_QUESTIONS_URL") or ARCHIVE_URL.format(ref=ref)
     req = urllib.request.Request(url, headers={"User-Agent": "cpe-coach"})
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as r:
-            data = r.read(MAX_ARCHIVE + 1)
-    except (urllib.error.URLError, OSError) as e:
-        raise CpeImportError(f"連不上 GitHub（{url}）：{getattr(e, 'reason', e)}。可以先自己下載那個 repo，再用『cpe past repo <資料夾>』匯入。")
+    for attempt in range(retries + 1):
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                data = r.read(MAX_ARCHIVE + 1)
+            break
+        except urllib.error.HTTPError as e:
+            if e.code < 500 or attempt == retries:
+                raise CpeImportError(f"GitHub 回應 HTTP {e.code}（{url}）。" + ("這個版本（提交）可能已經不存在，可以用環境變數 CPE_QUESTIONS_REF 指定別的分支，或先自己下載再用『cpe past repo <資料夾>』匯入。" if e.code == 404 else ""))
+        except (urllib.error.URLError, OSError) as e:
+            if attempt == retries:
+                raise CpeImportError(f"連不上 GitHub（{url}）：{getattr(e, 'reason', e)}（已重試 {retries} 次）。可以先自己下載那個 repo，再用『cpe past repo <資料夾>』匯入。")
+        time.sleep(wait * (2 ** attempt))
     if len(data) > MAX_ARCHIVE:
         raise CpeImportError("下載的檔案太大，已中止")
     return data
@@ -102,11 +112,14 @@ class Report(NamedTuple):
     no_samples: List[str]
     failed: List[Tuple[str, str]]              # (題號, 原因)
     missing: List[str]                         # 清單裡有、但找不到 PDF 的題
+    changed: Tuple[str, ...] = ()              # PDF 內容和我驗證時的版本不一樣的題（上游改過檔案，擷取結果沒有驗證過）
 
 
 def import_found(ws: Workspace, found: List[Found], force: bool = False, keep_pdf: bool = True,
                  progress: Optional[Callable[[str, str], None]] = None) -> Report:
     imported: List[Tuple[str, str, int]] = []
+    changed: List[str] = []
+    known = pdf_hashes()
     skipped: List[str] = []
     no_samples: List[str] = []
     failed: List[Tuple[str, str]] = []
@@ -121,6 +134,8 @@ def import_found(ws: Workspace, found: List[Found], force: bool = False, keep_pd
             continue
         try:
             raw = f.read()
+            if f.number in known and hashlib.sha256(raw).hexdigest() not in known[f.number]:
+                changed.append(pid)
             st = uvastatement.from_pdf(raw)
             n = service.import_statement(ws, pid, st.text)
         except Exception as e:                                # 一份壞掉的 PDF 不該讓其他題跟著失敗
@@ -138,12 +153,11 @@ def import_found(ws: Workspace, found: List[Found], force: bool = False, keep_pd
             progress(pid, f"{st.title}　範例 {n} 組")
     wanted = {pid_of(n) for n in membership()}
     missing = sorted(wanted - seen, key=lambda p: int(p[3:]))
-    return Report(imported, skipped, no_samples, failed, missing)
+    return Report(imported, skipped, no_samples, failed, missing, tuple(changed))
 
 
-def import_from(ws: Workspace, source: Optional[str] = None, force: bool = False,
-                progress: Optional[Callable[[str, str], None]] = None) -> Report:
-    """source：資料夾（例如把 repo clone 下來的位置）、.zip 檔，或不給（從 GitHub 下載）。"""
+def fetch_found(source: Optional[str] = None) -> List[Found]:
+    """source：資料夾（例如把 repo clone 下來的位置）、.zip 檔，或不給（從 GitHub 下載）。只讀取、不寫工作區。"""
     if source:
         p = Path(source)
         if p.is_dir():
@@ -156,4 +170,9 @@ def import_from(ws: Workspace, source: Optional[str] = None, force: bool = False
         found = scan_zip(download())
     if not found:
         raise CpeImportError("裡面沒有找到任何 <題號>.pdf。要給的是 CPE_Previous_Questions 的資料夾（裡面有 一星題／二星題／歷屆試題）。")
-    return import_found(ws, found, force=force, progress=progress)
+    return found
+
+
+def import_from(ws: Workspace, source: Optional[str] = None, force: bool = False,
+                progress: Optional[Callable[[str, str], None]] = None) -> Report:
+    return import_found(ws, fetch_found(source), force=force, progress=progress)

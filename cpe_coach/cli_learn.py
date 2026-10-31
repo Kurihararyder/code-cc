@@ -295,6 +295,8 @@ def cmd_test(ws: Workspace, args) -> int:
             print(f"\n✔ 通過，但這題用了提示／看了解法，需要無提示重寫：{fmt_ts(rev['due'])} 起")
     elif info["review_attempt"]:
         print("\n↩ 到期重寫沒通過，重練週期重新從 1 天後開始。")
+    if r["verdict"] == AC and args.id.startswith("uva") and not r["exam_note"] and len(r["cases"]) <= 3 and all(c["name"].startswith("sample") for c in r["cases"]):
+        print(f"\n提醒：原題只附了範例，通過範例不代表答案正確。想自己找出沒被涵蓋的錯：寫一個很慢但一定對的暴力解 brute.py，執行\n  cpe fuzz {args.id} --brute brute.py --save")
     return 0 if r["verdict"] == AC else 1
 
 

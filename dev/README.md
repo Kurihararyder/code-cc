@@ -17,3 +17,4 @@
 - `gen_cpe_sets.py <CPE_Previous_Questions 的資料夾>`：重新產生 `cpe_coach/data/cpe_sets.json`（題號、標題、所屬題單；不含題目敘述）與 `tests/fixtures/cpe_repo_digests.json`（每題範例輸入輸出的 SHA-256，只能拿來比對、無法還原內容）。
 - `ui_e2e/fake_github.py`：介面測試用的假 GitHub zip（用 `tests/pdfmaker.py` 自己產生的 PDF）。
 - 選用的真實資料驗證：`CPE_QUESTIONS_DIR=<clone 的資料夾> python -m unittest tests.test_cpe_real`（需要的話裝 poppler 才會多一項 pdftotext 對照）。不會執行 repo 裡的任何解答。
+- `cpe_meta_src.py`：91 題的類型標籤、先修單元、難度與提示的來源（我寫的，沒有官方核對）；執行後產生 `cpe_coach/data/cpe_meta.json`。

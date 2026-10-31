@@ -100,6 +100,7 @@ def _past_repo(ws: Workspace, args) -> None:
     """把 CPE 原題（社群整理的 GitHub repo：一星題 49、二星題 15、歷屆試題 31）的 PDF 匯入成題目文字與範例測資。"""
     where = f"讀取 {args.arg}" if args.arg else "從 GitHub 下載（約 6 MB）"
     print(f"匯入 CPE 原題：{where}…")
+    print("（題目敘述的著作權屬於各題作者；只供你自己練習，不要轉貼或散布。）")
     r = cpeimport.import_from(ws, args.arg, force=args.force, progress=lambda pid, msg: print(f"  {pid:<10} {msg}"))
     samples = sum(n for _, _, n in r.imported)
     print(f"\n完成：匯入 {len(r.imported)} 題（範例測資 {samples} 組）；略過已匯入的 {len(r.skipped)} 題；失敗 {len(r.failed)} 題。")
@@ -107,6 +108,8 @@ def _past_repo(ws: Workspace, args) -> None:
         print(f"  ✗ {pid}：{why}")
     if r.no_samples:
         print("  找不到 Sample Input／Output：" + "、".join(r.no_samples) + "（請用 cpe addtest 補）")
+    if r.changed:
+        print("  注意：這些題的 PDF 和我驗證時的版本不同（上游改過檔案），範例與題目文字請自己多看一眼：" + "、".join(r.changed))
     if r.missing:
         print("清單裡有、但這份資料沒有 PDF 的題：" + "、".join(r.missing) + "（要練的話自己貼上題目：cpe import <題號> <檔案>）")
     print("題目文字在 statements/uvaN.txt，原 PDF 也留在 statements/uvaN.pdf（算式、表格、圖擷取不好的地方請對照 PDF）。")
@@ -119,7 +122,8 @@ def _past_sets(ws: Workspace, bank) -> None:
         print(f"\n{g['name']}（{g['count']} 題；可練 {g['ready']}、已通過 {g['solved']}）")
         for r in g["problems"]:
             flag = ("✓" if r["solved"] else " ") + ("T" if r["has_tests"] else "-") + ("S" if r["has_statement"] else "-")
-            print(f"  [{flag}] {r['id']:<9} {r['title']}" + ("　（該 repo 沒有 PDF）" if r["no_pdf"] and not r["has_statement"] else ""))
+            tag = ("　" + "・".join(r["tags"][:3])) if r["tags"] else ""
+            print(f"  [{flag}] {r['id']:<9} {r['title']}{tag}" + ("　（該 repo 沒有 PDF）" if r["no_pdf"] and not r["has_statement"] else ""))
     print(f"\n[已通過/有測資(T)/有題目文字(S)]　共 {s['total']} 題，已可練 {s['ready']} 題。匯入：cpe past repo")
 
 

@@ -305,7 +305,7 @@ def problem_view(ws: Workspace, bank: Dict[str, dict], pid: str) -> Dict[str, An
     return {"id": pid, "title": p.get("title", pid), "title_en": p.get("title_en"),
             "lang_mode": bank_mod.resolve_lang(ws, pid) if drill else ("en" if statement_is_english(stmt) else "zh"),
             "has_english": bank_mod.has_english(pid), "lang_setting": ws.config().get("statement_lang", "auto"), "topic": p.get("topic", ""), "difficulty": p.get("difficulty", 1),
-            "url": p.get("url"), "statement": stmt, "code": sol.read_text(encoding="utf-8") if sol.exists() else None,
+            "url": p.get("url"), "has_pdf": (ws.root / "statements" / f"{pid}.pdf").exists(), "statement": stmt, "code": sol.read_text(encoding="utf-8") if sol.exists() else None,
             "lang": "cpp" if sol.suffix == ".cpp" else "py", "file": str(sol.relative_to(ws.root)) if sol.exists() else None,
             "tests": len(find_cases(ws.tests / pid)),
             "attempts": sp["attempts"] if sp else 0, "hint_level": sp["hint_level"] if sp else -1,

@@ -7,6 +7,7 @@ import os
 import socket
 import tempfile
 import threading
+import time
 import unittest
 import urllib.error
 import urllib.request
@@ -100,7 +101,7 @@ class SetDataTests(unittest.TestCase):
         for key in cpeset.SET_KEYS:
             for p in data["sets"][key]["problems"]:
                 self.assertTrue(p["title"])
-                self.assertLessEqual(set(p), {"uva", "title", "no_pdf", "title_unknown"})
+                self.assertLessEqual(set(p), {"uva", "title", "no_pdf", "title_unknown", "sha256"})
         self.assertLess(len(cpeset.DATA.read_bytes()), 40_000)                       # 只有題號與標題
 
     def test_bank_merge_keeps_existing_entries_and_adds_the_rest(self):
@@ -226,7 +227,7 @@ class ImportTests(unittest.TestCase):
             s.close()
             os.environ["CPE_QUESTIONS_URL"] = f"http://127.0.0.1:{dead}/a.zip"
             with self.assertRaises(cpeimport.CpeImportError) as cm:
-                cpeimport.download(timeout=3)
+                cpeimport.download(timeout=3, retries=0)
             self.assertIn("連不上 GitHub", str(cm.exception))
         finally:
             if old is None:
@@ -284,6 +285,18 @@ class CliWebTests(unittest.TestCase):
         self.assertNotEqual(rc, 0)
         self.assertIn("找不到", out)
 
+    def test_sets_shows_tags_and_tip_after_a_sample_only_pass(self):
+        self.run_cli("past", "repo", str(self.repo))
+        rc, out = self.run_cli("past", "sets")
+        self.assertIn("What's Cryptanalysis?　字串・計數・排序", out)
+        self.assertEqual(self.run_cli("new", "uva10008")[0], 0)
+        sol = next((self.root / "solutions").glob("uva10008.*")) if (self.root / "solutions").exists() else next(self.root.glob("uva10008.py"))
+        sol.write_text("n = int(input())\nfor _ in range(n):\n    print(sum(map(int, input().split())))\n", encoding="utf-8")
+        rc, out = self.run_cli("test", "uva10008")
+        self.assertEqual(rc, 0, out)
+        self.assertIn("通過範例不代表答案正確", out)
+        self.assertIn("cpe fuzz uva10008 --brute brute.py --save", out)
+
     def test_statements_command_accepts_pdf_files(self):
         folder = Path(self.tmp.name) / "pdfs"
         folder.mkdir()
@@ -316,16 +329,158 @@ class CliWebTests(unittest.TestCase):
         self.assertEqual([g["count"] for g in st["sets"]], [49, 15, 31])
         old = os.environ.get("CPE_QUESTIONS_URL")
         os.environ["CPE_QUESTIONS_URL"] = f"http://127.0.0.1:{port + 1}/none.zip"
+        old_wait = cpeimport.download.__defaults__
+        cpeimport.download.__defaults__ = (None, None, 3.0, 0, 0.0)               # 不重試，測試才不用等
         try:
-            code, err = req("/api/cpe/import", {})
-            self.assertGreaterEqual(code, 400)
-            self.assertIn("連不上", json.dumps(err, ensure_ascii=False))
+            code, j = req("/api/cpe/import", {})
+            self.assertEqual(code, 200)
+            for _ in range(100):
+                code, j = req("/api/cpe/progress")
+                if j["state"] not in ("download", "convert"):
+                    break
+                time.sleep(0.1)
+            self.assertEqual(j["state"], "error")
+            self.assertIn("連不上", j["error"])
+            # 成功的一次：假的 GitHub
+            blob = make_zip({"一星題": [10008, 100], "歷屆試題": [255]})
+            from http.server import BaseHTTPRequestHandler
+
+            class H(BaseHTTPRequestHandler):
+                def do_GET(self):
+                    self.send_response(200)
+                    self.send_header("Content-Length", str(len(blob)))
+                    self.end_headers()
+                    self.wfile.write(blob)
+
+                def log_message(self, *a):
+                    pass
+            gh = web.LocalServer(("127.0.0.1", 0), H)
+            threading.Thread(target=gh.serve_forever, daemon=True).start()
+            self.addCleanup(gh.server_close)
+            self.addCleanup(gh.shutdown)
+            os.environ["CPE_QUESTIONS_URL"] = f"http://127.0.0.1:{gh.server_address[1]}/a.zip"
+            req("/api/cpe/import", {})
+            for _ in range(200):
+                code, j = req("/api/cpe/progress")
+                if j["state"] not in ("download", "convert"):
+                    break
+                time.sleep(0.1)
+            self.assertEqual(j["state"], "done", j)
+            self.assertEqual((j["report"]["imported"], j["report"]["failed"]), (3, []))
+            self.assertEqual(j["done"], j["total"])
+            code, st = req("/api/cpe")
+            self.assertEqual(st["ready"], 3)
+            self.assertTrue(any(p["has_pdf"] for g in st["sets"] for p in g["problems"]))
+            # 原 PDF 與題目頁的旗標
+            r = urllib.request.Request(f"http://127.0.0.1:{port}/api/statement.pdf?id=uva10008", headers={"Host": f"127.0.0.1:{port}", "X-CPE-Token": app.token})
+            with urllib.request.urlopen(r) as resp:
+                self.assertEqual(resp.headers["Content-Type"], "application/pdf")
+                self.assertTrue(resp.read().startswith(b"%PDF"))
+            for bad in ("uva999", "..%2Fx", ""):
+                r = urllib.request.Request(f"http://127.0.0.1:{port}/api/statement.pdf?id={bad}", headers={"Host": f"127.0.0.1:{port}", "X-CPE-Token": app.token})
+                with self.assertRaises(urllib.error.HTTPError) as cm:
+                    urllib.request.urlopen(r)
+                self.assertEqual(cm.exception.code, 400)
+            self.assertTrue(req("/api/problem?id=uva10008")[1]["has_pdf"])
         finally:
+            cpeimport.download.__defaults__ = old_wait
             if old is None:
                 os.environ.pop("CPE_QUESTIONS_URL", None)
             else:
                 os.environ["CPE_QUESTIONS_URL"] = old
-        self.assertEqual(req("/api/cpe/import")[0], 405 if False else req("/api/cpe/import")[0])   # GET 不能觸發匯入
+
+
+class ExtraTests(unittest.TestCase):
+    def test_every_problem_has_meta_and_the_hints_reach_the_bank(self):
+        mt = cpeset.meta()
+        self.assertEqual(sorted(mt), sorted(cpeset.membership()))
+        for n, m in mt.items():
+            self.assertTrue(m["t"] and m["c"] and m["i"], n)
+            self.assertIn(m["s"], (1, 2, 3, 4))
+            self.assertTrue(1 <= m["u"] <= 52, n)
+        with tempfile.TemporaryDirectory() as d:
+            bank = bank_mod.load_bank(Workspace.create(Path(d), "2026-11-01"))
+            for n in cpeset.membership():
+                e = bank[f"uva{n}"]
+                self.assertTrue(e.get("hint_insight"), n)
+                self.assertTrue(e["cpe_tags"], n)
+            self.assertIn("Horner", bank["uva10268"]["hint_insight"])
+            self.assertNotIn("Horner", bank["uva100"]["hint_insight"])               # 原本就有的提示不被覆蓋
+
+    def test_related_problems_share_tags(self):
+        rel = cpeset.related(10010)
+        self.assertTrue(rel and 10010 not in rel)
+        mine = set(cpeset.meta()[10010]["t"])
+        self.assertTrue(all(mine & set(cpeset.meta()[n]["t"]) for n in rel))
+        self.assertEqual(cpeset.related(999999), [])
+
+    def test_official_order_override_file(self):
+        with tempfile.TemporaryDirectory() as d:
+            ws = Workspace.create(Path(d), "2026-11-01")
+            default = cpeset.set_numbers("one", ws)
+            self.assertEqual(default, sorted(default))
+            (ws.meta / "cpe_order.json").write_text(json.dumps({"one": [12019, 100, 999, 12019]}), encoding="utf-8")
+            got = cpeset.set_numbers("one", ws)
+            self.assertEqual(got[:2], [12019, 100])
+            self.assertEqual(sorted(got), sorted(default))
+            bank = bank_mod.load_bank(ws)
+            self.assertEqual(cpeset.unit_pool(ws, bank, 15)["items"][0]["id"], "uva12019")
+            (ws.meta / "cpe_order.json").write_text("not json", encoding="utf-8")
+            self.assertEqual(cpeset.set_numbers("one", ws), default)
+
+    def test_pool_items_carry_tags_prereq_and_related(self):
+        with tempfile.TemporaryDirectory() as d:
+            ws = Workspace.create(Path(d), "2026-11-01")
+            it = cpeset.unit_pool(ws, bank_mod.load_bank(ws), 15)["items"][0]
+            self.assertTrue(it["tags"] and it["prereq_unit"] and it["related"])
+
+    def test_pdf_hashes_cover_every_pdf_and_a_changed_pdf_is_flagged(self):
+        h = cpeset.pdf_hashes()
+        self.assertEqual(len(h), 89)
+        with tempfile.TemporaryDirectory() as d:
+            ws = Workspace.create(Path(d), "2026-11-01")
+            f = cpeimport.Found(10008, "one", "x.pdf", lambda: uva_pdf(10008))
+            r = cpeimport.import_found(ws, [f])
+            self.assertEqual(r.changed, ("uva10008",))                           # 合成的 PDF 當然和真的雜湊不同
+            self.assertEqual(cpeimport.import_found(ws, [cpeimport.Found(999999, None, "y.pdf", lambda: uva_pdf(1))]).changed, ())
+
+    def test_download_retries_server_errors_but_not_404(self):
+        from http.server import BaseHTTPRequestHandler
+        hits = []
+        blob = make_zip({"一星題": [10008]})
+
+        class H(BaseHTTPRequestHandler):
+            def do_GET(self):
+                hits.append(self.path)
+                code = 404 if self.path == "/gone" else (503 if len([x for x in hits if x == self.path]) < 3 else 200)
+                self.send_response(code)
+                self.send_header("Content-Length", str(len(blob) if code == 200 else 0))
+                self.end_headers()
+                if code == 200:
+                    self.wfile.write(blob)
+
+            def log_message(self, *a):
+                pass
+        httpd = web.LocalServer(("127.0.0.1", 0), H)
+        threading.Thread(target=httpd.serve_forever, daemon=True).start()
+        self.addCleanup(httpd.server_close)
+        self.addCleanup(httpd.shutdown)
+        base = f"http://127.0.0.1:{httpd.server_address[1]}"
+        self.assertEqual(cpeimport.download(url=base + "/flaky", wait=0.01), blob)         # 503, 503, 200
+        self.assertEqual(hits.count("/flaky"), 3)
+        with self.assertRaises(cpeimport.CpeImportError) as cm:
+            cpeimport.download(url=base + "/gone", wait=0.01)
+        self.assertIn("404", str(cm.exception))
+        self.assertEqual(hits.count("/gone"), 1)                                             # 404 不重試
+
+    def test_hyphen_is_dropped_only_with_evidence(self):
+        mk = pdftext.Line
+
+        def run(a, b):
+            return uvastatement.build([[mk("1 T", False, 700, 0, 17), mk(a, False, 680, 0, 10.9), mk(b, False, 666, 0, 10.9)]]).text.strip().split("\n")[-1]
+        self.assertEqual(run("find a single-", "source path"), "find a single-source path")          # 沒佐證：保留
+        self.assertEqual(run("each in-", "teger is read"), "each integer is read")                    # 內建題目裡有 integer
+        self.assertEqual(run("a rectan-", "gular grid, rectangular"), "a rectangular grid, rectangular")   # 本題其他地方有
 
 
 if __name__ == "__main__":

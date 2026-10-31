@@ -1,5 +1,5 @@
 {
- "_note": "社群整理的 CPE 題目清單。只收題號與標題（事實）；題目敘述有版權，不內建，匯入時才從 GitHub 下載到使用者自己的電腦。no_pdf：該 repo 裡這題沒有 PDF。",
+ "_note": "社群整理的 CPE 題目清單。只收題號、標題與 PDF 的 SHA-256（用來確認下載到的檔案沒有變）；題目敘述有版權，不內建，匯入時才從 GitHub 下載到使用者自己的電腦。no_pdf：該 repo 裡這題沒有 PDF。",
  "source": {
   "repo": "https://github.com/LuckyPigeon/CPE_Previous_Questions",
   "commit": "6304e15d88a8fe46d875ca878a0ca831c08b4a25",
@@ -11,179 +11,223 @@
    "problems": [
     {
      "uva": 100,
-     "title": "The 3n + 1 problem"
+     "title": "The 3n + 1 problem",
+     "sha256": "938eeb7469ceedf27311cb912229acedf51cca957cebe5e654a4f46e26f19525"
     },
     {
      "uva": 118,
-     "title": "Mutant Flatworld Explorers"
+     "title": "Mutant Flatworld Explorers",
+     "sha256": "c87f2cf2b47eb2f7302e1b9ea09ddba41df409ceab9de3f09063c21bc9c10b01"
     },
     {
      "uva": 272,
-     "title": "TEX Quotes"
+     "title": "TEX Quotes",
+     "sha256": "39bb94c6d20f3e28f8a3a6734a462a5a91e939c7d6f43df07f927ff46977da33"
     },
     {
      "uva": 299,
-     "title": "Train Swapping"
+     "title": "Train Swapping",
+     "sha256": "70cb40965c3c1d9d06ced3c7975ce5253a2eb6ac53e4e00e8b0afe69ad751b80"
     },
     {
      "uva": 490,
-     "title": "Rotating Sentences"
+     "title": "Rotating Sentences",
+     "sha256": "941ef2c1080dfc35764356943015aad054e1f19ab17d8a650f99f5acb528de78"
     },
     {
      "uva": 948,
-     "title": "Fibonaccimal Base"
+     "title": "Fibonaccimal Base",
+     "sha256": "085dc07d721de2042a3066babaee7112bcbcb355ed390786ea62f82c420a38fd"
     },
     {
      "uva": 10008,
-     "title": "What's Cryptanalysis?"
+     "title": "What's Cryptanalysis?",
+     "sha256": "32615e47d19e379ac71ead2ed9e9611f7791077b92611d3432b32742638db1f0"
     },
     {
      "uva": 10019,
-     "title": "Funny Encryption Method"
+     "title": "Funny Encryption Method",
+     "sha256": "66703568609ae468506e9ea6426a0598c58b6ab0815903b01edcfee5b5426ccb"
     },
     {
      "uva": 10035,
-     "title": "Primary Arithmetic"
+     "title": "Primary Arithmetic",
+     "sha256": "40f0773d9a98d4adb0ee6f3ad5d6e7d7aa34a0034fdd695dd10753ecf72c91f8"
     },
     {
      "uva": 10038,
-     "title": "Jolly Jumpers"
+     "title": "Jolly Jumpers",
+     "sha256": "1bd9610df2b32ebb848ad7371a64041eeccc232c15ef9920656031b076b605fb"
     },
     {
      "uva": 10041,
-     "title": "Vito's family"
+     "title": "Vito's family",
+     "sha256": "e8b1c13088d573c2d9a410f0a20298fef328b893071ccbefb3078acbc2f7a7ec"
     },
     {
      "uva": 10050,
-     "title": "Hartals"
+     "title": "Hartals",
+     "sha256": "0e6f5fd074c8a29e37b3ec193b5113eed2a9beaff07df4d598f83e1175c1547c"
     },
     {
      "uva": 10055,
-     "title": "Hashmat the brave warrior"
+     "title": "Hashmat the brave warrior",
+     "sha256": "92905ba666f5510fa94c73c0d14291dacd03dea49f0ace305d45631f7fe84f89"
     },
     {
      "uva": 10056,
-     "title": "What is the Probability?"
+     "title": "What is the Probability?",
+     "sha256": "14056f5370ab40ac76f0581f980ca7bde203c588365b2436661e267f3f48fcc8"
     },
     {
      "uva": 10057,
-     "title": "A mid-summer night's dream"
+     "title": "A mid-summer night's dream",
+     "sha256": "2332a1f4450fb2229f08376ad2c476dc58010cefce3a11b53d054bb60555e3c8"
     },
     {
      "uva": 10062,
-     "title": "Tell me the frequencies!"
+     "title": "Tell me the frequencies!",
+     "sha256": "3c0ba4aa23ee1b483a2b68e38fd068e1b8ed1dd3407d3e1092bfc3945df78ce5"
     },
     {
      "uva": 10071,
-     "title": "Back to High School Physics"
+     "title": "Back to High School Physics",
+     "sha256": "929b5582317fc95aa9e29098abf1bab758c82cf311721049025bd8592705ee0f"
     },
     {
      "uva": 10093,
-     "title": "An Easy Problem!"
+     "title": "An Easy Problem!",
+     "sha256": "e13c7037cc653564c199f6be26db99c21c9d8bf35591cd7a6de7a87f984a4c0b"
     },
     {
      "uva": 10101,
-     "title": "Bangla Numbers"
+     "title": "Bangla Numbers",
+     "sha256": "50c98f116ec6a4316c3d6b0381bbc575aec06150cce84b06277d6d5bb8e641fc"
     },
     {
      "uva": 10170,
-     "title": "The Hotel with Infinite Rooms"
+     "title": "The Hotel with Infinite Rooms",
+     "sha256": "09793e3626c77a6d50b2305253db542ce12506125fdafee709d3bc5c94dec0f4"
     },
     {
      "uva": 10189,
-     "title": "Minesweeper"
+     "title": "Minesweeper",
+     "sha256": "c51b858d3fd3effce6245e269bd4ca3b7fc340501f514b496378c0b32e3a0800"
     },
     {
      "uva": 10190,
-     "title": "Divide, But Not Quite Conquer!"
+     "title": "Divide, But Not Quite Conquer!",
+     "sha256": "fd0e65a6854e850aecff8b706248f5b0fcdd3fef0822baa346b5fdbaaa0b7519"
     },
     {
      "uva": 10193,
-     "title": "All You Need Is Love"
+     "title": "All You Need Is Love",
+     "sha256": "50f41548bcce74bdc89c34b36d009cf3bb361bb27f79d39d9ace47e198617b87"
     },
     {
      "uva": 10221,
-     "title": "Satellites"
+     "title": "Satellites",
+     "sha256": "c6eae32965a96ec352a13c6214e0813c6d8b3fa2d507c8746bcde7d05f91f2c3"
     },
     {
      "uva": 10222,
-     "title": "Decode the Mad man"
+     "title": "Decode the Mad man",
+     "sha256": "be5b71870cc1b9c3c35f4742ec585b5068d99e872387f4f3526b25c861b29953"
     },
     {
      "uva": 10226,
-     "title": "Hardwood Species"
+     "title": "Hardwood Species",
+     "sha256": "9e963784114ddf8f3982537222525600da73587e40615b62ecba915e98a9ec0f"
     },
     {
      "uva": 10235,
-     "title": "Simply Emirp"
+     "title": "Simply Emirp",
+     "sha256": "4dd70f5d1ec22df9c7dcd67ba6c6e51597f2ea2f9cad130d468d23fd379827e5"
     },
     {
      "uva": 10242,
-     "title": "Fourth Point!!"
+     "title": "Fourth Point!!",
+     "sha256": "6dd659ed3f8ee3991253f322f3fca5a56bbff51d589188ff741f2ebb374f93eb"
     },
     {
      "uva": 10252,
-     "title": "Common Permutation"
+     "title": "Common Permutation",
+     "sha256": "1fed2ba8a8ff36830e342742e520be9f6216f6ed5d76b17272056337f21c717d"
     },
     {
      "uva": 10268,
-     "title": "498-bis"
+     "title": "498-bis",
+     "sha256": "00cfbbfe3d51f7b78ac44fa45ce72dec7abd91873de7696a702c75a0268cadba"
     },
     {
      "uva": 10409,
-     "title": "Die Game"
+     "title": "Die Game",
+     "sha256": "190c1da74c2751381b77eb70280f2e17275c41b7a35de27a0a5966df5764561f"
     },
     {
      "uva": 10415,
-     "title": "Eb Alto Saxophone Player"
+     "title": "Eb Alto Saxophone Player",
+     "sha256": "d00c686f75619a4a745890b77ff8c29aaf0a5ee8755ddb2d3897fb79df9fe1e8"
     },
     {
      "uva": 10420,
-     "title": "List of Conquests"
+     "title": "List of Conquests",
+     "sha256": "e466a4adfeb92b4ba523b2270cd4f10e0318e9f2fe6727f13742f278f9e9a569"
     },
     {
      "uva": 10642,
-     "title": "Can You Solve It?"
+     "title": "Can You Solve It?",
+     "sha256": "09d6d9d95a8ca51c1426d07b83fc22a862e1de7f57d58466952ebcce669acb4c"
     },
     {
      "uva": 10783,
-     "title": "Odd Sum"
+     "title": "Odd Sum",
+     "sha256": "6e0f33a4b9e03cdd12b29d9f7711ad8d7eba1efeab63ffea9a6bf9aa13f3d91a"
     },
     {
      "uva": 10812,
-     "title": "Beat the Spread!"
+     "title": "Beat the Spread!",
+     "sha256": "25604b351574f1871f33db9dd49ca77367bace6d48aa5950a32883d416b4583d"
     },
     {
      "uva": 10908,
-     "title": "Largest Square"
+     "title": "Largest Square",
+     "sha256": "ed5dfaba03a1e4f5e975cbd7922f4afcc2dccd4c8fa312202ec0d44313947d7d"
     },
     {
      "uva": 10922,
-     "title": "2 the 9s"
+     "title": "2 the 9s",
+     "sha256": "bb89e14abf64976af56fc427cd1a9dd04453dc009005cef86e37b958cf5c4b64"
     },
     {
      "uva": 10929,
-     "title": "You can say 11"
+     "title": "You can say 11",
+     "sha256": "7a647b7ae52a5cb63fc79da9f34c1f38f20e2f02b8ab02bdf8f1ef802f1f8915"
     },
     {
      "uva": 10931,
-     "title": "Parity"
+     "title": "Parity",
+     "sha256": "3aefb0b71bb10e00e17bb142d35a22e79c0ca25d4d08fe647ef2ca605b4efac2"
     },
     {
      "uva": 11005,
-     "title": "Cheapest Base"
+     "title": "Cheapest Base",
+     "sha256": "f26c40d85a6752aca06a7b9c10b9417f30ff11c87d7058ddfb8f1058f50a54e0"
     },
     {
      "uva": 11063,
-     "title": "B2-Sequence"
+     "title": "B2-Sequence",
+     "sha256": "787b1ab7be2a6095f3e6b3c7442843b129009a4b2bdc1522fccdd3b0011e2b24"
     },
     {
      "uva": 11150,
-     "title": "Cola"
+     "title": "Cola",
+     "sha256": "8d92fdfcd58d12933948b05e341c0b31ca41116b825f0e516c757c108a8846ff"
     },
     {
      "uva": 11321,
-     "title": "Sort! Sort!! And Sort!!!"
+     "title": "Sort! Sort!! And Sort!!!",
+     "sha256": "e81fb8471c52dfe87c8130159ce3c35f74bc9dc184aec840183dd8f2b735a0e7"
     },
     {
      "uva": 11332,
@@ -192,19 +236,23 @@
     },
     {
      "uva": 11349,
-     "title": "Symmetric Matrix"
+     "title": "Symmetric Matrix",
+     "sha256": "efa6d747c98acda3062d1909a4fef90c3ef6515c53a19f55df66401c9183adff"
     },
     {
      "uva": 11417,
-     "title": "GCD"
+     "title": "GCD",
+     "sha256": "9e827ed971453422ccc23b6ecdb90407d64e0acdf4a1f729c30bd779f7d0cb35"
     },
     {
      "uva": 11461,
-     "title": "Square Numbers"
+     "title": "Square Numbers",
+     "sha256": "6ca7ebd5c7a2b96922811b3d81b0c6606beb46438f35cc313ee1a1e48d567a83"
     },
     {
      "uva": 12019,
-     "title": "Doom's Day Algorithm"
+     "title": "Doom's Day Algorithm",
+     "sha256": "f2b1c70100f11c8f7c736045d121ab47d6dc8b59efeab6c7a25d152712c4a115"
     }
    ]
   },
@@ -213,65 +261,78 @@
    "problems": [
     {
      "uva": 151,
-     "title": "Power Crisis"
+     "title": "Power Crisis",
+     "sha256": "c3fe12ae9c1a39aa74f404e3f777348f462f4882d298a22ce0adc20cb4e44569"
     },
     {
      "uva": 1022,
-     "title": "Covering Whole Holes"
+     "title": "Covering Whole Holes",
+     "sha256": "be2cfb518751e328f9c79322b2fb3c776e29b50c4a143ad3542b65d6eca54270"
     },
     {
      "uva": 1034,
      "title": "UVA 1034",
-     "no_pdf": true,
-     "title_unknown": true
+     "no_pdf": true
     },
     {
      "uva": 10004,
-     "title": "Bicoloring"
+     "title": "Bicoloring",
+     "sha256": "0ab66e8719679f366fd1d3231534ed49b64e191912942117d870d8bb6f2d64c5"
     },
     {
      "uva": 10009,
-     "title": "All Roads Lead Where?"
+     "title": "All Roads Lead Where?",
+     "sha256": "3b5c9bfd7d875e2dde5e7a15580165df24b726a3f965746d45db71b8bdd377c2"
     },
     {
      "uva": 10013,
-     "title": "Super long sums"
+     "title": "Super long sums",
+     "sha256": "b8b089d82a9ee6d8618ae9a2d596441e222f4d5dfba7e83b53fc7ce947f42e1f"
     },
     {
      "uva": 10020,
-     "title": "Minimal coverage"
+     "title": "Minimal coverage",
+     "sha256": "7158e85d4570c9db69c1875b3adac1cf8ea6f2792f4f5b81a26f08dc4954e692"
     },
     {
      "uva": 10042,
-     "title": "Smith Numbers"
+     "title": "Smith Numbers",
+     "sha256": "7ecc37d6e470625d53786df1cea88d5b8afda4520cadf7840ad7bcf60dd742a0"
     },
     {
      "uva": 10104,
-     "title": "Euclid Problem"
+     "title": "Euclid Problem",
+     "sha256": "f6ead48f108f73c02d8c05db54e9ddd113e0167adca4a21fa9f3e1d01c49b1b3"
     },
     {
      "uva": 10106,
-     "title": "Product"
+     "title": "Product",
+     "sha256": "ec0c5da3551f5f8ba281f33cc878016c399d8dce702035cf2c9726f742954c38"
     },
     {
      "uva": 10200,
-     "title": "Prime Time"
+     "title": "Prime Time",
+     "sha256": "eeec3af4887212d76fccd348a904037590b3ff0f677c2fd2ab3c51c5b062b103"
     },
     {
      "uva": 10295,
-     "title": "Hay Points"
+     "title": "Hay Points",
+     "sha256": "eb2c263fcee03626d95c924781b8e6f3e3dfb9ef6e185e28bbddb46ba293699a"
     },
     {
      "uva": 10298,
-     "title": "Power Strings"
+     "title": "Power Strings",
+     "sha256": "4473d2451115b086a067aec92e6629da8135c8ec1e53c4a0559dd243fc08e734"
     },
     {
      "uva": 10343,
-     "title": "Base64 Decoding"
+     "title": "Base64 Decoding",
+     "sha256": "2ce8ea009781cace5c9aec52e2ac6cd0903d4ef63725f4629aa544a45c422b34"
     },
     {
      "uva": 10407,
-     "title": "Simple division"
+     "title": "Simple division",
+     "sha256": "5d0214e51629fae4f613c861934b3fdbfb6f43e2f29de31b79f117194ce6c37e"
     }
    ]
   },
@@ -280,127 +341,158 @@
    "problems": [
     {
      "uva": 255,
-     "title": "Correct Move"
+     "title": "Correct Move",
+     "sha256": "ee6172ee79bb9483f6a324a70baa2add7bb4c2e93a43c4d809cbe5ffcf96e220"
     },
     {
      "uva": 263,
-     "title": "Number Chains"
+     "title": "Number Chains",
+     "sha256": "d513b6d0a64c692f8ce4de0d96fe4dcec84a55d2d46d917538165174850ed661"
     },
     {
      "uva": 544,
-     "title": "Heavy Cargo"
+     "title": "Heavy Cargo",
+     "sha256": "443ffc452ae1d0e9e49c0c08de93f4ae149f6b486cadbd6338b89df678c45adc"
     },
     {
      "uva": 679,
-     "title": "Dropping Balls"
+     "title": "Dropping Balls",
+     "sha256": "8cdf21500ed3b4567bb9ab198622d550eb598c8cbec57d72f8045b49a2c791f1"
     },
     {
      "uva": 846,
-     "title": "Steps"
+     "title": "Steps",
+     "sha256": "7f76f9f6e212eeb3dcea538cda1af5bbd2e5214e447cdf7f34e66bf89619c037"
     },
     {
      "uva": 855,
-     "title": "Lunch in Grid City"
+     "title": "Lunch in Grid City",
+     "sha256": "f601823021049dcba18b966ffca319109e3ad26dd6a7d0ebd499df2e150a90af"
     },
     {
      "uva": 1237,
-     "title": "Expert Enough?"
+     "title": "Expert Enough?",
+     "sha256": "7d0433b88df3b240aa48d24e5caa499deca1d402c622a6b8e389637feb9be66e"
     },
     {
      "uva": 1316,
-     "title": "Supermarket"
+     "title": "Supermarket",
+     "sha256": "a98037b0619ccb0c509e90f9fcc2d38c1823f7207cb67f9400e7a9c7b912689f"
     },
     {
      "uva": 1368,
-     "title": "DNA Consensus String"
+     "title": "DNA Consensus String",
+     "sha256": "1ed0ae1ff60b5152fd9bc726a85581c10c8dcd7db4bc40385174945dd455f32b"
     },
     {
      "uva": 1594,
-     "title": "Ducci Sequence"
+     "title": "Ducci Sequence",
+     "sha256": "d4fe193becf2d203dc5c3c823cbce96d7f77345af37e7f2f67aebeb31f40ae13"
     },
     {
      "uva": 10010,
-     "title": "Where's Waldorf?"
+     "title": "Where's Waldorf?",
+     "sha256": "eb62688f12907fd8cb4148434cc9958d3ef358cb4b9438433f928d7229735904"
     },
     {
      "uva": 10036,
-     "title": "Divisibility"
+     "title": "Divisibility",
+     "sha256": "6179f2ac5caf52e79f09be224a59a3bebca5f42bd69609be38a880cf62466b3b"
     },
     {
      "uva": 10130,
-     "title": "SuperSale"
+     "title": "SuperSale",
+     "sha256": "a200565ebe9914a724579f9da1db1732885ae140347d0239ef124b98f94c4d2f"
     },
     {
      "uva": 10189,
-     "title": "Minesweeper"
+     "title": "Minesweeper",
+     "sha256": "54ab0f211baf25cc3af49a4094908d1d269f7ad86ba5a87334ee871075ddb2d7"
     },
     {
      "uva": 10191,
-     "title": "Longest Nap"
+     "title": "Longest Nap",
+     "sha256": "e952877ebbea908f674ed2a896231a4787559c7b474e286bbc3245edf0be621d"
     },
     {
      "uva": 10268,
-     "title": "498-bis"
+     "title": "498-bis",
+     "sha256": "00cfbbfe3d51f7b78ac44fa45ce72dec7abd91873de7696a702c75a0268cadba"
     },
     {
      "uva": 10583,
-     "title": "Ubiquitous Religions"
+     "title": "Ubiquitous Religions",
+     "sha256": "156e9408b982713706dda3b0c815cea4505997e379b03a85e78869158d893020"
     },
     {
      "uva": 10813,
-     "title": "Traditional BINGO"
+     "title": "Traditional BINGO",
+     "sha256": "8000b54c0746a88568864667307566bbee8bec426d873d2a6bce59e468c02a8a"
     },
     {
      "uva": 11284,
-     "title": "Shopping Trip"
+     "title": "Shopping Trip",
+     "sha256": "9fc69ddbc6e0c00cdcde73b6f8fdb720a376f98cea9fff0f7c1e94b85b28da2f"
     },
     {
      "uva": 11349,
-     "title": "Symmetric Matrix"
+     "title": "Symmetric Matrix",
+     "sha256": "efa6d747c98acda3062d1909a4fef90c3ef6515c53a19f55df66401c9183adff"
     },
     {
      "uva": 11417,
-     "title": "GCD"
+     "title": "GCD",
+     "sha256": "9e827ed971453422ccc23b6ecdb90407d64e0acdf4a1f729c30bd779f7d0cb35"
     },
     {
      "uva": 11456,
-     "title": "Trainsorting"
+     "title": "Trainsorting",
+     "sha256": "d8a3a73c593491c1b593f9a3400fb63b76b0ad04a3c0db181c2453697f5bf7c7"
     },
     {
      "uva": 11498,
-     "title": "Division of Nlogonia"
+     "title": "Division of Nlogonia",
+     "sha256": "6ddb371592e6bce0c764e91515d0de071474357daff3da4478d81ccdedebb154"
     },
     {
      "uva": 11541,
-     "title": "Decoding"
+     "title": "Decoding",
+     "sha256": "cf66653a7ecbe483bf2b77ddad9aaca1c4e0cfd223f3d70f08c4111624aaefce"
     },
     {
      "uva": 11677,
-     "title": "Alarm Clock"
+     "title": "Alarm Clock",
+     "sha256": "17148ef9f12ed1acc24d8e47d534f9f6a5fd7434e54f78cac0b5c445e79f6653"
     },
     {
      "uva": 11730,
-     "title": "Number Transformation"
+     "title": "Number Transformation",
+     "sha256": "64219031b8ce900b15264e0b31563304fe454c86c5c8beb75636530b9612a800"
     },
     {
      "uva": 11987,
-     "title": "Almost Union-Find"
+     "title": "Almost Union-Find",
+     "sha256": "0b5a4f8a18f0987b9194769a6d0d2d1df27efc3031574e3c280a214dc7c938a9"
     },
     {
      "uva": 12096,
-     "title": "The SetStack Computer"
+     "title": "The SetStack Computer",
+     "sha256": "6cf5cb080a7bbfdf34dbb4fdf1b04022f2e38debccb5dee3cc22fa0cfeabf615"
     },
     {
      "uva": 12820,
-     "title": "Cool Word"
+     "title": "Cool Word",
+     "sha256": "ef5dd5f1420ec74c1d76117cb00d2de6ca05131853ebd8b9781d0e0db0147807"
     },
     {
      "uva": 12918,
-     "title": "Lucky Thief"
+     "title": "Lucky Thief",
+     "sha256": "c477b17e0395abc0bd49b82e21f86c790143be01bf399bfc9a42c96c1cc167e3"
     },
     {
      "uva": 13257,
-     "title": "License Plates"
+     "title": "License Plates",
+     "sha256": "9fdbc494e0878b958ecdb1823f0e7eb7300b83b701351117309ca2f96ef03fe7"
     }
    ]
   }

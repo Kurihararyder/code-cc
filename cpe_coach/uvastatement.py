@@ -6,7 +6,8 @@
 from __future__ import annotations
 
 import re
-from typing import List, NamedTuple, Optional
+from pathlib import Path
+from typing import List, NamedTuple, Optional, Set
 
 from . import pdftext
 
@@ -14,6 +15,38 @@ FOOTER_RE = re.compile(r"^\s*Universidad de Valladolid OJ\b.*$")
 TITLE_RE = re.compile(r"^\s*(\d{1,6})\s+(\S.*)$")
 HEADING_RE = re.compile(r"^(Input|Output|Sample Input(?: ?\d+)?|Sample Output(?: ?\d+)?|Notes?|Explanation|Hints?|Constraints?|Example)\s*:?\s*$", re.I)
 BAD_CHARS = {"￿": "–", "�": "–"}
+
+
+_WORD = re.compile(r"[A-Za-z]+(?:-[A-Za-z]+)*")
+_vocab_cache: Optional[Set[str]] = None
+
+
+def _bundled_vocab() -> Set[str]:
+    """內建英文題目（107 題）出現過的字，當作「這個字是不是真的存在」的佐證。"""
+    global _vocab_cache
+    if _vocab_cache is None:
+        words: Set[str] = set()
+        for f in (Path(__file__).parent / "data" / "drills").glob("*/statement.en.md"):
+            try:
+                words.update(w.lower() for w in _WORD.findall(f.read_text(encoding="utf-8")))
+            except OSError:
+                pass
+        _vocab_cache = words
+    return _vocab_cache
+
+
+def _join_hyphen(joined: str, nxt: str, doc_words: Set[str]) -> str:
+    """行尾的連字號：「compo-」＋「sition」。有佐證才去掉連字號（整份題目或內建題目裡出現過接起來的字，而且沒有出現過帶連字號的寫法）；
+    沒有佐證就保留連字號——寧可留一個多餘的連字號，也不要把真正的複合字（single-source）黏成不存在的字。"""
+    left = re.search(r"([A-Za-z]+)-$", joined)
+    right = re.match(r"[a-z]+", nxt)
+    if not left or not right:
+        return joined + nxt
+    glued, dashed = (left.group(1) + right.group(0)).lower(), (left.group(1) + "-" + right.group(0)).lower()
+    known = doc_words | _bundled_vocab()
+    if glued in known and dashed not in known:
+        return joined[:-1] + nxt
+    return joined + nxt
 
 
 class Statement(NamedTuple):
@@ -51,6 +84,8 @@ def build(pages: List[List[pdftext.Line]]) -> Statement:
             if m:
                 number, title, title_idx = int(m.group(1)), m.group(2).strip(), idx
             break
+    doc_words = {w.lower() for r in rows if not r[1] for w in _WORD.findall(r[0])}
+    doc_words |= {x for w in list(doc_words) for x in w.split("-")}
     out: List[str] = []
     para: List[str] = []                                     # 目前這一段的各行；遇到空行、小標題或等寬區塊才接成一行
 
@@ -60,7 +95,7 @@ def build(pages: List[List[pdftext.Line]]) -> Statement:
         joined = para[0]
         for nxt in para[1:]:
             if joined.endswith("-") and joined[-2:-1].isalpha() and nxt[:1].islower():
-                joined += nxt                                # 單字被連字號切在行尾：直接接上（連字號留著，不猜它是不是複合字）
+                joined = _join_hyphen(joined, nxt, doc_words)   # 單字被連字號切在行尾：有佐證才去掉連字號，沒有就留著
             else:
                 joined += " " + nxt
         out.append(joined)

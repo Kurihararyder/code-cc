@@ -363,3 +363,6 @@ table.t tfoot td{border-top:1px solid var(--border);padding:8px 10px}
 .langseg{margin-left:auto}.langseg button{padding:2px 9px;font-size:12.5px}
 .stmt hr{border:0;border-top:1px solid var(--border);margin:20px 0}
 .modal pre{margin:4px 0 0;background:var(--surface-2);border-radius:8px;padding:6px 8px;max-height:140px;overflow:auto;white-space:pre-wrap;word-break:break-word}
+
+/* CPE 原題清單：窄螢幕時標籤會擠到標題上，直接收起來 */
+@media (max-width:620px){.cpe-tags{display:none}#cpeSets .li .grow{min-width:0;overflow-wrap:anywhere}}

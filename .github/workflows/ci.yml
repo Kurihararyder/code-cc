@@ -23,7 +23,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest' && matrix.python == '3.12'
         run: |
           python -m pip install pyflakes
-          python -m pyflakes cpe_coach tests dev/gen_cpe_sets.py dev/launcher_screens.py dev/ci_installer_check.py dev/make_icons.py
+          python -m pyflakes cpe_coach tests dev/gen_cpe_sets.py dev/cpe_meta_src.py dev/launcher_screens.py dev/ci_installer_check.py dev/make_icons.py
       - name: Unit tests
         run: python -m unittest discover -s tests -v
 
@@ -174,12 +174,17 @@ jobs:
           COMMIT=$(python -c "import json;print(json.load(open('cpe_coach/data/cpe_sets.json',encoding='utf-8'))['source']['commit'])")
           mkdir -p "$RUNNER_TEMP/cpeq" && cd "$RUNNER_TEMP/cpeq"
           git init -q . && git remote add origin https://github.com/LuckyPigeon/CPE_Previous_Questions.git
-          git fetch -q --depth 1 origin "$COMMIT" && git checkout -q FETCH_HEAD
-          echo "CPE_QUESTIONS_DIR=$RUNNER_TEMP/cpeq" >> "$GITHUB_ENV"
+          # 上游若刪掉或改寫了那個提交就拿不到資料：這不是我們程式的錯，用警告標出來並略過下一步，而不是讓整個 CI 變紅
+          if git fetch -q --depth 1 origin "$COMMIT" && git checkout -q FETCH_HEAD; then
+            echo "CPE_QUESTIONS_DIR=$RUNNER_TEMP/cpeq" >> "$GITHUB_ENV"
+          else
+            echo "::warning::could not fetch commit $COMMIT of LuckyPigeon/CPE_Previous_Questions (deleted or network?) - real-data tests skipped"
+          fi
       - name: Install poppler (reference extractor for the cross-check)
         if: matrix.os == 'ubuntu-latest'
         run: sudo apt-get update && sudo apt-get install -y poppler-utils
       - name: Real-data tests (89 PDFs, digests and pdftotext cross-check)
+        if: env.CPE_QUESTIONS_DIR != ''
         run: python -m unittest tests.test_cpe_real -v
 
   ui:

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import re
+import threading
 from typing import Any, Dict
 
 from . import bank as bank_mod
@@ -59,12 +60,39 @@ class ExamMixin:
         ws = self.ws()
         return cpeset.status(ws, bank_mod.load_bank(ws))
 
+    _cpe_job: Dict[str, Any] = {"state": "idle"}
+    _cpe_job_lock = threading.Lock()
+
     def cpe_import(self, body: Dict[str, Any]) -> Dict[str, Any]:
-        """從 GitHub 下載 CPE 原題 repo 的 PDF，轉成題目文字與範例測資（只接受『從 GitHub 下載』；本機資料夾請用 cpe past repo）。"""
+        """在背景下載 CPE 原題 repo 的 PDF 並轉成題目文字與範例測資（只接受『從 GitHub 下載』；本機資料夾請用 cpe past repo）。
+        馬上回傳；進度用 cpe_progress 查（網頁每秒問一次）。"""
+        with self._cpe_job_lock:
+            if self._cpe_job.get("state") in ("download", "convert"):
+                return dict(self._cpe_job)
+            job: Dict[str, Any] = {"state": "download", "done": 0, "total": 0, "current": "", "report": None, "error": None}
+            self._cpe_job = job
+        force = bool(body.get("force"))
         ws = self.ws()
-        r = cpeimport.import_from(ws, None, force=bool(body.get("force")))
-        return {"imported": len(r.imported), "samples": sum(n for _, _, n in r.imported), "skipped": len(r.skipped), "failed": [{"id": a, "why": b} for a, b in r.failed],
-                "no_samples": r.no_samples, "missing": r.missing}
+
+        def run() -> None:
+            try:
+                found = cpeimport.fetch_found(None)
+                job.update(state="convert", total=len({f.number for f in found}))
+
+                def prog(pid: str, msg: str) -> None:
+                    job.update(done=job["done"] + 1, current=pid)
+                with ws.lock():
+                    r = cpeimport.import_found(ws, found, force=force, progress=prog)
+                job["report"] = {"imported": len(r.imported), "samples": sum(n for _, _, n in r.imported), "skipped": len(r.skipped),
+                                 "failed": [{"id": a, "why": b} for a, b in r.failed], "no_samples": r.no_samples, "missing": r.missing, "changed": list(r.changed)}
+                job["state"] = "done"
+            except Exception as e:                                  # 任何錯誤都要讓網頁看得到，不能讓背景執行緒默默死掉
+                job.update(state="error", error=str(e) or type(e).__name__)
+        threading.Thread(target=run, daemon=True).start()
+        return dict(job)
+
+    def cpe_progress(self) -> Dict[str, Any]:
+        return dict(self._cpe_job)
 
     def past_start(self, body: Dict[str, Any]) -> Dict[str, Any]:
         ws = self.ws()

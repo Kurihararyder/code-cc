@@ -19,6 +19,20 @@ FOLDER = os.environ.get("CPE_QUESTIONS_DIR")
 FIXTURE = json.loads((Path(__file__).parent / "fixtures" / "cpe_repo_digests.json").read_text(encoding="utf-8"))
 
 
+def _is_poppler() -> bool:
+    exe = shutil.which("pdftotext")
+    if not exe:
+        return False
+    try:
+        p = subprocess.run([exe, "-v"], capture_output=True, text=True, errors="replace", timeout=20)
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return "poppler" in (p.stdout + p.stderr).lower()
+
+
+IS_POPPLER = _is_poppler()
+
+
 def norm(t: str) -> str:
     return " ".join(t.split())
 
@@ -43,14 +57,13 @@ class RealRepoTests(unittest.TestCase):
                 bad.append(n)
         self.assertEqual(bad, [])
 
-    # 對照組只在我們自己裝 poppler 的環境跑（Linux CI、本機）；Windows 上找到的 pdftotext 不一定是 poppler，輸出不同。雜湊那一項已涵蓋每個平台。
-    @unittest.skipUnless(shutil.which("pdftotext") and sys.platform != "win32", "沒有 poppler 的 pdftotext，或在 Windows")
+    @unittest.skipUnless(IS_POPPLER, "沒有 poppler 的 pdftotext")
     def test_samples_agree_with_pdftotext_token_by_token(self):
         """對照組：pdftotext -layout 的 Sample Input／Output 區塊（去掉頁尾），逐個詞比對。"""
         bad = []
         for n, f in sorted(self.found.items()):
             raw = f.read()
-            ref = subprocess.run(["pdftotext", "-layout", "-", "-"], input=raw, capture_output=True).stdout.decode("utf-8", "replace")
+            ref = subprocess.run(["pdftotext", "-layout", "-", "-"], input=raw, capture_output=True).stdout.decode("utf-8", "replace").replace("\r\n", "\n")
             lines = [ln for ln in ref.replace("\f", "\n").split("\n") if "Universidad de Valladolid OJ" not in ln and not re.fullmatch(r"\s*\d+/\d+\s*", ln)]
             marks = [(i, "in" if re.match(r"^\s*Sample Input", ln) else "out") for i, ln in enumerate(lines) if re.match(r"^\s*Sample (Input|Output)", ln)]
             blocks = [(kind, lines[i + 1:(marks[k + 1][0] if k + 1 < len(marks) else len(lines))]) for k, (i, kind) in enumerate(marks)]
@@ -62,9 +75,12 @@ class RealRepoTests(unittest.TestCase):
                     pairs.append((pend, body))
                     pend = None
             mine = service.parse_samples(uvastatement.from_pdf(raw).text)
-            if [(a.split(), b.split()) for a, b in mine] != [(" ".join(x).split(), " ".join(y).split()) for x, y in pairs]:
+            want = [(" ".join(x).split(), " ".join(y).split()) for x, y in pairs]
+            if [(a.split(), b.split()) for a, b in mine] != want:
                 bad.append(n)
-        self.assertEqual(bad, [])
+                if len(bad) == 1:
+                    first = (n, [(a.split(), b.split()) for a, b in mine][:1], want[:1], ref[:300])
+        self.assertEqual(bad, [], first if bad else "")
 
 
 if __name__ == "__main__":

@@ -48,17 +48,18 @@ def main(folder: str) -> int:
         for n in folders:
             f = by_key.get(key, {}).get(n)
             if f is not None:
-                st = uvastatement.from_pdf(f.read())
+                raw = f.read()
+                st = uvastatement.from_pdf(raw)
                 title = (st.title or TITLE_FALLBACK.get(n, "")).replace("’", "'").replace("‘", "'")
                 samples = service.parse_samples(st.text)
                 digests[str(n)] = [hashlib.sha256((norm(a) + "\n---\n" + norm(b)).encode("utf-8")).hexdigest() for a, b in samples]
-                problems.append({"uva": n, "title": title})
+                problems.append({"uva": n, "title": title, "sha256": hashlib.sha256(raw).hexdigest()})
             else:
                 title = bank.get(n) or next((p["title"] for k in old.get("sets", {}) for p in old["sets"][k]["problems"] if p["uva"] == n), None)
                 problems.append(dict({"uva": n, "title": title or f"UVA {n}", "no_pdf": True}, **({} if title else {"title_unknown": True})))
         out_sets[key] = {"name": dirname, "problems": problems}
     data = {
-        "_note": "社群整理的 CPE 題目清單。只收題號與標題（事實）；題目敘述有版權，不內建，匯入時才從 GitHub 下載到使用者自己的電腦。no_pdf：該 repo 裡這題沒有 PDF。",
+        "_note": "社群整理的 CPE 題目清單。只收題號、標題與 PDF 的 SHA-256（用來確認下載到的檔案沒有變）；題目敘述有版權，不內建，匯入時才從 GitHub 下載到使用者自己的電腦。no_pdf：該 repo 裡這題沒有 PDF。",
         "source": {"repo": "https://github.com/LuckyPigeon/CPE_Previous_Questions", "commit": commit or old.get("source", {}).get("commit", ""),
                    "license": "MIT（repo 本身）；題目敘述的著作權屬於各題作者"},
         "sets": out_sets,

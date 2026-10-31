@@ -89,6 +89,15 @@ class App(PracticeMixin, ExamMixin, LearnMixin):
         ws = self.ws()
         return service.problem_view(ws, bank_mod.load_bank(ws), pid)
 
+    def statement_pdf(self, pid: str) -> bytes:
+        """匯入 CPE 原題時留下的原 PDF（statements/<題號>.pdf），給網頁對照算式、表格與圖。"""
+        if not re.fullmatch(r"[A-Za-z0-9_\-]{1,40}", pid):
+            raise ValueError("題號格式不正確")
+        f = self.ws().root / "statements" / f"{pid}.pdf"
+        if not f.is_file():
+            raise ValueError("這題沒有原 PDF")
+        return f.read_bytes()
+
     def chat(self, pid: str) -> Dict[str, Any]:
         return ask_mod.load_chat(self.ws(), pid)
 
@@ -178,7 +187,7 @@ def make_handler(app: App):
            "/api/unit": lambda q: app.unit(int(q["n"]) if "n" in q else None),
            "/api/problem": lambda q: app.problem(q["id"]), "/api/chat": lambda q: app.chat(q["id"]),
            "/api/search": lambda q: app.search(q.get("q", "")), "/api/settings": lambda q: app.settings(),
-           "/api/past": lambda q: app.past_list(), "/api/cpe": lambda q: app.cpe_status(), "/api/vocab": lambda q: app.vocab_list(),
+           "/api/past": lambda q: app.past_list(), "/api/cpe": lambda q: app.cpe_status(), "/api/cpe/progress": lambda q: app.cpe_progress(), "/api/vocab": lambda q: app.vocab_list(),
            "/api/plan": lambda q: app.plan(int(q.get("minutes", "30"))), "/api/calibration": lambda q: app.calibration(), "/api/weakness": lambda q: app.weakness(),
            "/api/eng": lambda q: app.eng_list()}
     POST = {"/api/new": app.new, "/api/save": app.save, "/api/test": app.test, "/api/trace": app.trace, "/api/fuzz": app.fuzz, "/api/ask": app.ask,
@@ -244,6 +253,9 @@ def make_handler(app: App):
                     with app.ws().lock():
                         data = backup.export_bytes(app.ws())
                     return self._send(200, data, "application/zip")
+                if u.path == "/api/statement.pdf":
+                    data = app.statement_pdf(q.get("id", ""))
+                    return self._send(200, data, "application/pdf")
                 fn = GET.get(u.path)
                 if fn is None:
                     return self._fail(404, "not found")

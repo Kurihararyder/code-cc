@@ -56,24 +56,49 @@ const STATUS = { ac: ["ok", "✓"], wrong: ["bad", "✗"], open: ["", ""] };
 
 // CPE 原題：社群整理的一星 49／二星 15／歷屆 31 題。題目文字不在這個程式裡，按鈕才從 GitHub 下載到你的電腦並轉成題目與範例測資。
 function cpeCard(C, repaint) {
+  const bar = h("div", { class: "muted small", hidden: true, role: "status", "aria-live": "polite" });
+  let filter = { q: "", only: "all" };
   const btn = h("button", { class: "btn" + (C.ready ? "" : " primary"), onclick: async () => {
-    btn.disabled = true; const old = btn.textContent; btn.textContent = "下載並轉換中…（約 10 秒）";
+    btn.disabled = true; const old = btn.textContent; bar.hidden = false; bar.textContent = "連線到 GitHub 下載中…";
     try {
-      const r = await post("/api/cpe/import", { force: false });
-      const bad = r.failed.length;
-      toast(`匯入 ${r.imported} 題（範例測資 ${r.samples} 組）` + (r.skipped ? `；${r.skipped} 題本來就有` : "") + (bad ? `；${bad} 題失敗` : ""), bad ? "warn" : "ok", 7000);
-      notify(); repaint();
-    } catch (e) { toast(e.message, "bad", 10000); btn.disabled = false; btn.textContent = old; }
+      let j = await post("/api/cpe/import", { force: false });
+      while (j.state === "download" || j.state === "convert") {
+        bar.textContent = j.state === "download" ? "從 GitHub 下載中…" : `轉換中 ${j.done}/${j.total}　${j.current || ""}`;
+        await new Promise((r) => setTimeout(r, 700));
+        j = await get("/api/cpe/progress");
+      }
+      if (j.state === "error") throw new Error(j.error);
+      const r = j.report, bad = r.failed.length;
+      toast(`匯入 ${r.imported} 題（範例測資 ${r.samples} 組）` + (r.skipped ? `；${r.skipped} 題本來就有` : "") + (bad ? `；${bad} 題失敗` : "") + (r.changed.length ? `；${r.changed.length} 題的 PDF 和驗證時不同` : ""), bad || r.changed.length ? "warn" : "ok", 8000);
+      bar.hidden = true; notify(); repaint();
+    } catch (e) { bar.hidden = true; toast(e.message, "bad", 10000); btn.disabled = false; btn.textContent = old; }
   } }, icon("refresh"), C.ready ? "再匯入（補沒有的）" : "從 GitHub 匯入");
-  const row = (p) => h("li", null, h("button", { class: "li", disabled: !p.has_tests, onclick: () => go("/practice/" + p.id) },
+  const row = (p) => h("li", { dataset: { cpe: p.id } }, h("button", { class: "li", disabled: !p.has_tests, onclick: () => go("/practice/" + p.id) },
     h("span", { class: "status" + (p.solved ? " done" : "") }, p.solved ? icon("check") : null), h("span", { class: "mono", text: p.id }), h("span", { class: "grow", text: p.title }),
+    p.tags && p.tags.length ? h("span", { class: "muted xs cpe-tags", text: p.tags.slice(0, 3).join("・") }) : null,
     !p.has_tests ? h("span", { class: "tag", text: p.no_pdf ? "該 repo 沒有 PDF，需貼上題目" : "尚未匯入" }) : null));
+  const match = (p) => (!filter.q || `${p.id} ${p.title} ${(p.tags || []).join(" ")}`.toLowerCase().includes(filter.q))
+    && (filter.only === "all" || (filter.only === "todo" && !p.solved) || (filter.only === "ready" && p.has_tests && !p.solved) || (filter.only === "solved" && p.solved) || (filter.only === "missing" && !p.has_tests));
+  const lists = h("div", null);
+  const paint = () => {
+    clear(lists);
+    C.sets.forEach((g) => {
+      const rows = g.problems.filter(match);
+      lists.append(h("details", { class: "mt", open: !!filter.q || filter.only !== "all" || (g.key === "one" && g.ready > 0) }, h("summary", { class: "small" }, h("b", { text: g.name }), `　${g.count} 題　可練 ${g.ready}　已通過 ${g.solved}` + (rows.length !== g.count ? `　（符合 ${rows.length}）` : "")),
+        rows.length ? h("ul", { class: "list" }, rows.map(row)) : h("p", { class: "muted small", text: "沒有符合的題目" })));
+    });
+  };
+  const search = h("input", { type: "search", class: "input", placeholder: "搜尋題號、標題或類型（例如 bfs、字串）", "aria-label": "搜尋 CPE 原題", style: { "max-width": "300px" }, oninput: (e) => { filter.q = e.target.value.trim().toLowerCase(); paint(); } });
+  const pick = h("select", { class: "input", "aria-label": "篩選", onchange: (e) => { filter.only = e.target.value; paint(); } },
+    [["all", "全部"], ["todo", "還沒通過"], ["ready", "已匯入、還沒通過"], ["solved", "已通過"], ["missing", "尚未匯入"]].map(([v, t]) => h("option", { value: v, text: t })));
+  paint();
   return h("section", { class: "card pad mt", id: "cpeSets" },
     h("div", { class: "card-h" }, h("h3", null, icon("target"), "CPE 原題"), h("span", { class: "pill " + (C.ready ? "ok" : "info"), text: `可練 ${C.ready}/${C.total}` }), h("span", { class: "grow" }), btn),
-    h("p", { class: "muted small", text: "社群整理的 CPE 題單：一星題、二星題、歷屆試題（UVa 原題，英文）。題目文字有版權，不放在這個程式裡：按『從 GitHub 匯入』才會把 PDF 下載到你的電腦，轉成題目文字與範例測資（原 PDF 也留在工作區的 statements/）。範例只是最基本的測資，通過後請自己再補邊界測資。" }),
-    C.sets.map((g) => h("details", { class: "mt", open: g.key === "one" && g.ready > 0 }, h("summary", { class: "small" }, h("b", { text: g.name }), `　${g.count} 題　可練 ${g.ready}　已通過 ${g.solved}`),
-      h("ul", { class: "list" }, g.problems.map(row)))),
-    h("p", { class: "muted xs mt" }, "清單來源：", h("a", { href: C.source.repo, target: "_blank", rel: "noopener noreferrer" }, "LuckyPigeon/CPE_Previous_Questions ", icon("external")), `（提交 ${String(C.source.commit).slice(0, 7)}）。算式、表格、圖擷取得不好的地方，請開 statements/ 裡的原 PDF 對照。`));
+    bar,
+    h("p", { class: "muted small", text: "社群整理的 CPE 題單：一星題、二星題、歷屆試題（UVa 原題，英文）。題目文字的著作權屬於各題作者，不放在這個程式裡：按『從 GitHub 匯入』才會把 PDF 下載到你的電腦，只供你自己練習，轉成題目文字與範例測資（原 PDF 也留在工作區的 statements/）。範例只是最基本的測資，通過後請自己再補邊界測資。" }),
+    h("div", { class: "row wrap gap-sm mt" }, search, pick),
+    lists,
+    h("p", { class: "muted xs mt" }, "清單來源：", h("a", { href: C.source.repo, target: "_blank", rel: "noopener noreferrer" }, "LuckyPigeon/CPE_Previous_Questions ", icon("external")), `（提交 ${String(C.source.commit).slice(0, 7)}）。每題的類型、先修單元與提示是我依題意寫的，沒有官方核對。算式、表格、圖擷取得不好的地方，練習頁有「開啟原 PDF 對照」。`));
 }
 
 function examCard(e, repaint, busy) {

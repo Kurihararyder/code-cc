@@ -1,5 +1,5 @@
 import { h, icon, clear, toast, stars, confirmDialog, debounce, fmtDate, modal, VERDICT_ZH, $ } from "./dom.js";
-import { get, post } from "./api.js";
+import { get, post, openPdf } from "./api.js";
 import { go } from "./router.js";
 import { S, pref } from "./state.js";
 import { Editor } from "./editor.js";
@@ -113,6 +113,8 @@ class Workspace {
     clear(this.stmtBox);
     this.head = h("div", { class: "row wrap", style: { "margin-bottom": "10px" } });
     this.stmtBox.append(this.head);
+    if (V.has_pdf) this.stmtBox.append(h("div", { class: "row wrap", style: { "margin-bottom": "8px" } },
+      h("button", { class: "btn sm", title: "算式、表格、圖在文字版可能擷取得不完整，請對照原 PDF", onclick: async () => { try { await openPdf("/api/statement.pdf?id=" + encodeURIComponent(V.id)); } catch (e) { toast(e.message, "bad"); } } }, icon("book"), "開啟原 PDF 對照")));
     if (V.statement) this.stmtBox.append(md(V.statement));
     else this.stmtBox.append(h("div", { class: "callout" }, icon("book"), h("div", null, "這題沒有內建的題目敘述。", V.url ? [" 請到 ", h("a", { href: V.url, target: "_blank", rel: "noopener noreferrer", text: "題目頁" }), " 閱讀，把文字存成檔案後用 ", h("code", { text: `cpe import ${V.id} 檔案` }), " 匯入範例測資。"] : null)));
     this.paintBadges(); this.paintLadder();

@@ -29,3 +29,13 @@ export async function download(path, filename) {
   const a = document.createElement("a"); a.href = url; a.download = filename; document.body.append(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
+
+// 在新分頁開啟 PDF（要帶 token，所以先取回成 blob 再開）。
+export async function openPdf(path) {
+  let r;
+  try { r = await fetch(path, { headers: { "X-CPE-Token": token } }); } catch { setOffline(true); throw new ApiError("連線中斷", 0); }
+  if (!r.ok) throw new ApiError("找不到原 PDF（HTTP " + r.status + "）", r.status);
+  const url = URL.createObjectURL(new Blob([await r.arrayBuffer()], { type: "application/pdf" }));
+  window.open(url, "_blank", "noopener");
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
