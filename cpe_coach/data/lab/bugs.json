@@ -1,0 +1,328 @@
+{
+ "items": [
+  {
+   "id": "b-range",
+   "concept": "loop",
+   "title": "加總 1 到 n",
+   "statement": "輸入 n，輸出 1+2+…+n。",
+   "buggy": "n = int(input())\ns = 0\nfor i in range(1, n):\n    s += i\nprint(s)",
+   "fixed": "n = int(input())\ns = 0\nfor i in range(1, n + 1):\n    s += i\nprint(s)",
+   "bug_lines": [
+    3
+   ],
+   "why": "range(1, n) 不含 n；要含 n 就要寫 range(1, n + 1)。這是最常見的「差一」錯誤。",
+   "tests": [
+    {
+     "in": "5\n",
+     "out": "15"
+    },
+    {
+     "in": "1\n",
+     "out": "1"
+    },
+    {
+     "in": "10\n",
+     "out": "55"
+    }
+   ]
+  },
+  {
+   "id": "b-input",
+   "concept": "io",
+   "title": "兩個數相加",
+   "statement": "兩行各一個整數，輸出它們的和。",
+   "buggy": "a = input()\nb = input()\nprint(a + b)",
+   "fixed": "a = int(input())\nb = int(input())\nprint(a + b)",
+   "bug_lines": [
+    1,
+    2,
+    3
+   ],
+   "why": "input() 回傳字串，字串的 + 是接起來（'3'+'4' = '34'）；要先用 int() 轉成整數。",
+   "tests": [
+    {
+     "in": "3\n4\n",
+     "out": "7"
+    },
+    {
+     "in": "10\n-2\n",
+     "out": "8"
+    }
+   ]
+  },
+  {
+   "id": "b-intdiv",
+   "concept": "arith",
+   "title": "平均數",
+   "statement": "第一行 n，第二行 n 個整數，輸出平均數（可以有小數）。",
+   "buggy": "n = int(input())\na = list(map(int, input().split()))\nprint(sum(a) // n)",
+   "fixed": "n = int(input())\na = list(map(int, input().split()))\nprint(sum(a) / n)",
+   "bug_lines": [
+    3
+   ],
+   "why": "// 是整數除法會捨去小數；要小數用 /。",
+   "tests": [
+    {
+     "in": "2\n2 3\n",
+     "out": "2.5"
+    },
+    {
+     "in": "3\n1 2 4\n",
+     "out": "2.3333333333333335"
+    }
+   ]
+  },
+  {
+   "id": "b-maxinit",
+   "concept": "list",
+   "title": "找最大值",
+   "statement": "一行整數，輸出最大的那個（可能全是負數）。",
+   "buggy": "a = list(map(int, input().split()))\nm = 0\nfor x in a:\n    if x > m:\n        m = x\nprint(m)",
+   "fixed": "a = list(map(int, input().split()))\nm = a[0]\nfor x in a:\n    if x > m:\n        m = x\nprint(m)",
+   "bug_lines": [
+    2
+   ],
+   "why": "最大值的初始值設成 0 時，全是負數會答錯；初始值應該用第一個元素（或負無限大）。",
+   "tests": [
+    {
+     "in": "3 9 2\n",
+     "out": "9"
+    },
+    {
+     "in": "-5 -2 -9\n",
+     "out": "-2"
+    }
+   ]
+  },
+  {
+   "id": "b-remove",
+   "concept": "list",
+   "title": "刪掉偶數",
+   "statement": "一行整數，輸出刪掉所有偶數後剩下的（保持順序）。",
+   "buggy": "a = list(map(int, input().split()))\nfor x in a:\n    if x % 2 == 0:\n        a.remove(x)\nprint(*a)",
+   "fixed": "a = list(map(int, input().split()))\na = [x for x in a if x % 2 != 0]\nprint(*a)",
+   "bug_lines": [
+    2,
+    3,
+    4
+   ],
+   "why": "一邊走訪 list 一邊刪除元素，後面的元素會往前移，下一個就被跳過了。要改用新 list（推導式）。",
+   "tests": [
+    {
+     "in": "1 2 3 4\n",
+     "out": "1 3"
+    },
+    {
+     "in": "2 4 6 1\n",
+     "out": "1"
+    }
+   ]
+  },
+  {
+   "id": "b-shadow",
+   "concept": "list",
+   "title": "加總兩種寫法",
+   "statement": "一行整數，輸出總和兩次（以空白分隔）。",
+   "buggy": "sum = 0\nxs = list(map(int, input().split()))\nfor x in xs:\n    sum += x\nprint(sum, sum(xs))",
+   "fixed": "total = 0\nxs = list(map(int, input().split()))\nfor x in xs:\n    total += x\nprint(total, sum(xs))",
+   "bug_lines": [
+    1
+   ],
+   "why": "把變數取名為 sum，就蓋掉了內建函式 sum()，之後 sum(xs) 會說「int 不能被呼叫」。",
+   "tests": [
+    {
+     "in": "1 2 3\n",
+     "out": "6 6"
+    }
+   ]
+  },
+  {
+   "id": "b-basecase",
+   "concept": "recursion",
+   "title": "階乘",
+   "statement": "輸入 n，輸出 n!。",
+   "buggy": "def f(n):\n    return n * f(n - 1)\nprint(f(int(input())))",
+   "fixed": "def f(n):\n    if n <= 1:\n        return 1\n    return n * f(n - 1)\nprint(f(int(input())))",
+   "bug_lines": [
+    2
+   ],
+   "why": "遞迴沒有結束條件，會一直呼叫下去直到 RecursionError。",
+   "tests": [
+    {
+     "in": "5\n",
+     "out": "120"
+    },
+    {
+     "in": "1\n",
+     "out": "1"
+    }
+   ]
+  },
+  {
+   "id": "b-strcmp",
+   "concept": "string",
+   "title": "兩數取大",
+   "statement": "一行兩個整數，輸出較大的。",
+   "buggy": "a, b = input().split()\nprint(max(a, b))",
+   "fixed": "a, b = map(int, input().split())\nprint(max(a, b))",
+   "bug_lines": [
+    1,
+    2
+   ],
+   "why": "沒轉成整數時是比較字串：'9' > '10'（逐字元比，'9' 比 '1' 大）。",
+   "tests": [
+    {
+     "in": "9 10\n",
+     "out": "10"
+    },
+    {
+     "in": "3 2\n",
+     "out": "3"
+    }
+   ]
+  },
+  {
+   "id": "b-alias",
+   "concept": "list",
+   "title": "單位矩陣",
+   "statement": "輸入 n，輸出 n×n 的單位矩陣（對角線是 1，其餘 0）。",
+   "buggy": "n = int(input())\ng = [[0] * n] * n\nfor i in range(n):\n    g[i][i] = 1\nfor row in g:\n    print(*row)",
+   "fixed": "n = int(input())\ng = [[0] * n for _ in range(n)]\nfor i in range(n):\n    g[i][i] = 1\nfor row in g:\n    print(*row)",
+   "bug_lines": [
+    2
+   ],
+   "why": "[[0]*n]*n 的每一列是同一個 list；改一列就改到全部。要用推導式各自建立。",
+   "tests": [
+    {
+     "in": "3\n",
+     "out": "1 0 0\n0 1 0\n0 0 1"
+    },
+    {
+     "in": "1\n",
+     "out": "1"
+    }
+   ]
+  },
+  {
+   "id": "b-is",
+   "concept": "arith",
+   "title": "兩數是否相等",
+   "statement": "兩行各一個整數，相等輸出 YES，否則 NO。",
+   "buggy": "a = int(input())\nb = int(input())\nprint('YES' if a is b else 'NO')",
+   "fixed": "a = int(input())\nb = int(input())\nprint('YES' if a == b else 'NO')",
+   "bug_lines": [
+    3
+   ],
+   "why": "is 比較的是「是不是同一個物件」，不是值相等；小整數碰巧共用才看起來沒問題。比較值要用 ==。",
+   "tests": [
+    {
+     "in": "1000\n1000\n",
+     "out": "YES"
+    },
+    {
+     "in": "5\n6\n",
+     "out": "NO"
+    }
+   ]
+  },
+  {
+   "id": "b-float",
+   "concept": "arith",
+   "title": "兩個小數相加是否為 0.3",
+   "statement": "兩行各一個小數，如果它們的和等於 0.3 輸出 YES 否則 NO。",
+   "buggy": "a = float(input())\nb = float(input())\nprint('YES' if a + b == 0.3 else 'NO')",
+   "fixed": "a = float(input())\nb = float(input())\nprint('YES' if abs(a + b - 0.3) < 1e-9 else 'NO')",
+   "bug_lines": [
+    3
+   ],
+   "why": "0.1 + 0.2 在電腦裡是 0.30000000000000004，用 == 比小數幾乎一定出錯；改成差的絕對值小於一個很小的數。",
+   "tests": [
+    {
+     "in": "0.1\n0.2\n",
+     "out": "YES"
+    },
+    {
+     "in": "0.5\n0.5\n",
+     "out": "NO"
+    }
+   ]
+  },
+  {
+   "id": "b-slice",
+   "concept": "list",
+   "title": "最後 k 個",
+   "statement": "第一行 n k，第二行 n 個整數，輸出最後 k 個。",
+   "buggy": "n, k = map(int, input().split())\na = list(map(int, input().split()))\nprint(*a[-k:-1])",
+   "fixed": "n, k = map(int, input().split())\na = list(map(int, input().split()))\nprint(*a[-k:])",
+   "bug_lines": [
+    3
+   ],
+   "why": "a[-k:-1] 的結尾 -1 不含最後一個元素；取到最後一個要省略結尾（a[-k:]）。",
+   "tests": [
+    {
+     "in": "5 2\n1 2 3 4 5\n",
+     "out": "4 5"
+    },
+    {
+     "in": "3 3\n7 8 9\n",
+     "out": "7 8 9"
+    }
+   ]
+  },
+  {
+   "id": "b-format",
+   "concept": "io",
+   "title": "排序後輸出",
+   "statement": "一行整數，由小到大排序後以空白分隔輸出。",
+   "buggy": "a = sorted(map(int, input().split()))\nprint(a)",
+   "fixed": "a = sorted(map(int, input().split()))\nprint(*a)",
+   "bug_lines": [
+    2
+   ],
+   "why": "print(list) 會印出中括號與逗號 [1, 2, 3]；要用空白分隔要用 print(*a)。",
+   "tests": [
+    {
+     "in": "3 1 2\n",
+     "out": "1 2 3"
+    }
+   ]
+  },
+  {
+   "id": "b-eof",
+   "concept": "io",
+   "title": "讀到結尾加總",
+   "statement": "每行一個整數（不知道有幾行），輸出總和。",
+   "buggy": "s = 0\nwhile True:\n    s += int(input())\nprint(s)",
+   "fixed": "import sys\ns = 0\nfor line in sys.stdin:\n    s += int(line)\nprint(s)",
+   "bug_lines": [
+    3
+   ],
+   "why": "input() 讀到檔案結尾會丟 EOFError；用 for line in sys.stdin 會自然停止。",
+   "tests": [
+    {
+     "in": "1\n2\n",
+     "out": "3"
+    }
+   ]
+  },
+  {
+   "id": "b-sortstr",
+   "concept": "sorting",
+   "title": "數字由小到大",
+   "statement": "一行整數，由小到大輸出。",
+   "buggy": "a = input().split()\na.sort()\nprint(*a)",
+   "fixed": "a = list(map(int, input().split()))\na.sort()\nprint(*a)",
+   "bug_lines": [
+    1,
+    2
+   ],
+   "why": "字串排序是逐字元比：'10' < '2'。要先轉成整數再排序。",
+   "tests": [
+    {
+     "in": "10 9 2\n",
+     "out": "2 9 10"
+    }
+   ]
+  }
+ ]
+}

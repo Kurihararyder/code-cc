@@ -1,0 +1,534 @@
+{
+ "items": [
+  {
+   "en": "integer",
+   "zh": "整數",
+   "note": "不含小數的數，例如 -3、0、42。"
+  },
+  {
+   "en": "positive",
+   "zh": "正的",
+   "note": "大於 0。non-negative 是「不是負的」，包含 0。"
+  },
+  {
+   "en": "non-negative",
+   "zh": "非負的",
+   "note": "大於或等於 0。"
+  },
+  {
+   "en": "consecutive",
+   "zh": "連續的",
+   "note": "一個接著一個，中間沒有間隔。"
+  },
+  {
+   "en": "adjacent",
+   "zh": "相鄰的",
+   "note": "緊鄰在旁邊的；格子的 adjacent 通常是上下左右（有時含斜角，看題目）。"
+  },
+  {
+   "en": "subsequence",
+   "zh": "子序列",
+   "note": "從原序列刪掉一些元素（不改變順序）剩下的；不一定要連續。substring／subarray 才是連續的。"
+  },
+  {
+   "en": "substring",
+   "zh": "子字串",
+   "note": "字串中連續的一段。"
+  },
+  {
+   "en": "permutation",
+   "zh": "排列",
+   "note": "把一些元素重新排列的一種順序；n 個不同元素有 n! 種。"
+  },
+  {
+   "en": "combination",
+   "zh": "組合",
+   "note": "從一些元素選出幾個，不管順序。"
+  },
+  {
+   "en": "lexicographically",
+   "zh": "依字典序",
+   "note": "像查字典那樣比大小：先比第一個字元，相同再比第二個…"
+  },
+  {
+   "en": "inclusive",
+   "zh": "含端點的",
+   "note": "1 to 5 inclusive 包含 1 與 5。exclusive 則不含。"
+  },
+  {
+   "en": "exclusive",
+   "zh": "不含端點的",
+   "note": "和 inclusive 相反。"
+  },
+  {
+   "en": "distinct",
+   "zh": "不同的、互異的",
+   "note": "兩兩不相同。"
+  },
+  {
+   "en": "duplicate",
+   "zh": "重複的",
+   "note": "出現不只一次。"
+  },
+  {
+   "en": "identical",
+   "zh": "相同的",
+   "note": "完全一樣。"
+  },
+  {
+   "en": "consist of",
+   "zh": "由…組成",
+   "note": "The input consists of N lines：輸入由 N 行組成。"
+  },
+  {
+   "en": "contain",
+   "zh": "包含",
+   "note": "The first line contains an integer N：第一行有一個整數 N。"
+  },
+  {
+   "en": "denote",
+   "zh": "代表、表示",
+   "note": "Let N denote the number of cities：令 N 代表城市數。"
+  },
+  {
+   "en": "represent",
+   "zh": "代表",
+   "note": "同 denote。"
+  },
+  {
+   "en": "at most",
+   "zh": "至多、最多",
+   "note": "N is at most 100：N ≤ 100。"
+  },
+  {
+   "en": "at least",
+   "zh": "至少",
+   "note": "at least 3：≥ 3。"
+  },
+  {
+   "en": "exactly",
+   "zh": "恰好",
+   "note": "exactly one：剛好一個，不多不少。"
+  },
+  {
+   "en": "less than",
+   "zh": "小於",
+   "note": "< ；less than or equal to 是 ≤。"
+  },
+  {
+   "en": "greater than",
+   "zh": "大於",
+   "note": "> ；greater than or equal to 是 ≥。"
+  },
+  {
+   "en": "between",
+   "zh": "在…之間",
+   "note": "要看有沒有 inclusive；沒有說明時通常含端點，不確定就看範例。"
+  },
+  {
+   "en": "range",
+   "zh": "範圍",
+   "note": "1 ≤ N ≤ 100 就是 N 的範圍。"
+  },
+  {
+   "en": "constraint",
+   "zh": "限制條件",
+   "note": "輸入的大小與範圍；決定要用多快的演算法。"
+  },
+  {
+   "en": "test case",
+   "zh": "測資、測試案例",
+   "note": "一組輸入。multiple test cases 表示一次輸入有很多組。"
+  },
+  {
+   "en": "terminate",
+   "zh": "結束",
+   "note": "The input terminates with a line containing 0：輸入以一行 0 結束（那行不用處理）。"
+  },
+  {
+   "en": "end of file (EOF)",
+   "zh": "檔案結尾",
+   "note": "輸入沒有告訴你幾組時，要一直讀到 EOF。"
+  },
+  {
+   "en": "blank line",
+   "zh": "空行",
+   "note": "只有換行的一行。題目常要求每組輸出之間要空一行。"
+  },
+  {
+   "en": "separated by",
+   "zh": "以…分隔",
+   "note": "separated by a single space：以一個空白分隔。"
+  },
+  {
+   "en": "trailing",
+   "zh": "尾端的",
+   "note": "trailing spaces 是行尾多餘的空白；通常不允許多出來。"
+  },
+  {
+   "en": "leading zeros",
+   "zh": "前導零",
+   "note": "數字前面多餘的 0，例如 007。"
+  },
+  {
+   "en": "print",
+   "zh": "輸出、印出",
+   "note": "write 與 output 也是。"
+  },
+  {
+   "en": "output",
+   "zh": "輸出",
+   "note": "程式要印出的東西。"
+  },
+  {
+   "en": "input",
+   "zh": "輸入",
+   "note": "程式讀進來的資料。"
+  },
+  {
+   "en": "sample",
+   "zh": "範例",
+   "note": "Sample Input／Sample Output：範例輸入／輸出。"
+  },
+  {
+   "en": "minimum",
+   "zh": "最小值",
+   "note": "maximum 是最大值。"
+  },
+  {
+   "en": "minimize",
+   "zh": "使…最小",
+   "note": "找一種做法讓某個值最小。"
+  },
+  {
+   "en": "maximize",
+   "zh": "使…最大",
+   "note": ""
+  },
+  {
+   "en": "sum",
+   "zh": "總和",
+   "note": "total 也是。"
+  },
+  {
+   "en": "product",
+   "zh": "乘積",
+   "note": ""
+  },
+  {
+   "en": "quotient",
+   "zh": "商",
+   "note": "整數除法的結果；remainder 是餘數。"
+  },
+  {
+   "en": "remainder",
+   "zh": "餘數",
+   "note": "a mod b。"
+  },
+  {
+   "en": "divisible by",
+   "zh": "可以被…整除",
+   "note": "a is divisible by b：a % b == 0。"
+  },
+  {
+   "en": "divisor",
+   "zh": "因數、除數",
+   "note": "factor 也是因數。"
+  },
+  {
+   "en": "multiple",
+   "zh": "倍數",
+   "note": ""
+  },
+  {
+   "en": "prime",
+   "zh": "質數",
+   "note": "只有 1 和自己兩個因數的大於 1 的整數。"
+  },
+  {
+   "en": "odd",
+   "zh": "奇數",
+   "note": "even 是偶數。"
+  },
+  {
+   "en": "even",
+   "zh": "偶數",
+   "note": ""
+  },
+  {
+   "en": "digit",
+   "zh": "位數、數字（單一個）",
+   "note": "0 到 9 的其中一個；number of digits 是位數。"
+  },
+  {
+   "en": "decimal",
+   "zh": "十進位的、小數",
+   "note": "decimal point 是小數點。"
+  },
+  {
+   "en": "binary",
+   "zh": "二進位的",
+   "note": ""
+  },
+  {
+   "en": "round",
+   "zh": "四捨五入",
+   "note": "round to two decimal places：四捨五入到小數第二位。"
+  },
+  {
+   "en": "truncate",
+   "zh": "捨去",
+   "note": "直接丟掉小數部分。"
+  },
+  {
+   "en": "absolute value",
+   "zh": "絕對值",
+   "note": "|x|。"
+  },
+  {
+   "en": "array",
+   "zh": "陣列",
+   "note": "sequence 也常指一串數字。"
+  },
+  {
+   "en": "matrix",
+   "zh": "矩陣",
+   "note": "二維的數字表。"
+  },
+  {
+   "en": "row",
+   "zh": "列（橫的）",
+   "note": "column 是行（直的）。"
+  },
+  {
+   "en": "column",
+   "zh": "行（直的）",
+   "note": ""
+  },
+  {
+   "en": "grid",
+   "zh": "格子",
+   "note": "二維棋盤狀的地圖。"
+  },
+  {
+   "en": "diagonal",
+   "zh": "對角線",
+   "note": ""
+  },
+  {
+   "en": "vertex",
+   "zh": "頂點（圖的點）",
+   "note": "複數 vertices；node 也是。"
+  },
+  {
+   "en": "edge",
+   "zh": "邊",
+   "note": "連接兩個頂點的線。"
+  },
+  {
+   "en": "graph",
+   "zh": "圖",
+   "note": "由頂點與邊組成。"
+  },
+  {
+   "en": "directed",
+   "zh": "有向的",
+   "note": "邊有方向；undirected 是無向的。"
+  },
+  {
+   "en": "weighted",
+   "zh": "加權的",
+   "note": "邊上有數字（長度、成本）。"
+  },
+  {
+   "en": "path",
+   "zh": "路徑",
+   "note": "一串相連的邊。"
+  },
+  {
+   "en": "cycle",
+   "zh": "環",
+   "note": "起點與終點相同的路徑。"
+  },
+  {
+   "en": "tree",
+   "zh": "樹",
+   "note": "沒有環的連通圖。"
+  },
+  {
+   "en": "root",
+   "zh": "根",
+   "note": ""
+  },
+  {
+   "en": "leaf",
+   "zh": "葉節點",
+   "note": "沒有子節點的節點。"
+  },
+  {
+   "en": "shortest path",
+   "zh": "最短路徑",
+   "note": ""
+  },
+  {
+   "en": "connected",
+   "zh": "連通的",
+   "note": "任意兩點之間都有路徑。"
+  },
+  {
+   "en": "component",
+   "zh": "元件",
+   "note": "connected component：連通塊。"
+  },
+  {
+   "en": "queue",
+   "zh": "佇列",
+   "note": "先進先出。"
+  },
+  {
+   "en": "stack",
+   "zh": "堆疊",
+   "note": "後進先出。"
+  },
+  {
+   "en": "sort",
+   "zh": "排序",
+   "note": "ascending 是由小到大，descending 是由大到小。"
+  },
+  {
+   "en": "ascending order",
+   "zh": "遞增順序",
+   "note": "由小到大。"
+  },
+  {
+   "en": "descending order",
+   "zh": "遞減順序",
+   "note": "由大到小。"
+  },
+  {
+   "en": "increasing",
+   "zh": "遞增的",
+   "note": "strictly increasing 是嚴格遞增（不能相等）。"
+  },
+  {
+   "en": "strictly",
+   "zh": "嚴格地",
+   "note": "strictly less than 就是 <，不含相等。"
+  },
+  {
+   "en": "optimal",
+   "zh": "最佳的",
+   "note": "optimal solution：最佳解。"
+  },
+  {
+   "en": "efficient",
+   "zh": "有效率的",
+   "note": ""
+  },
+  {
+   "en": "time limit",
+   "zh": "時間限制",
+   "note": "超過就是 Time Limit Exceeded (TLE)。"
+  },
+  {
+   "en": "memory limit",
+   "zh": "記憶體限制",
+   "note": ""
+  },
+  {
+   "en": "wrong answer",
+   "zh": "答案錯誤",
+   "note": "WA。"
+  },
+  {
+   "en": "runtime error",
+   "zh": "執行時錯誤",
+   "note": "RE：程式當掉。"
+  },
+  {
+   "en": "accepted",
+   "zh": "通過",
+   "note": "AC。"
+  },
+  {
+   "en": "guarantee",
+   "zh": "保證",
+   "note": "It is guaranteed that…：題目保證輸入一定符合這個條件，不用另外檢查。"
+  },
+  {
+   "en": "assume",
+   "zh": "假設",
+   "note": "You may assume…：你可以當作…成立。"
+  },
+  {
+   "en": "otherwise",
+   "zh": "否則",
+   "note": "if … ; otherwise …：如果…；否則…"
+  },
+  {
+   "en": "respectively",
+   "zh": "分別地",
+   "note": "A and B are 1 and 2 respectively：A 是 1，B 是 2。"
+  },
+  {
+   "en": "as follows",
+   "zh": "如下",
+   "note": ""
+  },
+  {
+   "en": "the following",
+   "zh": "下面的",
+   "note": ""
+  },
+  {
+   "en": "each",
+   "zh": "每一個",
+   "note": "for each test case：每一組測資。"
+  },
+  {
+   "en": "pair",
+   "zh": "一對",
+   "note": "ordered pair 有順序，unordered pair 沒有。"
+  },
+  {
+   "en": "rotate",
+   "zh": "旋轉",
+   "note": ""
+  },
+  {
+   "en": "reverse",
+   "zh": "反轉",
+   "note": ""
+  },
+  {
+   "en": "swap",
+   "zh": "交換",
+   "note": ""
+  },
+  {
+   "en": "insert",
+   "zh": "插入",
+   "note": "delete／remove 是刪除。"
+  },
+  {
+   "en": "query",
+   "zh": "詢問、查詢",
+   "note": "q queries：q 次詢問。"
+  },
+  {
+   "en": "update",
+   "zh": "更新、修改",
+   "note": ""
+  },
+  {
+   "en": "initially",
+   "zh": "一開始",
+   "note": ""
+  },
+  {
+   "en": "simulate",
+   "zh": "模擬",
+   "note": "照規則一步一步做。"
+  }
+ ]
+}

@@ -5,6 +5,7 @@ from typing import Any, Dict
 
 from . import ask as ask_mod
 from . import bank as bank_mod
+from . import behavior
 from . import fuzz as fuzz_mod, hints, service
 
 
@@ -35,6 +36,13 @@ class PracticeMixin:
             self.save(body)
         r = service.run_test(ws, body["id"], body.get("lang"), body.get("predicted"))
         r["lint"] = []
+        beh = behavior.clean(body.get("beh"))
+        r["behavior"] = []
+        if beh:                                                                       # 編輯行為（只有次數與時間）：記錄並回傳可能卡住的提示
+            recent = [e for e in ws.events()[-30:] if e.get("kind") == "test" and e.get("problem") == body["id"]]
+            failed = sum(1 for e in recent if e.get("verdict") != "AC")
+            ws.log("beh", problem=body["id"], failed_runs=failed, **beh)
+            r["behavior"] = behavior.patterns(beh, failed) if r["verdict"] != "AC" else []
         if r["failing"] and r["lang"] == "py":
             r["lint"] = service.lint(service.solution_file(ws, body["id"], body.get("lang")).read_text(encoding="utf-8"))
         return r

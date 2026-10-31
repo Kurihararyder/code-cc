@@ -6,6 +6,7 @@ import { Editor } from "./editor.js";
 import { render as md, inline } from "./md.js";
 import { AskUI, highlightText } from "./ask.js";
 import { skeleton, empty, notify, progress } from "./widgets.js";
+import { renderStep } from "./viz.js";
 
 const LEVELS = [
   ["理解題意", "把題目重述一遍的檢查清單；不談解法。", "free"],
@@ -35,6 +36,15 @@ class Workspace {
     this.view = view; this.pid = pid; this.V = V; this.unit = unit; this.traceText = ""; this.busy = false; this.hintTexts = {}; this.lastResult = null;
     this.editor = new Editor({ lang: V.lang, onChange: () => this.onEdit(), onRun: () => this.run(), onSave: () => this.save(true), onSelect: () => this.ask?.maybeShow() });
     this.editor.setFontSize(pref.get("fontSize", 14));
+    // 編輯行為：只數次數與時間，不記打了什麼字（隱私）。按「執行」時隨結果送出，供伺服器判斷是不是卡住了。
+    this.beh = { edits: 0, deletes: 0, pastes: 0, active_s: 0, max_pause_s: 0, runs: 0, opened: Date.now(), last: 0 };
+    this.editor.ta.addEventListener("input", (e) => {
+      const b = this.beh, now = Date.now(); b.edits++;
+      if ((e.inputType || "").startsWith("delete")) b.deletes++;
+      if ((e.inputType || "") === "insertFromPaste") b.pastes++;
+      if (b.last) { const gap = (now - b.last) / 1000; if (gap < 60) b.active_s += gap; b.max_pause_s = Math.max(b.max_pause_s, gap); }
+      b.last = now;
+    });
     this.saveSoon = debounce(() => this.save(false), 900); this.dirty = false;
   }
   // ---------- 掛載 ----------
@@ -215,7 +225,9 @@ class Workspace {
     this.res.hidden = false; this.setRes("res"); clear(this.resBody); this.resBody.append(skeleton(3));
     const predicted = this.predict.value || undefined;
     try {
-      const r = await post("/api/test", { id: this.pid, code: this.editor.getValue(), predicted }); this.dirty = false; this.lastResult = r; this.predicted = predicted;
+      const b = this.beh; b.runs++;
+      const r = await post("/api/test", { id: this.pid, code: this.editor.getValue(), predicted,
+        beh: { edits: b.edits, deletes: b.deletes, pastes: b.pastes, active_s: Math.round(b.active_s), max_pause_s: Math.round(b.max_pause_s), since_open_s: Math.round((Date.now() - b.opened) / 1000), runs: b.runs } }); this.dirty = false; this.lastResult = r; this.predicted = predicted;
       this.editor.clearMarks(); if (r.error_line) this.editor.mark("err", [r.error_line]); this.editor.mark("lint", (r.lint || []).map((x) => x.line));
       if (r.error_line) this.editor.mark("err", [r.error_line]);
       this.predict.value = ""; await this.reloadView(); this.paintRes(); notify();
@@ -226,13 +238,15 @@ class Workspace {
   }
   paintRes() {
     const k = this.resK || "res"; const r = this.lastResult; clear(this.resBody);
-    const lintTab = this.resTabs.querySelector('[data-k="lint"]'); lintTab.textContent = "提醒" + (r?.lint?.length ? ` (${r.lint.length})` : "");
+    const nHints = (r?.lint?.length || 0) + (r?.static?.length || 0);
+    const lintTab = this.resTabs.querySelector('[data-k="lint"]'); lintTab.textContent = "提醒" + (nHints ? ` (${nHints})` : "");
     if (k === "trace") return this.paintTrace();
     if (!r) { this.resBody.append(empty("play", "按「執行測試」看結果")); return; }
     if (k === "lint") {
-      if (!r.lint?.length) { this.resBody.append(empty("check", "沒有偵測到常見陷阱。")); return; }
-      this.resBody.append(h("p", { class: "muted small", text: "這些是『語法合法、但初學者最常踩』的寫法，不一定是你的錯誤原因。" }),
-        h("ul", { class: "list" }, r.lint.map((x) => h("li", null, h("button", { class: "li", onclick: () => this.editor.flash(x.line) }, icon("alert"), h("span", { class: "mono muted", text: "L" + x.line }), h("span", { class: "grow", text: x.message }))))));
+      if (!r.lint?.length && !r.static?.length) { this.resBody.append(empty("check", "沒有偵測到常見陷阱。")); return; }
+      const row = (x, msg) => h("li", null, h("button", { class: "li", onclick: () => this.editor.flash(x.line) }, icon("alert"), h("span", { class: "mono muted", text: "L" + x.line }), h("span", { class: "grow", text: msg })));
+      if (r.lint?.length) this.resBody.append(h("p", { class: "muted small", text: "這些是『語法合法、但初學者最常踩』的寫法，不一定是你的錯誤原因。" }), h("ul", { class: "list" }, r.lint.map((x) => row(x, x.message))));
+      if (r.static?.length) this.resBody.append(h("p", { class: "muted small", text: "靜態分析：常見的慢寫法與風險（只看程式碼，可能誤報）。" }), h("ul", { class: "list" }, r.static.map((x) => row(x, x.msg))));
       return;
     }
     if (r.setup_error) { this.resBody.append(h("div", { class: "callout warn" }, icon("alert"), h("span", { text: r.message }))); return; }
@@ -242,6 +256,9 @@ class Workspace {
     if (r.message && !ok) this.resBody.append(h("div", { class: "callout bad mt", dataset: { src: "output" } }, icon("alert"), h("div", null, h("span", { text: r.message }), r.error_line ? h("div", null, h("a", { href: "#", onclick: (e) => { e.preventDefault(); this.editor.flash(r.error_line); }, text: `跳到第 ${r.error_line} 行` })) : null)));
     this.resBody.append(h("div", { class: "cases" }, r.cases.map((c) => h("span", { class: "case " + c.verdict }, h("span", { text: c.name }), h("b", { text: c.verdict }), h("span", { class: "muted", text: `${c.seconds}s` })))));
     if (r.failing) this.resBody.append(this.failBlock(r));
+    if (!ok && r.cause) this.resBody.append(h("div", { class: "callout warn mt" }, icon("alert"), h("div", null, h("b", { text: "可能的錯因：" + r.cause }), r.cause_advice ? h("div", { class: "small", text: r.cause_advice }) : null,
+      h("div", { class: "xs muted", text: "這是規則判斷，可能分錯；錯誤本在指令列 cpe err。" }))));
+    (r.behavior || []).forEach((b) => this.resBody.append(h("div", { class: "callout mt" }, icon("clock"), h("span", { text: b.msg }))));
     if (ok) this.resBody.append(this.nextCard(r));
     if (r.exam_note) this.resBody.append(h("div", { class: "callout mt" }, icon("clock"), h("span", { text: r.exam_note })));
     if (!ok && r.error_line && r.failing?.verdict === "RE") this.resBody.append(h("p", { class: "small muted mt", text: "提示：選取錯誤訊息或那一行，按「預期和實際不同」可以讓 AI 針對它發問。" }));
@@ -279,6 +296,19 @@ class Workspace {
   paintTrace() {
     clear(this.resBody); const t = this.traceData; if (!t) { this.resBody.append(empty("list", "按「逐行追蹤」，逐行看每個變數怎麼變。先在心裡猜，再看答案。")); return; }
     this.resBody.append(h("p", { class: "small muted" }, "追蹤的輸入：", h("code", { text: t.input.slice(0, 60).replace(/\n/g, " ⏎ ") }), t.truncated ? `（只顯示前 ${t.steps.length} 步）` : "", t.error && !t.truncated ? `；結束於 ${t.error}` : "", " 選取任一列可以問 AI。"));
+    const modeBtn = (k, label) => h("button", { class: "btn sm" + (this.traceView === k ? " primary" : ""), onclick: () => { this.traceView = k; this.paintTrace(); } }, label);
+    this.resBody.append(h("div", { class: "row gap-sm", style: { "margin-bottom": "6px" } }, modeBtn("table", "表格"), modeBtn("viz", "圖像（一步一步看變數）")));
+    if (this.traceView === "viz") {
+      const steps = t.steps; const i = Math.min(this.vizStep ?? 0, steps.length - 1);
+      const slider = h("input", { type: "range", min: 0, max: Math.max(steps.length - 1, 0), value: i, "aria-label": "追蹤的步驟", oninput: (e) => { this.vizStep = +e.target.value; this.paintTrace(); } });
+      const s0 = steps[i];
+      this.resBody.append(h("div", { class: "vz-step" }, h("button", { class: "btn sm", disabled: i <= 0, onclick: () => { this.vizStep = i - 1; this.paintTrace(); } }, "◀"), slider,
+        h("button", { class: "btn sm", disabled: i >= steps.length - 1, onclick: () => { this.vizStep = i + 1; this.paintTrace(); } }, "▶"), h("span", { class: "small muted", text: `${i + 1}/${steps.length}` })),
+      h("div", { class: "small mono mb" }, `第 ${s0.line} 行　${s0.text}`), renderStep(s0.vars, i > 0 ? steps[i - 1].vars : {}),
+      h("p", { class: "xs muted mt", text: "有變動的格子會上色。比較複雜的物件（類別、很長的資料）會顯示原本的文字。" }));
+      this.editor.flash(s0.line);
+      return;
+    }
     const tb = h("table", { class: "trace" }, h("thead", null, h("tr", null, h("th", { text: "行" }), h("th", { text: "程式" }), h("th", { text: "變數" }))),
       h("tbody", null, t.steps.map((s) => h("tr", { onclick: () => this.editor.flash(s.line) }, h("td", { text: s.line }), h("td", { text: s.text }), h("td", { text: Object.entries(s.vars).map(([k, v]) => `${k}=${v}`).join("，") })))));
     this.resBody.append(h("div", { dataset: { src: "trace" } }, tb));

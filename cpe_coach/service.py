@@ -15,7 +15,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from . import bank as bank_mod
-from . import mock, srs
+from . import errbook, mock, srs
+from . import lint as lint_mod
 from .judge import AC, VERDICT_ZH, find_cases, judge
 from .store import Workspace
 
@@ -114,6 +115,16 @@ def run_test(ws: Workspace, pid: str, lang: Optional[str] = None, predicted: Opt
     ws.save_state(st)
     extra = {"predicted": predicted} if predicted else {}
     ws.log("test", problem=pid, verdict=res.verdict, lang=out["lang"], **info, **extra)
+    cause = errbook.classify(res.verdict, out["failing"])
+    out["cause"] = cause
+    out["cause_advice"] = errbook.ADVICE.get(cause) if cause else None
+    if cause:                                                                       # 錯誤本：記下這次沒通過的原因（可用 cpe err tag 改）
+        ws.log("err", problem=pid, cause=cause, verdict=res.verdict, case=(out["failing"] or {}).get("name"),
+               input=((out["failing"] or {}).get("input") or "")[:200])
+    try:
+        out["static"] = lint_mod.lint(sol.read_text(encoding="utf-8"), out["lang"])[:12]
+    except (OSError, UnicodeDecodeError):
+        out["static"] = []
     out["info"] = info
     out["review"] = {"stage": p["review_stage"], "due": p["review_due"]}
     exam = ws.exam()

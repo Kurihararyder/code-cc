@@ -5,7 +5,7 @@ import time
 from typing import Any, Dict, List
 
 from . import bank as bank_mod
-from . import calibrate, cpeset, course as course_mod, eng, mock, pastexams, srs, weakness
+from . import calibrate, concepts, cpeset, course as course_mod, eng, knowledge, memory, mock, pastexams, srs, weakness
 from .store import Workspace
 
 DAY = 86400.0
@@ -14,6 +14,26 @@ KIND_ZH = {"review": "重練", "continue": "續做", "new": "新題", "gate": "�
 
 def _today(ws: Workspace) -> str:
     return time.strftime("%Y-%m-%d", time.localtime(ws.now()))
+
+
+def _interleave(pool: List[Dict[str, Any]], bank: Dict[str, dict]) -> List[Dict[str, Any]]:
+    """交錯練習：相鄰兩題盡量不要是同一個知識點（交錯比連續練同類型，長期記憶效果通常更好）。只重排『新題／複習／弱點／歷屆』這類題目，順序的大方向（到期的複習在前）不變。"""
+    movable = ("review", "weak", "continue", "new", "past")
+
+    def cs(it: Dict[str, Any]) -> set:
+        return set(concepts.of_problem(bank[it["id"]])) if it.get("id") in bank else set()
+    out: List[Dict[str, Any]] = []
+    rest = list(pool)
+    while rest:
+        prev = cs(out[-1]) if out and out[-1]["kind"] in movable else set()
+        pick = 0
+        if prev and rest[0]["kind"] in movable and cs(rest[0]) & prev:
+            for i, it in enumerate(rest[:4]):                                  # 只往前看 4 個，避免把重要的東西推得太後面
+                if it["kind"] in movable and not cs(it) & prev:
+                    pick = i
+                    break
+        out.append(rest.pop(pick))
+    return out
 
 
 def build(ws: Workspace, minutes: int = 30) -> Dict[str, Any]:
@@ -38,6 +58,11 @@ def build(ws: Workspace, minutes: int = 30) -> Dict[str, Any]:
     for pid, p in srs.due_list(st, now):                                   # 1. 到期重練（越久越優先）
         pool.append(item("review", pid, bank_mod.resolve(bank, pid)["title"], calibrate.est_minutes(bank, pid, ef, factor, review=True),
                          f"無提示重寫（第 {p['review_stage'] + 1}/3 次）", pid in ac_today))
+    rp, mfit = memory.build(ws, bank)                                      # 1b. 記憶排程：所有解出過的題（含一次就過的），預測保留率降到 90% 的先複習
+    srs_ids = {pid for pid, _ in srs.due_list(st, now)}
+    for di in [d for d in memory.due_now(rp.cards, now, mfit.k) if d.pid not in srs_ids and d.pid in bank][:5]:
+        pool.append(item("review", di.pid, bank_mod.resolve(bank, di.pid)["title"], calibrate.est_minutes(bank, di.pid, ef, factor, review=True),
+                         f"記憶排程：預測保留率約 {round(100 * di.r_now)}%（降到 90% 以下就該複習）", di.pid in ac_today))
     u = course_mod.current_unit(ws, course)
     wk_analysis = weakness.analyze(ws, bank, course)
     weak_sugg = weakness.suggestions(ws, bank, course, wk_analysis, per_family=2 if u and u["n"] == 49 else 1, families=3 if u and u["n"] == 49 else 2)
@@ -85,6 +110,9 @@ def build(ws: Workspace, minutes: int = 30) -> Dict[str, Any]:
     if t and (not last_eng or now - last_eng[-1]["ts"] > 6 * DAY):
         pool.append(item("eng", t["n"], t["title"], 30, "工程能力線：每週一次，累積作品集"))
 
+    if u and not any(i["kind"] in ("new", "continue") and not i["done"] for i in pool):      # 沒有必做的新題時，依掌握度推薦「成功率約 70%」的題
+        for r in knowledge.recommend(ws, bank, 1, current_unit=u["n"]):
+            pool.append(item("new", r["id"], r["title"], calibrate.est_minutes(bank, r["id"], ef, factor), "推薦：" + r["why"], r["id"] in ac_today))
     seen_ids, deduped = set(), []
     for it in pool:                                                        # 同一題只出現一次（以先排的為準）
         if it["id"] and it["kind"] != "eng":
@@ -92,7 +120,7 @@ def build(ws: Workspace, minutes: int = 30) -> Dict[str, Any]:
                 continue
             seen_ids.add(it["id"])
         deduped.append(it)
-    pool = deduped
+    pool = _interleave(deduped, bank)
     listed = {i["id"] for i in pool if i["id"]}
     for pid in sorted(ac_today - listed):                                  # 今天已經完成、不再出現在清單裡的題
         sp = st["problems"].get(pid, {})

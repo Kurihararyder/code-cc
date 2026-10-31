@@ -1,0 +1,31 @@
+{
+ "_note": "知識點（概念）與先修關係。kw 是比對題目 topic／標籤／標題用的關鍵字（小寫比對）。unit 是主要教這個概念的課程單元。這張圖是我依課程順序整理的，沒有經過教育研究驗證。",
+ "concepts": {
+  "io":        {"name": "輸入輸出", "unit": 1, "pre": [], "kw": ["輸入輸出", "輸入格式", "eof", "輸出格式", "浮點數格式"]},
+  "arith":     {"name": "運算與數學基礎", "unit": 1, "pre": ["io"], "kw": ["運算", "數學", "函式", "規律", "機率", "數字"]},
+  "cond":      {"name": "條件判斷", "unit": 2, "pre": ["io"], "kw": ["條件", "座標判斷"]},
+  "loop":      {"name": "迴圈與模擬", "unit": 3, "pre": ["cond"], "kw": ["迴圈", "模擬", "多組輸入", "枚舉", "週期", "歷屆", "極值"]},
+  "string":    {"name": "字串處理", "unit": 4, "pre": ["loop"], "kw": ["字串", "解析", "映射", "格式"]},
+  "list":      {"name": "list 與二維陣列", "unit": 7, "pre": ["loop"], "kw": ["list", "二維", "網格", "座標", "序列", "矩陣"]},
+  "dict_set":  {"name": "字典、集合與計數", "unit": 5, "pre": ["string"], "kw": ["dict", "set", "字典", "集合", "計數", "映射"]},
+  "base":      {"name": "進位制與位元", "unit": 6, "pre": ["arith"], "kw": ["進位", "位元", "bit"]},
+  "bignum":    {"name": "大數", "unit": 11, "pre": ["base"], "kw": ["大數", "大整數", "超長"]},
+  "numtheory": {"name": "質數、因數與數論", "unit": 12, "pre": ["arith"], "kw": ["質數", "篩", "gcd", "數論", "歐幾里得", "因數", "快速冪"]},
+  "datetime":  {"name": "日期與時間", "unit": 14, "pre": ["string"], "kw": ["日期", "時間"]},
+  "sorting":   {"name": "排序與自訂排序", "unit": 17, "pre": ["list"], "kw": ["排序", "中位數", "sort"]},
+  "prefix_bs": {"name": "前綴和與二分搜尋", "unit": 18, "pre": ["sorting"], "kw": ["前綴", "二分", "搜尋"]},
+  "two_ptr":   {"name": "雙指標與區間", "unit": 19, "pre": ["sorting"], "kw": ["雙指標", "區間", "滑動"]},
+  "stack_q":   {"name": "stack、queue、deque", "unit": 20, "pre": ["list"], "kw": ["stack", "queue", "deque", "佇列", "單調"]},
+  "heap":      {"name": "heap 與優先佇列", "unit": 21, "pre": ["sorting"], "kw": ["heap", "堆", "資料結構"]},
+  "greedy":    {"name": "貪心", "unit": 22, "pre": ["sorting"], "kw": ["貪心"]},
+  "recursion": {"name": "遞迴與回溯", "unit": 23, "pre": ["loop"], "kw": ["遞迴", "回溯", "分治"]},
+  "bitmask":   {"name": "位元遮罩", "unit": 24, "pre": ["base", "recursion"], "kw": ["遮罩", "子集合", "位元運算"]},
+  "graph":     {"name": "圖：BFS／DFS", "unit": 26, "pre": ["stack_q"], "kw": ["圖", "bfs", "dfs", "拓撲", "scc", "二分圖", "連通", "歐拉"]},
+  "dsu":       {"name": "並查集", "unit": 27, "pre": ["graph"], "kw": ["並查集"]},
+  "shortest":  {"name": "最短路與生成樹", "unit": 29, "pre": ["graph", "heap"], "kw": ["最短路", "mst", "最小生成樹", "bellman", "網路流", "floyd", "dijkstra", "minimax", "maximin"]},
+  "dp":        {"name": "動態規劃", "unit": 31, "pre": ["recursion"], "kw": ["dp", "背包", "lis", "lcs", "kadane", "動態規劃", "最大子段"]},
+  "geometry":  {"name": "計算幾何", "unit": 42, "pre": ["arith"], "kw": ["幾何", "凸包"]},
+  "str_adv":   {"name": "字串演算法", "unit": 44, "pre": ["string", "dp"], "kw": ["kmp", "字串演算法", "failure"]},
+  "tree":      {"name": "樹與進階資料結構", "unit": 45, "pre": ["graph"], "kw": ["樹", "線段樹", "bit", "稀疏表", "博弈"]}
+ }
+}

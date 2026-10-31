@@ -11,6 +11,7 @@ from . import bank as bank_mod
 from . import hints
 from .store import Workspace, WorkspaceError
 from .cli_learn import cmd_addtest, cmd_course, cmd_external, cmd_fuzz, cmd_gate, cmd_giveup, cmd_hint, cmd_import, cmd_init, cmd_lang, cmd_new, cmd_next, cmd_review, cmd_roadmap, cmd_solution, cmd_stage, cmd_statement, cmd_stress, cmd_test, cmd_today
+from . import cli_sci
 from .cli_exam import cmd_ai_eval, cmd_calibrate, cmd_eng, cmd_mock, cmd_past, cmd_plan, cmd_stats, cmd_vocab, cmd_weak
 from .cli_admin import cmd_add, cmd_bank, cmd_export, cmd_gpt_prompt, cmd_panel, cmd_restore, cmd_update, cmd_web
 
@@ -140,6 +141,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--text", action="store_true", help="用文字模式（不開圖形視窗）")
     sub.add_parser("doctor", help="環境檢測與安裝診斷（Python、git、網路、編譯器、服務狀態…）")
     sub.add_parser("gpt-prompt", help="印出可貼進 ChatGPT 自訂 GPT 的助教規則")
+    cli_sci.register(sub)
     return ap
 
 
@@ -167,7 +169,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             "roadmap": cmd_roadmap, "stage": cmd_stage, "today": cmd_today, "next": cmd_next, "new": cmd_new,
             "addtest": cmd_addtest, "test": cmd_test, "stress": cmd_stress, "hint": cmd_hint,
             "giveup": cmd_giveup, "solution": cmd_solution, "review": cmd_review, "mock": cmd_mock,
-            "stats": cmd_stats, "add": cmd_add, "bank": cmd_bank, "eng": cmd_eng, "external": cmd_external, "web": cmd_web, "export": cmd_export, "past": cmd_past, "vocab": cmd_vocab, "plan": cmd_plan, "calibrate": cmd_calibrate, "lang": cmd_lang, "fuzz": cmd_fuzz, "ai-eval": cmd_ai_eval, "weak": cmd_weak,
+            "stats": cmd_stats, "add": cmd_add, "bank": cmd_bank, "eng": cmd_eng, "external": cmd_external, "web": cmd_web, "export": cmd_export, "past": cmd_past, "vocab": cmd_vocab, "plan": cmd_plan, "calibrate": cmd_calibrate, "lang": cmd_lang, "fuzz": cmd_fuzz, "ai-eval": cmd_ai_eval, "weak": cmd_weak, **cli_sci.HANDLERS,
         }[args.cmd]
         if args.cmd == "web":                       # 長時間執行：不要整個程序持有鎖，由每個請求自己加鎖
             return handler(ws, args)

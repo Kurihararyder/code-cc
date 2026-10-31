@@ -366,3 +366,11 @@ table.t tfoot td{border-top:1px solid var(--border);padding:8px 10px}
 
 /* CPE 原題清單：窄螢幕時標籤會擠到標題上，直接收起來 */
 @media (max-width:620px){.cpe-tags{display:none}#cpeSets .li .grow{min-width:0;overflow-wrap:anywhere}}
+
+/* 資料結構視覺化（逐行追蹤的「圖像」檢視） */
+.vz{display:grid;gap:10px}.vz-var{display:grid;grid-template-columns:90px 1fr;gap:8px;align-items:start}.vz-name{color:var(--text-3);padding-top:18px;overflow:hidden;text-overflow:ellipsis}
+.vz-row{display:flex;flex-wrap:wrap;gap:3px}.vz-grid{display:grid;gap:3px}.vz-c{min-width:34px;text-align:center;border:1px solid var(--border);border-radius:6px;background:var(--surface)}
+.vz-i{font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border);padding:1px 3px}.vz-v{font:13px/1.6 var(--mono);padding:2px 6px}
+.vz-c.chg,.vz-dict tr.chg td,.vz-s.chg{background:color-mix(in srgb,var(--accent) 22%,transparent);border-color:var(--accent)}
+.vz-dict{border-collapse:collapse;font:12.5px var(--mono)}.vz-dict td{border:1px solid var(--border);padding:2px 8px}.vz-s{font:13px var(--mono);padding:2px 8px;border:1px solid var(--border);border-radius:6px;display:inline-block}
+.vz-nest,.vz-more,.vz-raw{font:12px var(--mono);color:var(--text-2)}.vz-step{display:flex;align-items:center;gap:8px;margin:8px 0}.vz-step input[type=range]{flex:1}

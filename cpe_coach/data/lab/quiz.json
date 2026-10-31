@@ -1,0 +1,692 @@
+{
+ "items": [
+  {
+   "id": "q-io-1",
+   "concept": "io",
+   "b": -1.6,
+   "q": "輸入是一行「3 4」，這個程式輸出什麼？",
+   "code": "a, b = map(int, input().split())\nprint(a + b)",
+   "stdin": "3 4\n",
+   "choices": [
+    "7",
+    "34",
+    "3 4",
+    "錯誤"
+   ],
+   "answer": 0,
+   "why": "map(int, ...) 把兩段文字轉成整數，所以是 3 + 4 = 7；如果沒轉型，+ 會把字串接起來變 34。"
+  },
+  {
+   "id": "q-io-2",
+   "concept": "io",
+   "b": -0.8,
+   "q": "第一行是組數 N，接下來 N 行每行兩個整數。哪一種讀法正確？",
+   "code": null,
+   "stdin": null,
+   "choices": [
+    "n = int(input())\nfor _ in range(n):\n    a, b = map(int, input().split())",
+    "for line in input():\n    a, b = line.split()",
+    "n = input()\nfor _ in range(n):\n    a, b = input().split()",
+    "a, b = map(int, input())"
+   ],
+   "answer": 0,
+   "why": "先把 N 轉成整數再用 range(N)；input() 一次只讀一行，不能用 for 去迭代它（會一個字元一個字元跑）。"
+  },
+  {
+   "id": "q-io-3",
+   "concept": "io",
+   "b": 0.3,
+   "q": "輸入沒有說有幾行，要一直讀到檔案結束。Python 最穩的寫法是？",
+   "code": null,
+   "stdin": null,
+   "choices": [
+    "import sys\nfor line in sys.stdin:\n    ...",
+    "while True:\n    line = input()\n    ...",
+    "line = input()\nwhile line:\n    ...",
+    "for i in range(10**9):\n    line = input()"
+   ],
+   "answer": 0,
+   "why": "while True + input() 讀到結尾會丟 EOFError；直接迭代 sys.stdin 到結尾會自然停止。"
+  },
+  {
+   "id": "q-arith-1",
+   "concept": "arith",
+   "b": -1.2,
+   "q": "這個程式輸出什麼？",
+   "code": "print(7 // 2, 7 % 2, -7 // 2)",
+   "stdin": "",
+   "choices": [
+    "3 1 -4",
+    "3 1 -3",
+    "3.5 1 -3.5",
+    "4 1 -4"
+   ],
+   "answer": 0,
+   "why": "// 是向下取整（往負無限大）：-7 // 2 = -4，不是 -3。"
+  },
+  {
+   "id": "q-arith-2",
+   "concept": "arith",
+   "b": -0.2,
+   "q": "這個程式輸出什麼？",
+   "code": "print(10 / 4, 10 // 4, 2 ** 3)",
+   "stdin": "",
+   "choices": [
+    "2.5 2 8",
+    "2 2 6",
+    "2.5 2 6",
+    "2.5 2.0 8"
+   ],
+   "answer": 0,
+   "why": "/ 一定得到小數，// 是整數除法，** 是次方。"
+  },
+  {
+   "id": "q-cond-1",
+   "concept": "cond",
+   "b": -1.2,
+   "q": "這個程式輸出什麼？",
+   "code": "x = 5\nif x > 3:\n    print('A')\nelif x > 1:\n    print('B')\nelse:\n    print('C')",
+   "stdin": "",
+   "choices": [
+    "A",
+    "B",
+    "C",
+    "A\nB"
+   ],
+   "answer": 0,
+   "why": "if / elif / else 只會執行第一個成立的分支。"
+  },
+  {
+   "id": "q-cond-2",
+   "concept": "cond",
+   "b": -0.3,
+   "q": "這個程式輸出什麼？",
+   "code": "print(1 < 2 < 3, 3 > 2 > 2)",
+   "stdin": "",
+   "choices": [
+    "True False",
+    "True True",
+    "False False",
+    "False True"
+   ],
+   "answer": 0,
+   "why": "Python 可以連續比較：3 > 2 > 2 等於 (3 > 2) and (2 > 2)，後半不成立。"
+  },
+  {
+   "id": "q-loop-1",
+   "concept": "loop",
+   "b": -1.0,
+   "q": "這個程式輸出什麼？",
+   "code": "s = 0\nfor i in range(1, 5):\n    s += i\nprint(s)",
+   "stdin": "",
+   "choices": [
+    "10",
+    "15",
+    "6",
+    "5"
+   ],
+   "answer": 0,
+   "why": "range(1, 5) 是 1、2、3、4（不含 5）。"
+  },
+  {
+   "id": "q-loop-2",
+   "concept": "loop",
+   "b": 0.0,
+   "q": "這個程式輸出什麼？",
+   "code": "i = 0\nwhile i < 10:\n    i += 3\nprint(i)",
+   "stdin": "",
+   "choices": [
+    "12",
+    "9",
+    "10",
+    "11"
+   ],
+   "answer": 0,
+   "why": "i 依序是 0、3、6、9、12；12 才讓條件不成立。"
+  },
+  {
+   "id": "q-loop-3",
+   "concept": "loop",
+   "b": 0.5,
+   "q": "這個程式輸出什麼？",
+   "code": "c = 0\nfor i in range(3):\n    for j in range(i):\n        c += 1\nprint(c)",
+   "stdin": "",
+   "choices": [
+    "3",
+    "6",
+    "9",
+    "4"
+   ],
+   "answer": 0,
+   "why": "內圈跑 0、1、2 次，加起來 3 次。"
+  },
+  {
+   "id": "q-string-1",
+   "concept": "string",
+   "b": -1.0,
+   "q": "這個程式輸出什麼？",
+   "code": "s = 'hello'\nprint(s[1:4], s[::-1])",
+   "stdin": "",
+   "choices": [
+    "ell olleh",
+    "hel olleh",
+    "ello olleh",
+    "ell hello"
+   ],
+   "answer": 0,
+   "why": "切片 s[1:4] 取索引 1、2、3；s[::-1] 是反轉。"
+  },
+  {
+   "id": "q-string-2",
+   "concept": "string",
+   "b": 0.0,
+   "q": "這個程式輸出什麼？",
+   "code": "print('a,b,,c'.split(','))",
+   "stdin": "",
+   "choices": [
+    "['a', 'b', '', 'c']",
+    "['a', 'b', 'c']",
+    "['a,b,,c']",
+    "['a', 'b', ' ', 'c']"
+   ],
+   "answer": 0,
+   "why": "用逗號切會保留空字串；不給參數的 split() 才會把連續空白當一個分隔。"
+  },
+  {
+   "id": "q-list-1",
+   "concept": "list",
+   "b": -0.8,
+   "q": "這個程式輸出什麼？",
+   "code": "a = [1, 2, 3]\nb = a\nb.append(4)\nprint(a)",
+   "stdin": "",
+   "choices": [
+    "[1, 2, 3, 4]",
+    "[1, 2, 3]",
+    "[4]",
+    "錯誤"
+   ],
+   "answer": 0,
+   "why": "b = a 不會複製，兩個名字指到同一個 list。要複製用 a[:] 或 a.copy()。"
+  },
+  {
+   "id": "q-list-2",
+   "concept": "list",
+   "b": 0.4,
+   "q": "這個程式輸出什麼？",
+   "code": "g = [[0] * 3] * 2\ng[0][0] = 1\nprint(g)",
+   "stdin": "",
+   "choices": [
+    "[[1, 0, 0], [1, 0, 0]]",
+    "[[1, 0, 0], [0, 0, 0]]",
+    "[[0, 0, 0], [1, 0, 0]]",
+    "[[1, 1, 1], [0, 0, 0]]"
+   ],
+   "answer": 0,
+   "why": "[[0]*3]*2 是同一個內層 list 重複兩次；要建二維陣列用 [[0]*3 for _ in range(2)]。"
+  },
+  {
+   "id": "q-dict-1",
+   "concept": "dict_set",
+   "b": -0.5,
+   "q": "這個程式輸出什麼？",
+   "code": "d = {}\nfor c in 'abca':\n    d[c] = d.get(c, 0) + 1\nprint(d)",
+   "stdin": "",
+   "choices": [
+    "{'a': 2, 'b': 1, 'c': 1}",
+    "{'a': 1, 'b': 1, 'c': 1}",
+    "{'a': 2, 'b': 2, 'c': 2}",
+    "錯誤"
+   ],
+   "answer": 0,
+   "why": "d.get(key, 0) 沒有這個鍵時回傳 0，是計數的標準寫法。"
+  },
+  {
+   "id": "q-dict-2",
+   "concept": "dict_set",
+   "b": 0.3,
+   "q": "這個程式輸出什麼？",
+   "code": "print(len({1, 2} | {2, 3}), len({1, 2} & {2, 3}))",
+   "stdin": "",
+   "choices": [
+    "3 1",
+    "4 2",
+    "3 2",
+    "2 1"
+   ],
+   "answer": 0,
+   "why": "| 是聯集 {1,2,3}，& 是交集 {2}。"
+  },
+  {
+   "id": "q-base-1",
+   "concept": "base",
+   "b": -0.3,
+   "q": "這個程式輸出什麼？",
+   "code": "print(bin(10), int('101', 2), hex(255))",
+   "stdin": "",
+   "choices": [
+    "0b1010 5 0xff",
+    "1010 5 ff",
+    "0b1010 101 0xff",
+    "0b1010 5 0xFF"
+   ],
+   "answer": 0,
+   "why": "bin／hex 的結果帶 0b／0x 前綴；int(字串, 進位) 把字串當該進位的數字讀。"
+  },
+  {
+   "id": "q-base-2",
+   "concept": "base",
+   "b": 0.6,
+   "q": "這個程式輸出什麼？",
+   "code": "print(6 & 3, 6 | 3, 6 ^ 3, 1 << 4)",
+   "stdin": "",
+   "choices": [
+    "2 7 5 16",
+    "2 7 5 8",
+    "3 7 5 16",
+    "2 5 7 16"
+   ],
+   "answer": 0,
+   "why": "6=110、3=011：AND=010(2)、OR=111(7)、XOR=101(5)；1<<4 = 16。"
+  },
+  {
+   "id": "q-big-1",
+   "concept": "bignum",
+   "b": -0.3,
+   "q": "這個程式輸出什麼（2 的 100 次方）？",
+   "code": "print(2 ** 100)",
+   "stdin": "",
+   "choices": [
+    "1267650600228229401496703205376",
+    "1.2676506002282294e+30",
+    "溢位錯誤",
+    "0"
+   ],
+   "answer": 0,
+   "why": "Python 的整數沒有位數上限；C++ 的 long long 會溢位，要自己寫大數。"
+  },
+  {
+   "id": "q-num-1",
+   "concept": "numtheory",
+   "b": 0.0,
+   "q": "這個程式輸出什麼？",
+   "code": "from math import gcd\nprint(gcd(12, 18), 12 * 18 // gcd(12, 18))",
+   "stdin": "",
+   "choices": [
+    "6 36",
+    "6 216",
+    "36 6",
+    "3 72"
+   ],
+   "answer": 0,
+   "why": "gcd(12,18)=6；最小公倍數 = a×b ÷ gcd = 36。"
+  },
+  {
+   "id": "q-num-2",
+   "concept": "numtheory",
+   "b": 0.8,
+   "q": "這個程式輸出什麼（小於 20 的質數個數）？",
+   "code": "print(sum(all(n % d for d in range(2, n)) for n in range(2, 20)))",
+   "stdin": "",
+   "choices": [
+    "8",
+    "7",
+    "9",
+    "10"
+   ],
+   "answer": 0,
+   "why": "2、3、5、7、11、13、17、19 共 8 個。"
+  },
+  {
+   "id": "q-date-1",
+   "concept": "datetime",
+   "b": 0.0,
+   "q": "2024 年 2 月有幾天？",
+   "code": null,
+   "stdin": null,
+   "choices": [
+    "29",
+    "28",
+    "30",
+    "31"
+   ],
+   "answer": 0,
+   "why": "能被 4 整除且不被 100 整除（或被 400 整除）的是閏年：2024 是閏年，2 月 29 天。"
+  },
+  {
+   "id": "q-sort-1",
+   "concept": "sorting",
+   "b": -0.4,
+   "q": "這個程式輸出什麼？",
+   "code": "print(sorted([3, 1, 2], reverse=True))",
+   "stdin": "",
+   "choices": [
+    "[3, 2, 1]",
+    "[1, 2, 3]",
+    "[3, 1, 2]",
+    "None"
+   ],
+   "answer": 0,
+   "why": "sorted 回傳新的 list；list.sort() 才是就地排序且回傳 None。"
+  },
+  {
+   "id": "q-sort-2",
+   "concept": "sorting",
+   "b": 0.5,
+   "q": "這個程式輸出什麼？",
+   "code": "a = [(2, 'b'), (1, 'z'), (2, 'a')]\nprint(sorted(a))",
+   "stdin": "",
+   "choices": [
+    "[(1, 'z'), (2, 'a'), (2, 'b')]",
+    "[(2, 'a'), (2, 'b'), (1, 'z')]",
+    "[(1, 'z'), (2, 'b'), (2, 'a')]",
+    "[(2, 'b'), (1, 'z'), (2, 'a')]"
+   ],
+   "answer": 0,
+   "why": "tuple 比較先比第一個元素，相同再比第二個。"
+  },
+  {
+   "id": "q-prefix-1",
+   "concept": "prefix_bs",
+   "b": 0.3,
+   "q": "這個程式輸出什麼？",
+   "code": "a = [1, 2, 3, 4]\np = [0]\nfor x in a:\n    p.append(p[-1] + x)\nprint(p[3] - p[1])",
+   "stdin": "",
+   "choices": [
+    "5",
+    "6",
+    "9",
+    "3"
+   ],
+   "answer": 0,
+   "why": "p[3]-p[1] 是 a[1]+a[2]（前綴和相減得到區間和）= 2+3。"
+  },
+  {
+   "id": "q-prefix-2",
+   "concept": "prefix_bs",
+   "b": 0.9,
+   "q": "這個程式輸出什麼？",
+   "code": "import bisect\nprint(bisect.bisect_left([1, 3, 3, 5], 3), bisect.bisect_right([1, 3, 3, 5], 3))",
+   "stdin": "",
+   "choices": [
+    "1 3",
+    "1 2",
+    "2 3",
+    "0 3"
+   ],
+   "answer": 0,
+   "why": "bisect_left 回傳第一個 ≥ 3 的位置，bisect_right 回傳第一個 > 3 的位置。"
+  },
+  {
+   "id": "q-twoptr-1",
+   "concept": "two_ptr",
+   "b": 0.8,
+   "q": "已排序的陣列中找兩數和等於 T，用雙指標（一個從頭、一個從尾）掃描，掃描本身的時間複雜度是？",
+   "code": null,
+   "stdin": null,
+   "choices": [
+    "O(n)",
+    "O(n²)",
+    "O(log n)",
+    "O(n log n)"
+   ],
+   "answer": 0,
+   "why": "每一步至少有一個指標往中間移動，最多 n 步；先排序才是 O(n log n)。"
+  },
+  {
+   "id": "q-stack-1",
+   "concept": "stack_q",
+   "b": 0.0,
+   "q": "這個程式輸出什麼？",
+   "code": "from collections import deque\nq = deque([1, 2, 3])\nq.append(4)\nprint(q.popleft(), q.pop())",
+   "stdin": "",
+   "choices": [
+    "1 4",
+    "4 1",
+    "1 3",
+    "2 4"
+   ],
+   "answer": 0,
+   "why": "popleft 取最左邊（最早進來的），pop 取最右邊（最後進來的）。"
+  },
+  {
+   "id": "q-stack-2",
+   "concept": "stack_q",
+   "b": 0.7,
+   "q": "要檢查一串括號「([]{})」是否成對配好，最適合用哪一種資料結構？",
+   "code": null,
+   "stdin": null,
+   "choices": [
+    "stack（後進先出）",
+    "queue（先進先出）",
+    "heap",
+    "dict"
+   ],
+   "answer": 0,
+   "why": "最後打開的括號要最先關閉，正是後進先出。"
+  },
+  {
+   "id": "q-heap-1",
+   "concept": "heap",
+   "b": 0.3,
+   "q": "這個程式輸出什麼？",
+   "code": "import heapq\nh = [5, 1, 3]\nheapq.heapify(h)\nprint(heapq.heappop(h), heapq.heappop(h))",
+   "stdin": "",
+   "choices": [
+    "1 3",
+    "5 3",
+    "1 5",
+    "3 5"
+   ],
+   "answer": 0,
+   "why": "Python 的 heapq 是最小堆，每次 heappop 取出目前最小的。"
+  },
+  {
+   "id": "q-greedy-1",
+   "concept": "greedy",
+   "b": 0.6,
+   "q": "活動選擇問題（在許多時段有衝突的活動中，選出最多個互不重疊的），標準的貪心策略是？",
+   "code": null,
+   "stdin": null,
+   "choices": [
+    "依結束時間由早到晚排序，每次選最早結束且和已選的不衝突的",
+    "依開始時間排序，每次選最早開始的",
+    "選持續時間最短的",
+    "選最晚結束的"
+   ],
+   "answer": 0,
+   "why": "最早結束的活動留給後面最多的空間；其他三種都有反例。"
+  },
+  {
+   "id": "q-rec-1",
+   "concept": "recursion",
+   "b": 0.0,
+   "q": "這個程式輸出什麼？",
+   "code": "def f(n):\n    return 1 if n <= 1 else n * f(n - 1)\nprint(f(5))",
+   "stdin": "",
+   "choices": [
+    "120",
+    "24",
+    "15",
+    "5"
+   ],
+   "answer": 0,
+   "why": "5! = 120。遞迴要有結束條件（n <= 1）。"
+  },
+  {
+   "id": "q-rec-2",
+   "concept": "recursion",
+   "b": 0.8,
+   "q": "這個程式輸出什麼？",
+   "code": "def f(n):\n    return n if n < 2 else f(n - 1) + f(n - 2)\nprint(f(10))",
+   "stdin": "",
+   "choices": [
+    "55",
+    "89",
+    "34",
+    "10"
+   ],
+   "answer": 0,
+   "why": "費氏數列 0,1,1,2,3,5,8,13,21,34,55；這種寫法會重複計算，n 大時要加記憶化。"
+  },
+  {
+   "id": "q-bitmask-1",
+   "concept": "bitmask",
+   "b": 0.7,
+   "q": "這個程式輸出什麼？",
+   "code": "n = 3\nprint([bin(m)[2:].zfill(n) for m in range(1 << n)][:4])",
+   "stdin": "",
+   "choices": [
+    "['000', '001', '010', '011']",
+    "['001', '010', '011', '100']",
+    "['000', '001', '010', '100']",
+    "['111', '110', '101', '100']"
+   ],
+   "answer": 0,
+   "why": "0 到 2ⁿ−1 的每個數字，二進位的每一位代表一個元素選或不選：這就是枚舉所有子集。"
+  },
+  {
+   "id": "q-graph-1",
+   "concept": "graph",
+   "b": 0.5,
+   "q": "這個 BFS 程式輸出什麼？",
+   "code": "from collections import deque\ng = {1: [2, 3], 2: [4], 3: [4], 4: []}\nd = {1: 0}\nq = deque([1])\nwhile q:\n    u = q.popleft()\n    for v in g[u]:\n        if v not in d:\n            d[v] = d[u] + 1\n            q.append(v)\nprint(d[4])",
+   "stdin": "",
+   "choices": [
+    "2",
+    "1",
+    "3",
+    "0"
+   ],
+   "answer": 0,
+   "why": "1→2→4（或 1→3→4）需要 2 步。"
+  },
+  {
+   "id": "q-graph-2",
+   "concept": "graph",
+   "b": 0.9,
+   "q": "在『每條邊長度都相同』的圖上找兩點間的最短路徑，應該用？",
+   "code": null,
+   "stdin": null,
+   "choices": [
+    "BFS",
+    "DFS",
+    "排序",
+    "二分搜尋"
+   ],
+   "answer": 0,
+   "why": "BFS 一層一層往外擴張，第一次到達的步數就是最短；DFS 不保證。"
+  },
+  {
+   "id": "q-dsu-1",
+   "concept": "dsu",
+   "b": 0.8,
+   "q": "並查集的 find 加上『路徑壓縮』，主要是為了？",
+   "code": null,
+   "stdin": null,
+   "choices": [
+    "讓之後的 find 更快（把路徑上的節點直接掛到根）",
+    "讓 union 可以刪除元素",
+    "節省記憶體",
+    "讓集合保持排序"
+   ],
+   "answer": 0,
+   "why": "壓縮後樹變得很扁，平均每次操作接近常數時間。"
+  },
+  {
+   "id": "q-short-1",
+   "concept": "shortest",
+   "b": 1.0,
+   "q": "圖中有負權邊（但沒有負環）時，Dijkstra 可能出錯。可以改用？",
+   "code": null,
+   "stdin": null,
+   "choices": [
+    "Bellman-Ford",
+    "BFS",
+    "Kruskal",
+    "二分搜尋"
+   ],
+   "answer": 0,
+   "why": "Dijkstra 假設走過的點不會被更短的路徑改善，負邊會破壞這個假設；Bellman-Ford 允許負邊。"
+  },
+  {
+   "id": "q-dp-1",
+   "concept": "dp",
+   "b": 0.6,
+   "q": "這個程式輸出什麼？",
+   "code": "dp = [0, 1]\nfor i in range(2, 8):\n    dp.append(dp[-1] + dp[-2])\nprint(dp[7])",
+   "stdin": "",
+   "choices": [
+    "13",
+    "21",
+    "8",
+    "7"
+   ],
+   "answer": 0,
+   "why": "dp[7] 是費氏數列第 7 項：0,1,1,2,3,5,8,13。"
+  },
+  {
+   "id": "q-dp-2",
+   "concept": "dp",
+   "b": 1.0,
+   "q": "硬幣面額 1、3、4，湊出 6 元最少要幾枚？這個程式輸出什麼？",
+   "code": "coins = [1, 3, 4]\nINF = 99\ndp = [0] + [INF] * 6\nfor a in range(1, 7):\n    for c in coins:\n        if c <= a:\n            dp[a] = min(dp[a], dp[a - c] + 1)\nprint(dp[6])",
+   "stdin": "",
+   "choices": [
+    "2",
+    "3",
+    "6",
+    "4"
+   ],
+   "answer": 0,
+   "why": "3+3 只要 2 枚；貪心（先拿最大的 4，再 1+1）要 3 枚，所以這題不能貪心，要 DP。"
+  },
+  {
+   "id": "q-geo-1",
+   "concept": "geometry",
+   "b": 0.8,
+   "q": "二維向量 (1, 0) 與 (0, 1) 的叉積（x1·y2 − x2·y1）是多少？它的正負代表什麼？",
+   "code": null,
+   "stdin": null,
+   "choices": [
+    "1；正 = 第二個向量在第一個的逆時針方向",
+    "−1；正 = 順時針",
+    "0；兩向量平行",
+    "2；面積的兩倍"
+   ],
+   "answer": 0,
+   "why": "1·1 − 0·0 = 1 > 0，代表從第一個向量轉到第二個是逆時針；叉積為 0 才是平行。"
+  },
+  {
+   "id": "q-stradv-1",
+   "concept": "str_adv",
+   "b": 1.2,
+   "q": "字串 'abab' 的 KMP 失敗函數（最長相同前後綴長度）是？這個程式輸出什麼？",
+   "code": "s = 'abab'\nf = [0] * 4\nk = 0\nfor i in range(1, 4):\n    while k and s[i] != s[k]:\n        k = f[k - 1]\n    if s[i] == s[k]:\n        k += 1\n    f[i] = k\nprint(f)",
+   "stdin": "",
+   "choices": [
+    "[0, 0, 1, 2]",
+    "[0, 1, 2, 3]",
+    "[0, 0, 0, 0]",
+    "[0, 0, 1, 1]"
+   ],
+   "answer": 0,
+   "why": "'aba' 的最長相同前後綴是 'a'(1)，'abab' 的是 'ab'(2)。"
+  },
+  {
+   "id": "q-tree-1",
+   "concept": "tree",
+   "b": 1.0,
+   "q": "二元樹的『中序走訪』的順序是？",
+   "code": null,
+   "stdin": null,
+   "choices": [
+    "左子樹 → 根 → 右子樹",
+    "根 → 左子樹 → 右子樹",
+    "左子樹 → 右子樹 → 根",
+    "一層一層由上到下"
+   ],
+   "answer": 0,
+   "why": "中序＝左、根、右；二元搜尋樹做中序走訪會得到由小到大的排序。"
+  }
+ ]
+}

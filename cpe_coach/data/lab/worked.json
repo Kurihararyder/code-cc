@@ -1,0 +1,461 @@
+{
+ "items": [
+  {
+   "id": "w-sum",
+   "concept": "io",
+   "title": "讀入並加總",
+   "problem": "第一行是 n，第二行是 n 個整數，輸出它們的總和。",
+   "steps": [
+    {
+     "say": "先讀入 n（input() 讀到的是字串，要轉成整數）",
+     "code": "n = int(input())"
+    },
+    {
+     "say": "再讀入那一行，切開後每一段轉成整數，放進 list",
+     "code": "a = list(map(int, input().split()))"
+    },
+    {
+     "say": "用內建的 sum 加總並輸出",
+     "code": "print(sum(a))"
+    }
+   ],
+   "tests": [
+    {
+     "in": "3\n1 2 3\n",
+     "out": "6"
+    },
+    {
+     "in": "1\n-5\n",
+     "out": "-5"
+    },
+    {
+     "in": "5\n10 20 30 40 50\n",
+     "out": "150"
+    }
+   ],
+   "distractors": [
+    "print(a)",
+    "n = input()"
+   ]
+  },
+  {
+   "id": "w-wordfreq",
+   "concept": "dict_set",
+   "title": "單字計數與排序",
+   "problem": "一行英文單字（空白分隔）。依出現次數由多到少輸出「單字 次數」，次數相同時依字母順序。",
+   "steps": [
+    {
+     "say": "讀入並切成單字",
+     "code": "words = input().split()"
+    },
+    {
+     "say": "用 dict 計數：沒有這個鍵時 get 回傳 0",
+     "code": "cnt = {}\nfor w in words:\n    cnt[w] = cnt.get(w, 0) + 1"
+    },
+    {
+     "say": "排序：先比次數（取負號變成由大到小），再比單字",
+     "code": "items = sorted(cnt.items(), key=lambda kv: (-kv[1], kv[0]))"
+    },
+    {
+     "say": "逐行輸出",
+     "code": "for w, c in items:\n    print(w, c)"
+    }
+   ],
+   "tests": [
+    {
+     "in": "b a b c a b\n",
+     "out": "b 3\na 2\nc 1"
+    },
+    {
+     "in": "x\n",
+     "out": "x 1"
+    },
+    {
+     "in": "z y x z y z\n",
+     "out": "z 3\ny 2\nx 1"
+    }
+   ],
+   "distractors": [
+    "cnt = []"
+   ]
+  },
+  {
+   "id": "w-prefix",
+   "concept": "prefix_bs",
+   "title": "區間和查詢（前綴和）",
+   "problem": "n 個數字、q 次詢問；每次詢問 l r（從 1 算起，含兩端），輸出 a[l..r] 的和。",
+   "steps": [
+    {
+     "say": "讀入 n、q 與陣列",
+     "code": "n, q = map(int, input().split())\na = list(map(int, input().split()))"
+    },
+    {
+     "say": "建立前綴和：p[i] 是前 i 個數的和（p[0] = 0）",
+     "code": "p = [0]\nfor x in a:\n    p.append(p[-1] + x)"
+    },
+    {
+     "say": "每次詢問用 p[r] − p[l−1]，O(1) 回答",
+     "code": "for _ in range(q):\n    l, r = map(int, input().split())\n    print(p[r] - p[l - 1])"
+    }
+   ],
+   "tests": [
+    {
+     "in": "5 3\n1 2 3 4 5\n1 5\n2 3\n4 4\n",
+     "out": "15\n5\n4"
+    },
+    {
+     "in": "1 1\n7\n1 1\n",
+     "out": "7"
+    }
+   ],
+   "distractors": [
+    "print(sum(a))"
+   ]
+  },
+  {
+   "id": "w-bfs-grid",
+   "concept": "graph",
+   "title": "迷宮最短路（BFS）",
+   "problem": "n×m 的格子，'.' 可走、'#' 是牆，從左上走到右下（上下左右），輸出最少步數，走不到輸出 -1。起點與終點保證是 '.'。",
+   "steps": [
+    {
+     "say": "讀入格子，準備距離表（-1 表示還沒到過），把起點放進 queue",
+     "code": "from collections import deque\nn, m = map(int, input().split())\ng = [input() for _ in range(n)]\ndist = [[-1] * m for _ in range(n)]\ndist[0][0] = 0\nq = deque([(0, 0)])"
+    },
+    {
+     "say": "BFS：每次從 queue 前面取一格，往四個方向擴張",
+     "code": "while q:\n    r, c = q.popleft()\n    for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):\n        nr, nc = r + dr, c + dc"
+    },
+    {
+     "say": "在範圍內、不是牆、還沒到過的格子：記下距離並加入 queue",
+     "code": "        if 0 <= nr < n and 0 <= nc < m and g[nr][nc] == '.' and dist[nr][nc] < 0:\n            dist[nr][nc] = dist[r][c] + 1\n            q.append((nr, nc))"
+    },
+    {
+     "say": "終點的距離就是答案",
+     "code": "print(dist[n - 1][m - 1])"
+    }
+   ],
+   "tests": [
+    {
+     "in": "3 3\n...\n...\n...\n",
+     "out": "4"
+    },
+    {
+     "in": "3 3\n.#.\n###\n..#\n",
+     "out": "-1"
+    },
+    {
+     "in": "1 1\n.\n",
+     "out": "0"
+    }
+   ],
+   "distractors": [
+    "q = [(0, 0)]"
+   ]
+  },
+  {
+   "id": "w-coin",
+   "concept": "dp",
+   "title": "硬幣最少枚數（DP）",
+   "problem": "第一行 k 與目標金額 amount，第二行 k 種面額（每種數量不限）。輸出湊出 amount 最少要幾枚，湊不出來輸出 -1。",
+   "steps": [
+    {
+     "say": "讀入；dp[a] 表示湊出 a 元的最少枚數，dp[0] = 0，其他先設為無限大",
+     "code": "k, amount = map(int, input().split())\ncoins = list(map(int, input().split()))\nINF = float('inf')\ndp = [0] + [INF] * amount"
+    },
+    {
+     "say": "由小到大算每個金額：最後一枚用哪種面額 c，就是 dp[a − c] + 1，取最小",
+     "code": "for a in range(1, amount + 1):\n    for c in coins:\n        if c <= a and dp[a - c] + 1 < dp[a]:\n            dp[a] = dp[a - c] + 1"
+    },
+    {
+     "say": "還是無限大就是湊不出來",
+     "code": "print(dp[amount] if dp[amount] != INF else -1)"
+    }
+   ],
+   "tests": [
+    {
+     "in": "3 6\n1 3 4\n",
+     "out": "2"
+    },
+    {
+     "in": "1 3\n2\n",
+     "out": "-1"
+    },
+    {
+     "in": "2 0\n1 2\n",
+     "out": "0"
+    },
+    {
+     "in": "2 11\n5 2\n",
+     "out": "4"
+    }
+   ],
+   "distractors": [
+    "dp = [0] * (amount + 1)"
+   ]
+  },
+  {
+   "id": "w-gcd",
+   "concept": "numtheory",
+   "title": "最大公因數與最小公倍數",
+   "problem": "輸入兩個正整數 a b，輸出 gcd 與 lcm（以空白分隔）。",
+   "steps": [
+    {
+     "say": "讀入，另外複製一份來做歐幾里得演算法",
+     "code": "a, b = map(int, input().split())\nx, y = a, b"
+    },
+    {
+     "say": "輾轉相除：(x, y) 換成 (y, x % y) 直到 y 為 0，這時 x 就是 gcd",
+     "code": "while y:\n    x, y = y, x % y"
+    },
+    {
+     "say": "lcm = a ÷ gcd × b（先除再乘避免溢位）",
+     "code": "print(x, a // x * b)"
+    }
+   ],
+   "tests": [
+    {
+     "in": "12 18\n",
+     "out": "6 36"
+    },
+    {
+     "in": "7 13\n",
+     "out": "1 91"
+    },
+    {
+     "in": "100 25\n",
+     "out": "25 100"
+    }
+   ],
+   "distractors": [
+    "print(x, a * b)"
+   ]
+  },
+  {
+   "id": "w-sort-custom",
+   "concept": "sorting",
+   "title": "自訂排序",
+   "problem": "n 個字串，依長度由短到長輸出，長度相同時依字母順序。",
+   "steps": [
+    {
+     "say": "讀入 n 個字串",
+     "code": "n = int(input())\nwords = [input().strip() for _ in range(n)]"
+    },
+    {
+     "say": "排序的 key 是 (長度, 字串本身)：tuple 會先比第一個再比第二個",
+     "code": "words.sort(key=lambda w: (len(w), w))"
+    },
+    {
+     "say": "輸出",
+     "code": "for w in words:\n    print(w)"
+    }
+   ],
+   "tests": [
+    {
+     "in": "4\nbanana\nfig\napple\nkiwi\n",
+     "out": "fig\nkiwi\napple\nbanana"
+    },
+    {
+     "in": "1\nx\n",
+     "out": "x"
+    }
+   ],
+   "distractors": [
+    "words.sort()"
+   ]
+  },
+  {
+   "id": "w-brackets",
+   "concept": "stack_q",
+   "title": "括號配對（stack）",
+   "problem": "輸入一行只含 ()[]{} 的字串，輸出括號是否正確配對（YES／NO）。",
+   "steps": [
+    {
+     "say": "準備配對表與 stack",
+     "code": "s = input().strip()\npair = {')': '(', ']': '[', '}': '{'}\nst = []\nok = True"
+    },
+    {
+     "say": "左括號推進 stack；右括號要和 stack 頂端的左括號配對，配不上（或 stack 空了）就失敗",
+     "code": "for ch in s:\n    if ch in '([{':\n        st.append(ch)\n    elif not st or st.pop() != pair[ch]:\n        ok = False\n        break"
+    },
+    {
+     "say": "全部掃完 stack 也要是空的（沒有多餘的左括號）",
+     "code": "print('YES' if ok and not st else 'NO')"
+    }
+   ],
+   "tests": [
+    {
+     "in": "([]{})\n",
+     "out": "YES"
+    },
+    {
+     "in": "(]\n",
+     "out": "NO"
+    },
+    {
+     "in": "((\n",
+     "out": "NO"
+    },
+    {
+     "in": ")\n",
+     "out": "NO"
+    }
+   ],
+   "distractors": [
+    "st = ''"
+   ]
+  },
+  {
+   "id": "w-twoptr",
+   "concept": "two_ptr",
+   "title": "雙指標找兩數和",
+   "problem": "第一行 n 與 T，第二行是由小到大排好的 n 個整數。有沒有兩個不同位置的數加起來等於 T？輸出 YES 或 NO。",
+   "steps": [
+    {
+     "say": "讀入，兩個指標分別在最左與最右",
+     "code": "n, t = map(int, input().split())\na = list(map(int, input().split()))\ni, j = 0, n - 1\nfound = False"
+    },
+    {
+     "say": "和太小就把左指標右移（要更大的數），太大就把右指標左移；剛好就找到了",
+     "code": "while i < j:\n    s = a[i] + a[j]\n    if s == t:\n        found = True\n        break\n    if s < t:\n        i += 1\n    else:\n        j -= 1"
+    },
+    {
+     "say": "輸出",
+     "code": "print('YES' if found else 'NO')"
+    }
+   ],
+   "tests": [
+    {
+     "in": "5 9\n1 3 4 5 8\n",
+     "out": "YES"
+    },
+    {
+     "in": "3 100\n1 2 3\n",
+     "out": "NO"
+    },
+    {
+     "in": "2 4\n2 2\n",
+     "out": "YES"
+    }
+   ],
+   "distractors": [
+    "while i <= j:"
+   ]
+  },
+  {
+   "id": "w-greedy",
+   "concept": "greedy",
+   "title": "活動選擇（貪心）",
+   "problem": "n 個活動，每個有開始與結束時間（結束時間等於下一個的開始時間不算衝突）。輸出最多能參加幾個。",
+   "steps": [
+    {
+     "say": "讀入所有活動",
+     "code": "n = int(input())\niv = [tuple(map(int, input().split())) for _ in range(n)]"
+    },
+    {
+     "say": "貪心的關鍵：依結束時間排序，越早結束留給後面的空間越大",
+     "code": "iv.sort(key=lambda x: x[1])"
+    },
+    {
+     "say": "依序檢查：開始時間不早於上一個選的結束時間就選它",
+     "code": "cnt, last = 0, -10**18\nfor s, e in iv:\n    if s >= last:\n        cnt += 1\n        last = e\nprint(cnt)"
+    }
+   ],
+   "tests": [
+    {
+     "in": "4\n1 3\n2 5\n3 6\n5 7\n",
+     "out": "2"
+    },
+    {
+     "in": "1\n0 1\n",
+     "out": "1"
+    },
+    {
+     "in": "3\n1 4\n2 3\n3 5\n",
+     "out": "2"
+    }
+   ],
+   "distractors": [
+    "iv.sort()"
+   ]
+  },
+  {
+   "id": "w-dsu",
+   "concept": "dsu",
+   "title": "連通元件個數（並查集）",
+   "problem": "n 個點、m 條無向邊（點編號 1..n），輸出連通元件的個數。",
+   "steps": [
+    {
+     "say": "每個點一開始自己是一個集合",
+     "code": "n, m = map(int, input().split())\nparent = list(range(n + 1))"
+    },
+    {
+     "say": "find：找代表（根），順便做路徑壓縮讓之後更快",
+     "code": "def find(x):\n    while parent[x] != x:\n        parent[x] = parent[parent[x]]\n        x = parent[x]\n    return x"
+    },
+    {
+     "say": "每條邊：兩端的根不同就合併，元件數減一",
+     "code": "comp = n\nfor _ in range(m):\n    u, v = map(int, input().split())\n    ru, rv = find(u), find(v)\n    if ru != rv:\n        parent[ru] = rv\n        comp -= 1\nprint(comp)"
+    }
+   ],
+   "tests": [
+    {
+     "in": "5 3\n1 2\n2 3\n4 5\n",
+     "out": "2"
+    },
+    {
+     "in": "3 0\n",
+     "out": "3"
+    },
+    {
+     "in": "4 4\n1 2\n2 3\n3 1\n3 4\n",
+     "out": "1"
+    }
+   ],
+   "distractors": [
+    "comp = 0"
+   ]
+  },
+  {
+   "id": "w-base",
+   "concept": "base",
+   "title": "十進位轉任意進位",
+   "problem": "輸入 n 與 b（2 ≤ b ≤ 16），輸出 n 在 b 進位下的表示（大寫字母）。",
+   "steps": [
+    {
+     "say": "準備數字字元表；n 是 0 要特別處理",
+     "code": "n, b = map(int, input().split())\ndigits = '0123456789ABCDEF'\nif n == 0:\n    print('0')\nelse:"
+    },
+    {
+     "say": "反覆取餘數得到最低位，再除以 b；餘數是由低位到高位",
+     "code": "    out = []\n    while n:\n        out.append(digits[n % b])\n        n //= b"
+    },
+    {
+     "say": "反轉後接起來",
+     "code": "    print(''.join(reversed(out)))"
+    }
+   ],
+   "tests": [
+    {
+     "in": "10 2\n",
+     "out": "1010"
+    },
+    {
+     "in": "255 16\n",
+     "out": "FF"
+    },
+    {
+     "in": "0 7\n",
+     "out": "0"
+    },
+    {
+     "in": "100 8\n",
+     "out": "144"
+    }
+   ],
+   "distractors": [
+    "    out = ''"
+   ]
+  }
+ ]
+}
