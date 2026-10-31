@@ -8,6 +8,11 @@ const log = (ok, msg) => console.log((ok ? 'PASS ' : 'FAIL ') + msg);
   await p.goto('http://127.0.0.1:8793/#/home'); await p.waitForTimeout(1000);
   const overflow = async (name) => { const o = await p.evaluate(() => ({ sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth })); log(o.sw <= o.cw + 1, `${name}：沒有橫向捲動（${o.sw}/${o.cw}）`); };
   await overflow('首頁'); await p.screenshot({ path: 'shots/m1-home.png' });
+  for (const [n, h] of [['學習：洞察', 'insights'], ['學習：工坊', 'lab'], ['學習：筆記', 'notes'], ['學習：目標', 'goal']]) { await p.goto('http://127.0.0.1:8793/#/study/' + h); await p.waitForSelector('.page h1'); await p.waitForTimeout(700); await overflow(n); }
+  await p.screenshot({ path: 'shots/m0-study.png' });
+  const navItems = await p.locator('#rail a.navbtn').count(); const railW = await p.evaluate(() => { const r = document.querySelector('#rail'); return [r.scrollWidth, r.clientWidth]; });
+  log(railW[0] <= railW[1] + 1, `底部導覽列 ${navItems} 個項目都放得下（${railW[0]}/${railW[1]}）`);
+  await p.goto('http://127.0.0.1:8793/#/home'); await p.waitForTimeout(500);
   log(await p.locator('#rail').isVisible(), '底部導覽列可見');
   await p.goto('http://127.0.0.1:8793/#/practice/d001'); await p.waitForSelector('.startcta'); await p.waitForTimeout(300);
   await p.screenshot({ path: 'shots/m2-start.png' }); await overflow('練習（開始）');

@@ -18,7 +18,17 @@ from .judge import run_program
 DATA = Path(__file__).parent / "data" / "lab"
 _cache: Dict[str, List[Dict[str, Any]]] = {}
 GUESS = 0.25
+_OVERRIDE: Dict[str, float] = {}                      # 校準過的難度（cpe calibrate-merge 的結果）；沒有就用題目檔裡我估的 b
 MAX_Q, MIN_Q, SE_STOP = 12, 6, 0.45
+
+
+def set_calibration(b_by_id: Dict[str, float]) -> None:
+    _OVERRIDE.clear()
+    _OVERRIDE.update(b_by_id)
+
+
+def _b(q: Dict[str, Any]) -> float:
+    return _OVERRIDE.get(q["id"], q["b"])
 
 
 def items(name: str) -> List[Dict[str, Any]]:
@@ -54,11 +64,11 @@ def estimate(asked: List[Dict[str, Any]]) -> Dict[str, float]:
         th = i * 0.05
         ll = -(th * th) / (2 * 1.2 ** 2)
         for a in asked:
-            p = _p(th, quiz[a["id"]]["b"])
+            p = _p(th, _b(quiz[a["id"]]))
             ll += math.log(p) if a["correct"] else math.log(1 - p)
         if ll > best_ll:
             best, best_ll = th, ll
-    inf = 1 / 1.2 ** 2 + sum(_info(best, quiz[a["id"]]["b"]) for a in asked)
+    inf = 1 / 1.2 ** 2 + sum(_info(best, _b(quiz[a["id"]])) for a in asked)
     return {"theta": round(best, 2), "se": round(1 / math.sqrt(inf), 2)}
 
 
@@ -75,7 +85,7 @@ def cat_next(state: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     if not pool:
         return None
     th = state["theta"]
-    best = max(pool, key=lambda q: (_info(th, q["b"]) * (1.15 if q["concept"] not in seen_c else 1.0), -abs(q["b"] - th)))
+    best = max(pool, key=lambda q: (_info(th, _b(q)) * (1.15 if q["concept"] not in seen_c else 1.0), -abs(_b(q) - th)))
     return {k: best[k] for k in ("id", "concept", "q", "code", "stdin", "choices")}
 
 

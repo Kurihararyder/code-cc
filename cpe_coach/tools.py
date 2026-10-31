@@ -132,7 +132,10 @@ MODELS: List[Tuple[str, Callable[[float], float]]] = [
 
 def fit_complexity(points: List[Tuple[int, float]], baseline: float = 0.0) -> Dict[str, Any]:
     """points：(輸入大小, 秒數)。扣掉啟動時間後，對每個模型 t = c·f(n)+0 在對數空間做最小平方，選殘差最小的。"""
-    pts = [(n, max(t - baseline, 1e-6)) for n, t in points]
+    floor = max(0.01, 0.4 * baseline)                         # 比啟動時間多不了多少的量測只是雜訊，不拿來擬合
+    pts = [(n, t - baseline) for n, t in points if t - baseline >= floor]
+    if len(pts) < 3:
+        return {"error": f"輸入太小：程式的執行時間幾乎都是啟動時間（約 {baseline * 1000:.0f} ms），量不出成長趨勢。請用 --sizes 給更大的輸入大小。", "points": points}
     scores = []
     for name, f in MODELS:
         logs = [math.log(t) - math.log(f(n)) for n, t in pts]
@@ -178,19 +181,26 @@ def measure_complexity(solution: Path, make_input: Callable[[int], Optional[str]
         base = min(_timed(solution, make_input(1) or small, cmd, timeout, mem_mb) for _ in range(2))
         pts: List[Tuple[int, float]] = []
         start = time.time()
-        for n in sizes:
-            text = make_input(n)
-            ts = []
-            for _ in range(repeat):
-                t = _timed(solution, text, cmd, timeout, mem_mb)
-                if t is None:
-                    return {"error": f"n={n} 時逾時或出錯", "points": pts, **(fit_complexity(pts, base or 0) if len(pts) >= 3 else {})}
-                ts.append(t)
-            pts.append((n, statistics.median(ts)))
-            if time.time() - start > budget_s:
+        scale = 1
+        for attempt in range(3):                                   # 量不出趨勢（時間都被啟動時間蓋過）就把輸入放大 4 倍再量
+            for n in sizes:
+                n = n * scale
+                text = make_input(n)
+                ts = []
+                for _ in range(repeat):
+                    t = _timed(solution, text, cmd, timeout, mem_mb)
+                    if t is None:
+                        res = fit_complexity(pts, base or 0) if len(pts) >= 3 else {}
+                        return {**res, "error": f"n={n} 時逾時或出錯", "points": pts}
+                    ts.append(t)
+                pts.append((n, statistics.median(ts)))
+                if time.time() - start > budget_s:
+                    break
+            res = fit_complexity(pts, base or 0.0)
+            if "error" not in res or time.time() - start > budget_s * 0.6:
                 break
-        res = fit_complexity(pts, base or 0.0)
-        res.update(points=pts, baseline=round(base or 0.0, 4))
+            pts, scale = [], scale * 4
+        res.update(points=pts or res.get("points", []), baseline=round(base or 0.0, 4))
         return res
     finally:
         if tmp:

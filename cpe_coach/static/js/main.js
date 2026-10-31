@@ -9,9 +9,11 @@ import { mountCourse } from "./course.js";
 import { mountStats } from "./stats.js";
 import { mountSettings } from "./settings.js";
 import { mountExam } from "./exam.js";
+import { mountStudy } from "./study.js";
+import { applyA11y } from "./i18n.js";
 
-applyTheme();
-route("home", mountHome); route("practice", mountWorkspace); route("course", mountCourse); route("exam", mountExam); route("stats", mountStats); route("settings", mountSettings);
+applyTheme(); applyA11y();
+route("home", mountHome); route("practice", mountWorkspace); route("course", mountCourse); route("exam", mountExam); route("stats", mountStats); route("settings", mountSettings); route("study", mountStudy);
 
 document.addEventListener("keydown", (e) => {
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openPalette(); return; }

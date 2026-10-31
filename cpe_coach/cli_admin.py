@@ -1,6 +1,8 @@
 """維護用的指令：題庫、備份與還原、網頁介面。"""
 from __future__ import annotations
 
+import shutil
+import time
 from pathlib import Path
 
 from . import bank as bank_mod
@@ -30,7 +32,25 @@ def cmd_bank(ws: Workspace, args) -> int:
     return 0
 
 
+def _password(confirm: bool) -> str:
+    import getpass
+    import os
+    pw = os.environ.get("CPE_BACKUP_PASSWORD")
+    if pw:
+        return pw
+    pw = getpass.getpass("備份密碼（至少 8 個字元，忘了就救不回來）：")
+    if confirm and getpass.getpass("再輸入一次：") != pw:
+        raise ValueError("兩次輸入的密碼不一樣")
+    return pw
+
+
 def cmd_export(ws: Workspace, args) -> int:
+    if getattr(args, "encrypt", False):
+        from . import exchange
+        stamp = time.strftime("%Y%m%d-%H%M%S", time.localtime(ws.now()))
+        dest = exchange.encrypted_backup(ws, Path(args.out) if args.out else ws.root / f"cpe-backup-{stamp}.zip.enc", _password(True))
+        print(f"已匯出加密備份：{dest}（{dest.stat().st_size // 1024} KB）。還原：cpe restore {dest.name}（會詢問密碼）。")
+        return 0
     dest = backup.export_workspace(ws, Path(args.out) if args.out else None)
     print(f"已匯出：{dest}（{dest.stat().st_size // 1024} KB）")
     print("包含進度、解答、你匯入的題目與測資；內建練習題的測資不包含（會自動重新安裝）。")
@@ -38,7 +58,17 @@ def cmd_export(ws: Workspace, args) -> int:
 
 
 def cmd_restore(args) -> int:
-    n = backup.restore_workspace(Path(args.file), Path(args.dir), args.force)
+    src = Path(args.file)
+    if src.suffix == ".enc":
+        from . import exchange
+        zp = exchange.decrypt_to_zip(src, _password(False))
+        try:
+            n = backup.restore_workspace(zp, Path(args.dir), args.force)
+        finally:
+            shutil.rmtree(zp.parent, ignore_errors=True)
+        print(f"已還原 {n} 個檔案到 {Path(args.dir).resolve()}。在那個資料夾裡執行 cpe today 繼續。")
+        return 0
+    n = backup.restore_workspace(src, Path(args.dir), args.force)
     print(f"已還原 {n} 個檔案到 {Path(args.dir).resolve()}。在那個資料夾裡執行 cpe today 繼續。")
     return 0
 

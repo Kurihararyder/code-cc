@@ -8,7 +8,7 @@ import random
 from pathlib import Path
 
 from . import bank as bank_mod
-from . import concepts, errbook, habits, judge, knowledge, lab, lint, memory, notes, tools
+from . import aggregate, coach, concepts, errbook, exchange, experiment, sync as sync_mod, habits, judge, knowledge, lab, lint, memory, notes, planning, reminder, tools
 from .llm import detect_client
 from .service import fail_path, solution_file, statement_for
 from .store import Workspace
@@ -24,17 +24,17 @@ def cmd_mem(ws: Workspace, args) -> int:
     now = ws.now()
     if args.action == "status":
         print(f"已解出且納入記憶排程的題：{len(rp.cards)} 題；複習紀錄 {len(rp.pairs)} 次。")
-        due = memory.due_now(rp.cards, now, ft.k)
+        due = memory.due_now(rp.cards, now, ft.k, due_fn=memory.make_due_fn(ws))
         print(f"現在該複習：{len(due)} 題（預測保留率由低到高）")
         for d in due[:10]:
             print(f"  {d.pid:<12} 預測保留率 {round(100 * d.r_now):>3}%　已逾期 {d.overdue_days:.1f} 天　{bank.get(d.pid, {}).get('title', '')}")
         print(("個人化：k=%.2f（用你的 %d 次複習擬合；k<1 表示你比預設模型記得好）" % (ft.k, ft.n)) if ft.enabled else f"個人化：還沒啟用（需要至少 {memory.MIN_REVIEWS_FOR_FIT} 次複習，目前 {ft.n} 次）；先用 FSRS-4.5 預設參數。")
     elif args.action == "due":
-        for d in memory.schedule(rp.cards, now, ft.k):
+        for d in memory.schedule(rp.cards, now, ft.k, due_fn=memory.make_due_fn(ws)):
             when = "今天" if d.day == 0 else f"{d.day} 天後"
             print(f"{d.pid:<12} {when:<6} 預測保留率 {round(100 * d.r_now):>3}%　下次 {_d(d.due_ts)}")
     elif args.action == "forecast":
-        f = memory.forecast(rp.cards, now, 14, ft.k)
+        f = memory.forecast(rp.cards, now, 14, ft.k, due_fn=memory.make_due_fn(ws))
         for i, n in enumerate(f):
             print(f"{time.strftime('%m-%d', time.localtime(now + i * 86400))}　{'█' * n} {n}")
         print("每天最多排 8 題，超過的會往後挪最多 2 天（負載平準）。")
@@ -274,6 +274,8 @@ def cmd_quiz(ws: Workspace, args) -> int:
             print(("✔ 答對了。" if g["correct"] else f"✘ 答案是 {'ABCD'[g['answer']]}。") + g["why"])
         print(f"\n{right}/{len(qs)} 題答對。")
         return 0
+    from . import aggregate
+    lab.set_calibration(aggregate.load_calibration(ws)["quiz"])
     state = lab.cat_new()
     print("適性診斷：最多 %d 題，會依你的答對情況調整難度（q 可離開）。" % lab.MAX_Q)
     while True:
@@ -293,7 +295,7 @@ def cmd_quiz(ws: Workspace, args) -> int:
     if res["weak"]:
         print("建議先補：" + "、".join(f"{w['name']}（單元 {w['unit']}）" for w in res["weak"]))
     print(res["why"] + "\n" + res["caveat"])
-    ws.log("quiz", theta=res["theta"], answered=res["answered"], correct=res["correct"], start_unit=res["start_unit"])
+    ws.log("quiz", theta=res["theta"], answered=res["answered"], correct=res["correct"], start_unit=res["start_unit"], items=[{"id": a["id"], "correct": a["correct"]} for a in state["asked"]])
     return 0
 
 
@@ -386,7 +388,234 @@ def cmd_study(ws: Workspace, args) -> int:
     return 0
 
 
+def cmd_goal(ws: Workspace, args) -> int:
+    if args.action == "set":
+        if not args.date or not args.problems:
+            raise ValueError("用法：cpe goal set --date 2027-03-20 --problems 60")
+        g = planning.set_goal(ws, args.date, args.problems)
+        print(f"目標已設定：{g['date']} 之前累積解出 {g['problems']} 題。")
+    s = planning.goal_status(ws)
+    if not s["set"]:
+        print("還沒有設定目標。cpe goal set --date YYYY-MM-DD --problems N")
+        return 0
+    print(f"目標：{s['date']} 前解出 {s['target']} 題；目前 {s['solved']} 題，還差 {s['remaining']} 題，剩 {s['days_left']} 天。")
+    print(f"需要的速度：每週 {s['need_per_week']:.1f} 題；你最近的速度：每週 {s['pace_per_week']} 題。" if s["need_per_week"] is not None else "已經到期。")
+    if s["forecast_days"] and s["forecast_days"]["possible"]:
+        f = s["forecast_days"]
+        print(f"預測還要幾天（10%／50%／90%）：{f['p10']}／{f['p50']}／{f['p90']} 天（用你最近每天的解題數做 1000 次模擬）。")
+    if s["daily_minutes"]:
+        print(f"平均每題約 {s['minutes_per_problem']} 分鐘 → 為了趕上，平均每天約 {s['daily_minutes']} 分鐘。")
+    print(s["message"])
+    return 0
+
+
+def cmd_report(ws: Workspace, args) -> int:
+    r = planning.report(ws, args.days, bank_mod.load_bank(ws))
+    print(f"{r['range'][0]} ～ {r['range'][1]}（最近 {r['days']} 天）")
+    print(f"練習 {r['active_days']} 天、約 {r['minutes']} 分鐘；提交 {r['submissions']} 次；新解出 {r['new_solved']} 題；一次就對 {r['first_try_correct']}/{r['attempts']}")
+    print(f"複習 {r['reviews_passed']}/{r['reviews']} 通過；用了 {r['hints']} 次提示；寫了 {r['notes']} 則筆記")
+    if r["top_errors"]:
+        print("最常見的錯因：" + "、".join(f"{e['cause']}（{e['count']}）" for e in r["top_errors"]))
+    if r["time_of_day"]:
+        print("時段：" + r["time_of_day"])
+    if args.days >= 7 and not r["notes"]:
+        print("\n花一分鐘想想：這段時間最卡的是什麼？有什麼下次想改的做法？  cpe note add reflect \"…\"")
+    if args.out:
+        out = coach.export(ws, Path(args.out), args.notes)
+        print(f"已產生給老師的報告：{out['html']}（只含統計數字，不含程式碼與題目文字）")
+    return 0
+
+
+def cmd_achievements(ws: Workspace, args) -> int:
+    for a in planning.achievements(ws, bank_mod.load_bank(ws)):
+        print(("✔ " if a["unlocked"] else "· ") + f"{a['name']}：{a['desc']}" + (f"（{_d(a['ts'])}）" if a["unlocked"] else ""))
+    print("成就看的是做法的品質（無提示、回想、複習），不是刷題量；沒有「斷了就歸零」的連續紀錄。")
+    return 0
+
+
+def cmd_strategy(ws: Workspace, args) -> int:
+    t = planning.time_strategy(ws)
+    for a in t["advice"]:
+        print("・" + a)
+    return 0
+
+
+def cmd_predict(ws: Workspace, args) -> int:
+    p = planning.score_prediction(ws, bank_mod.load_bank(ws))
+    print(f"預期答對 {p['expected']} 題；至少 4 題的機率約 {round(100 * p['p_at_least_4'])}%、至少 6 題約 {round(100 * p['p_at_least_6'])}%；壓力係數 {p['pressure_factor']}")
+    for k, v in enumerate(p["distribution"]):
+        print(f"  答對 {k} 題：{round(100 * v):>3}%  {'█' * round(40 * v)}")
+    print("各難度的推測一次通過率：" + "、".join(f"★{s} {round(100 * x)}%（樣本 {p['samples'][s]}）" for s, x in p["per_star"].items()))
+    print(p["caveat"])
+    pr = planning.pressure(ws, bank_mod.load_bank(ws))
+    print(pr.get("note", ""))
+    return 0
+
+
+def cmd_final(ws: Workspace, args) -> int:
+    for it in planning.final_checklist(ws, bank_mod.load_bank(ws), args.days)["items"]:
+        print("□ " + it["text"])
+    return 0
+
+
+def cmd_remind(ws: Workspace, args) -> int:
+    if args.action == "check":
+        r = reminder.check(ws, force=args.force)
+        print(f"到期的複習：{r['due']} 題" + ("；已通知" if r["notified"] else f"；沒有通知（{r['reason']}）"))
+        return 0
+    plan = reminder.install_plan(ws, args.hour, args.minute)
+    print(plan["text"])
+    if args.apply:
+        ok, msg = reminder.apply_install(plan)
+        print(msg)
+        return 0 if ok else 1
+    print("\n以上只是列出指令；加 --apply 才會真的安裝。取消：" + plan["uninstall"])
+    return 0
+
+
+def cmd_coach(ws: Workspace, args) -> int:
+    if args.action == "import":
+        if not args.file:
+            raise ValueError("用法：cpe coach import 留言檔.json")
+        print(f"已匯入 {coach.import_comments(ws, Path(args.file))} 則留言。")
+    elif args.action == "export":
+        out = coach.export(ws, Path(args.file or "."), args.notes)
+        print("已產生：" + out["html"] + "\n（只含統計數字與知識點狀態，不含程式碼、題目文字、金鑰與 AI 對話。）")
+    else:
+        for c in coach.comments(ws):
+            print(f"[{_d(c['ts'])}] {c['from'] or '老師'}：{c['text']}" + (f"（{c['problem']}）" if c["problem"] else ""))
+    return 0
+
+
+def cmd_exp(ws: Workspace, args) -> int:
+    if args.action in ("start", "stop"):
+        experiment.set_enabled(ws, args.action == "start")
+        print("實驗已" + ("開啟：約一半的題會改用固定間隔（1/3/7/14/30/60 天）複習，另一半用 FSRS。" if args.action == "start" else "關閉：全部回到 FSRS。"))
+    rp, _ = memory.build(ws, bank_mod.load_bank(ws))
+    r = experiment.analyze(ws, rp.cards)
+    print("實驗：" + ("進行中" if r["enabled"] else "沒有開啟"))
+    for a, d in r["arms"].items():
+        print(f"  {a:<6} 複習 {d['reviews']:>3} 次　記得比例 {d['recall_rate']}　95% 區間 {d['ci']}　間隔中位數 {d['median_gap_days']} 天")
+    print(r["conclusion"])
+    return 0
+
+
+def cmd_stats_export(ws: Workspace, args) -> int:
+    d = aggregate.export_anonymous(ws, Path(args.out))
+    print(f"已匯出匿名統計：{args.out}（代號 {d['learner']}；{len(d['problems'])} 題的一次通過與否、{len(d['quiz'])} 題概念測驗）。")
+    print("檔案裡沒有時間、程式碼、題目文字或名字；你可以放心看過內容再決定要不要給別人。")
+    return 0
+
+
+def cmd_calibrate_merge(ws: Workspace, args) -> int:
+    res = aggregate.merge([Path(f) for f in args.files])
+    rel = sum(1 for k in ("problems", "quiz") for v in res[k].values() if v["reliable"])
+    print(f"合併 {res['learners']} 位學習者；可靠的題目 {rel} 題。{res['note']}")
+    for k, label in (("problems", "題目"), ("quiz", "測驗題")):
+        top = sorted(res[k].items(), key=lambda kv: -kv[1]["b"])[:3]
+        if top:
+            print(f"最難的{label}：" + "、".join(f"{i}（b={v['b']}，一次通過率 {round(100 * v['p_correct'])}%，n={v['n']}）" for i, v in top))
+    if args.out:
+        Path(args.out).write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8")
+        print(f"已寫入 {args.out}。放進工作區的 .cpe/calibration.json，推薦下一題與適性診斷就會改用校準過的難度。")
+    return 0
+
+
+def cmd_sync(ws: Workspace, args) -> int:
+    r = sync_mod.sync_folder(ws, Path(args.folder))
+    print(f"同步完成：本機新增 {r['events_added_local']} 筆紀錄、共用資料夾新增 {r['events_added_remote']} 筆；檔案拉下 {r['files_pulled']} 個、推上 {r['files_pushed']} 個。")
+    for c in r["conflicts"]:
+        print(f"  衝突：{c['file']}　留下{c['kept']}的版本，另一份存在 {c['other_saved_as']}")
+    return 0
+
+
+def cmd_anki(ws: Workspace, args) -> int:
+    Path(args.out).write_text(exchange.anki_tsv(ws, not args.no_quiz), encoding="utf-8")
+    print(f"已產生 {args.out}：在 Anki 選「檔案 → 匯入」，欄位對應 正面／背面／標籤（Tab 分隔，允許 HTML）。")
+    return 0
+
+
+def cmd_xapi(ws: Workspace, args) -> int:
+    st = exchange.xapi(ws)
+    Path(args.out).write_text(json.dumps(st, ensure_ascii=False, indent=1), encoding="utf-8")
+    print(f"已產生 {len(st)} 筆 xAPI statements：{args.out}（actor 是匿名帳號，沒有 email）。")
+    return 0
+
+
+def cmd_privacy(ws: Workspace, args) -> int:
+    if args.action == "delete":
+        n = exchange.delete_all(ws, args.confirm or "")
+        print(f"已刪除 {n} 個檔案。")
+        return 0
+    inv = exchange.inventory(ws)
+    print(f"工作區：{inv['root']}\n\n.cpe/ 裡的資料：")
+    for r in inv["meta"]:
+        print(f"  {r['name']:<24} {r['bytes']:>9} bytes  {r['meaning']}")
+    for r in inv["other"]:
+        print(f"  {r['name']:<24} {r['bytes']:>9} bytes  {r['meaning']}")
+    print("\n" + inv["sent_out"] + "\n刪除全部：cpe privacy delete --confirm <工作區資料夾名稱>（先用 cpe export 備份）。")
+    return 0
+
+
+def cmd_group(ws: Workspace, args) -> int:
+    if args.action == "card":
+        Path(args.out).write_text(json.dumps(coach.card(ws, args.name or "me"), ensure_ascii=False, indent=1), encoding="utf-8")
+        print(f"已產生進度卡：{args.out}（只有暱稱與統計數字）。傳給同學，大家用 cpe group show 卡片… 看對照表。")
+        return 0
+    rows = coach.group_table([Path(f) for f in args.files])
+    print(f"{'暱稱':<12}{'解出':>6}{'無提示':>8}{'近7天練習':>10}{'知識點':>8}")
+    for r in rows:
+        print(f"{r['name']:<12}{r['solved']:>6}{r['clean_solved']:>8}{r['active_days_7']:>10}{r['concepts']:>8}")
+    print("排序依「無提示通過的題數」（看品質）；這只是互相打氣的參考，不是比賽。")
+    return 0
+
+
 def register(sub) -> None:
+    s = sub.add_parser("stats-export", help="匯出匿名統計檔（只有每題一次通過與否；自願給別人合併校準難度）")
+    s.add_argument("out")
+    s = sub.add_parser("calibrate-merge", help="合併多個匿名統計檔，用 IRT 估每題的難度")
+    s.add_argument("files", nargs="+")
+    s.add_argument("--out", help="寫出 calibration.json")
+    s = sub.add_parser("sync", help="多裝置同步：和一個共用資料夾（Dropbox／隨身碟）雙向合併進度與紀錄")
+    s.add_argument("folder")
+    s = sub.add_parser("anki", help="匯出 Anki 卡片（Tab 分隔文字）")
+    s.add_argument("out")
+    s.add_argument("--no-quiz", action="store_true")
+    s = sub.add_parser("xapi", help="匯出 xAPI 學習紀錄（JSON）")
+    s.add_argument("out")
+    s = sub.add_parser("privacy", help="列出存了什麼資料、資料會不會送出去；delete 刪除全部")
+    s.add_argument("action", nargs="?", default="show", choices=["show", "delete"])
+    s.add_argument("--confirm")
+    s = sub.add_parser("group", help="學習小組：card 產生進度卡、show 看多張卡的對照表（用檔案交換）")
+    s.add_argument("action", choices=["card", "show"])
+    s.add_argument("files", nargs="*")
+    s.add_argument("--out", default="cpe-card.json")
+    s.add_argument("--name")
+    s = sub.add_parser("goal", help="目標倒推：設定日期與題數，看進度、預測完成日、需要的速度")
+    s.add_argument("action", nargs="?", default="show", choices=["show", "set"])
+    s.add_argument("--date")
+    s.add_argument("--problems", type=int)
+    s = sub.add_parser("report", help="週報／月報（--out 資料夾 產生可以給老師的 HTML）")
+    s.add_argument("--days", type=int, default=7)
+    s.add_argument("--out")
+    s.add_argument("--notes", action="store_true", help="報告附上你的近期筆記")
+    sub.add_parser("achievements", help="成就（看品質不看刷題量）")
+    sub.add_parser("strategy", help="考試時間策略：從你的模擬考歷史分析")
+    sub.add_parser("predict", help="落點預測：推測真實考試答對題數的分布（粗估）")
+    s = sub.add_parser("final", help="考前清單")
+    s.add_argument("--days", type=int, help="距離考試還有幾天")
+    s = sub.add_parser("remind", help="複習提醒：check 檢查一次並通知；install 列出（或 --apply 安裝）每天自動檢查的排程")
+    s.add_argument("action", nargs="?", default="check", choices=["check", "install"])
+    s.add_argument("--force", action="store_true", help="check：忽略『剛提醒過』與安靜時段")
+    s.add_argument("--hour", type=int, default=19)
+    s.add_argument("--minute", type=int, default=30)
+    s.add_argument("--apply", action="store_true", help="install：真的安裝排程")
+    s = sub.add_parser("coach", help="教練模式：export 產生給老師的報告、import 匯入老師的留言、list 看留言")
+    s.add_argument("action", nargs="?", default="list", choices=["list", "export", "import"])
+    s.add_argument("file", nargs="?")
+    s.add_argument("--notes", action="store_true")
+    s = sub.add_parser("exp", help="自我實驗：FSRS 對固定間隔（start／stop／結果）")
+    s.add_argument("action", nargs="?", default="show", choices=["show", "start", "stop"])
     s = sub.add_parser("quiz", help="概念測驗：不給知識點就做適性診斷（最多 12 題），給知識點就練那個知識點")
     s.add_argument("concept", nargs="?")
     s.add_argument("-n", type=int, default=5)
@@ -437,4 +666,6 @@ def register(sub) -> None:
 
 
 HANDLERS = {"mem": cmd_mem, "err": cmd_err, "insight": cmd_insight, "lint": cmd_lint, "shrink": cmd_shrink, "complexity": cmd_complexity, "algo": cmd_algo,
-            "note": cmd_note, "recall": cmd_recall, "explain": cmd_explain, "quiz": cmd_quiz, "study": cmd_study}
+            "note": cmd_note, "recall": cmd_recall, "explain": cmd_explain, "quiz": cmd_quiz, "study": cmd_study, "goal": cmd_goal, "report": cmd_report, "achievements": cmd_achievements,
+            "strategy": cmd_strategy, "predict": cmd_predict, "final": cmd_final, "remind": cmd_remind, "coach": cmd_coach, "exp": cmd_exp, "stats-export": cmd_stats_export,
+            "calibrate-merge": cmd_calibrate_merge, "sync": cmd_sync, "anki": cmd_anki, "xapi": cmd_xapi, "privacy": cmd_privacy, "group": cmd_group}

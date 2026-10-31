@@ -18,3 +18,8 @@
 - `ui_e2e/fake_github.py`：介面測試用的假 GitHub zip（用 `tests/pdfmaker.py` 自己產生的 PDF）。
 - 選用的真實資料驗證：`CPE_QUESTIONS_DIR=<clone 的資料夾> python -m unittest tests.test_cpe_real`（需要的話裝 poppler 才會多一項 pdftotext 對照）。不會執行 repo 裡的任何解答。
 - `cpe_meta_src.py`：91 題的類型標籤、先修單元、難度與提示的來源（我寫的，沒有官方核對）；執行後產生 `cpe_coach/data/cpe_meta.json`。
+
+## 學習工坊的內容
+
+- `lab_quiz_src.py`、`lab_worked_src.py`、`lab_text_src.py`：概念測驗、示範題、找 bug、預測輸出、解法比較、微課、術語表的來源（我寫的）。
+- `gen_lab.py`：把這些來源**實際執行**過再產生 `cpe_coach/data/lab/*.json`（測驗題的答案要和實際輸出一致、每個 bug 都要真的讓程式出錯而修正版要通過、各種解法的輸出要一致，否則中止）。CI 會重新產生並檢查沒有差異。

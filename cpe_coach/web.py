@@ -24,6 +24,7 @@ from . import course as course_mod
 from . import __version__, backup, dashboard, hints, judge, service, srs, updater
 from .llm import detect_client
 from .web_exam import ExamMixin
+from .web_sci import SciMixin
 from .web_learn import LearnMixin
 from .web_practice import PracticeMixin
 from .store import Workspace, WorkspaceError
@@ -37,7 +38,7 @@ CSP = ("default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' 
        "connect-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'")
 
 
-class App(PracticeMixin, ExamMixin, LearnMixin):
+class App(PracticeMixin, ExamMixin, LearnMixin, SciMixin):
     def __init__(self, root: Path, port: int):
         self.root, self.port = Path(root), port
         self.token = secrets.token_urlsafe(24)
@@ -187,12 +188,17 @@ def make_handler(app: App):
            "/api/unit": lambda q: app.unit(int(q["n"]) if "n" in q else None),
            "/api/problem": lambda q: app.problem(q["id"]), "/api/chat": lambda q: app.chat(q["id"]),
            "/api/search": lambda q: app.search(q.get("q", "")), "/api/settings": lambda q: app.settings(),
-           "/api/past": lambda q: app.past_list(), "/api/cpe": lambda q: app.cpe_status(), "/api/cpe/progress": lambda q: app.cpe_progress(), "/api/vocab": lambda q: app.vocab_list(),
+           "/api/past": lambda q: app.past_list(), "/api/cpe": lambda q: app.cpe_status(), "/api/insights": lambda q: app.insights(), "/api/notes": app.notes_list, "/api/lab/index": lambda q: app.lab_index(),
+           "/api/lab/lesson": app.lab_lesson, "/api/lab/worked": app.lab_worked, "/api/lab/parsons": app.lab_parsons, "/api/lab/bug": app.lab_bug, "/api/lab/predict": app.lab_predict,
+           "/api/lab/compare": app.lab_compare, "/api/lab/glossary": app.lab_glossary, "/api/cpe/progress": lambda q: app.cpe_progress(), "/api/vocab": lambda q: app.vocab_list(),
            "/api/plan": lambda q: app.plan(int(q.get("minutes", "30"))), "/api/calibration": lambda q: app.calibration(), "/api/weakness": lambda q: app.weakness(),
            "/api/eng": lambda q: app.eng_list()}
     POST = {"/api/new": app.new, "/api/save": app.save, "/api/test": app.test, "/api/trace": app.trace, "/api/fuzz": app.fuzz, "/api/ask": app.ask,
             "/api/hint": app.hint, "/api/giveup": app.giveup, "/api/solution": app.solution, "/api/gate": app.gate_start,
-            "/api/mock": app.mock_start, "/api/exam/finish": app.exam_finish, "/api/course/goto": app.course_goto,
+            "/api/mock": app.mock_start, "/api/exam/finish": app.exam_finish, "/api/goal/set": app.goal_set, "/api/exp": app.exp_set, "/api/notes/add": app.notes_add, "/api/explain": app.explain,
+            "/api/lab/quiz/start": app.lab_quiz_start, "/api/lab/quiz/answer": app.lab_quiz_answer, "/api/lab/quiz/practice": app.lab_quiz_practice, "/api/lab/grade": app.lab_grade,
+            "/api/lab/faded/check": app.lab_faded_check, "/api/lab/parsons/check": app.lab_parsons_check, "/api/lab/bug/check": app.lab_bug_check, "/api/lab/predict/check": app.lab_predict_check,
+            "/api/coach/import": app.coach_import, "/api/exam/focus": app.exam_focus, "/api/course/goto": app.course_goto,
             "/api/course/next": app.course_next, "/api/settings": app.set_settings, "/api/past/import": app.past_import, "/api/cpe/import": app.cpe_import,
             "/api/past/statement": app.past_statement, "/api/past/start": app.past_start, "/api/vocab/add": app.vocab_add,
             "/api/vocab/remove": app.vocab_remove, "/api/eng/start": app.eng_start, "/api/eng/verify": app.eng_verify, "/api/key": app.set_key, "/api/ai/test": app.ai_test, "/api/update/check": app.update_check}
@@ -253,6 +259,9 @@ def make_handler(app: App):
                     with app.ws().lock():
                         data = backup.export_bytes(app.ws())
                     return self._send(200, data, "application/zip")
+                if u.path.startswith("/api/export/"):
+                    ex = app.export_text(u.path.rsplit("/", 1)[1])
+                    return self._send(200, ex["body"], ex["type"])
                 if u.path == "/api/statement.pdf":
                     data = app.statement_pdf(q.get("id", ""))
                     return self._send(200, data, "application/pdf")

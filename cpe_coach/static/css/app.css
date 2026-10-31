@@ -374,3 +374,9 @@ table.t tfoot td{border-top:1px solid var(--border);padding:8px 10px}
 .vz-c.chg,.vz-dict tr.chg td,.vz-s.chg{background:color-mix(in srgb,var(--accent) 22%,transparent);border-color:var(--accent)}
 .vz-dict{border-collapse:collapse;font:12.5px var(--mono)}.vz-dict td{border:1px solid var(--border);padding:2px 8px}.vz-s{font:13px var(--mono);padding:2px 8px;border:1px solid var(--border);border-radius:6px;display:inline-block}
 .vz-nest,.vz-more,.vz-raw{font:12px var(--mono);color:var(--text-2)}.vz-step{display:flex;align-items:center;gap:8px;margin:8px 0}.vz-step input[type=range]{flex:1}
+
+/* 色盲友善：通過／失敗改用藍與橘（Okabe–Ito），而且判題結果本來就有圖示與文字，不只靠顏色 */
+:root[data-cb="1"]{--ok:#0072b2;--bad:#d55e00;--warn:#e69f00}
+@media (prefers-color-scheme:dark){:root[data-cb="1"]:not([data-theme="light"]){--ok:#56b4e9;--bad:#e69f00;--warn:#f0e442}}
+:root[data-cb="1"][data-theme="dark"]{--ok:#56b4e9;--bad:#e69f00;--warn:#f0e442}
+:root[data-cb="1"] .badge.AC::after{content:" ✓"}:root[data-cb="1"] .badge.bad::after{content:" ✗"}

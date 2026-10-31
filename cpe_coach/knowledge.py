@@ -130,16 +130,18 @@ def _logit(p: float) -> float:
     return math.log(p / (1 - p))
 
 
-def predict_success(m: Dict[str, Dict[str, Any]], problem: Dict[str, Any]) -> float:
+def predict_success(m: Dict[str, Dict[str, Any]], problem: Dict[str, Any], b_calibrated: Optional[float] = None) -> float:
     """這題你一次通過的推測機率：知識點掌握度（log-odds 平均）減題目難度。難度星等 1→−0.8、2→0、3→+0.8、4→+1.6。"""
     cs = concepts.of_problem(problem)
     theta = sum(_logit(m[c]["effective"]) for c in cs) / len(cs)
-    b = (float(problem.get("difficulty", 2)) - 2) * 0.8
+    b = b_calibrated if b_calibrated is not None else (float(problem.get("difficulty", 2)) - 2) * 0.8      # 有校準過的難度（cpe calibrate-merge）就用它
     return 1 / (1 + math.exp(-(theta - b + 0.6)))
 
 
 def recommend(ws, bank: Dict[str, dict], n: int = 5, target: float = 0.7, current_unit: Optional[int] = None) -> List[Dict[str, Any]]:
     """下一題：挑「推測成功率最接近 70%」的未解題（太簡單學不到、太難會挫折），先修要解鎖，而且已經有測資。"""
+    from . import aggregate
+    calib = aggregate.load_calibration(ws)["problems"]
     m = mastery(ws, bank)
     st = ws.state()["problems"]
     if current_unit is None:
@@ -151,7 +153,7 @@ def recommend(ws, bank: Dict[str, dict], n: int = 5, target: float = 0.7, curren
         cs = concepts.of_problem(p)
         if not all(unlocked(c, m, current_unit) for c in cs):
             continue
-        ps = predict_success(m, p)
+        ps = predict_success(m, p, calib.get(pid))
         rows.append({"id": pid, "title": p.get("title", pid), "p_success": round(ps, 2), "concepts": [concepts.load()[c]["name"] for c in cs],
                      "difficulty": p.get("difficulty"), "gap": abs(ps - target)})
     rows.sort(key=lambda r: (r["gap"], r["difficulty"] or 0, r["id"]))

@@ -3,6 +3,7 @@ import { get, post, download } from "./api.js";
 import { S, pref, applyTheme } from "./state.js";
 import { refreshState, paintTop } from "./shell.js";
 import { skeleton, empty } from "./widgets.js";
+import { lang as uiLang, applyA11y } from "./i18n.js";
 
 export async function mountSettings(view) {
   view.append(h("div", { class: "page" }, h("div", { class: "card pad" }, skeleton(5))));
@@ -44,7 +45,9 @@ export async function mountSettings(view) {
       h("div", { class: "col" }, h("label", { class: "field" }, "API 金鑰", h("div", { class: "row" }, key, show)), h("label", { class: "field" }, "模型", model, h("small", { text: "填你帳號可用的聊天模型名稱。" }))),
       h("div", { class: "row mt" }, h("button", { class: "btn primary", onclick: saveAi }, "儲存"), testBtn), status),
     h("section", { class: "card pad mt" }, h("div", { class: "card-h" }, h("h3", { text: "外觀與編輯器" })),
-      h("div", { class: "col" }, h("div", { class: "row wrap" }, h("span", { class: "grow", text: "外觀" }), theme), h("div", { class: "row wrap" }, h("span", { class: "grow", text: "編輯器字體大小（px）" }), fs))),
+      h("div", { class: "col" }, h("div", { class: "row wrap" }, h("span", { class: "grow", text: "外觀" }), theme),
+        h("div", { class: "row wrap" }, h("span", { class: "grow", text: "介面語言（英文只涵蓋導覽列與「學習」頁）" }), h("div", { class: "seg", role: "group", "aria-label": "介面語言" }, [["zh", "中文"], ["en", "English"]].map(([k, x]) => h("button", { "aria-pressed": String(uiLang() === k), onclick: () => { pref.set("lang", k); applyA11y(); location.reload(); } }, x)))),
+        h("div", { class: "row wrap" }, h("span", { class: "grow", text: "色盲友善配色（通過／失敗改用藍與橘）" }), h("div", { class: "seg", role: "group", "aria-label": "色盲友善配色" }, [[false, "關"], [true, "開"]].map(([k, x]) => h("button", { "aria-pressed": String(pref.get("colorblind", false) === k), onclick: (e) => { pref.set("colorblind", k); applyA11y(); [...e.currentTarget.parentElement.children].forEach((b) => b.setAttribute("aria-pressed", String(b === e.currentTarget))); } }, x)))), h("div", { class: "row wrap" }, h("span", { class: "grow", text: "編輯器字體大小（px）" }), fs))),
     h("section", { class: "card pad mt" }, h("div", { class: "card-h" }, h("h3", { text: "學習" })),
       h("div", { class: "col" }, h("label", { class: "field" }, "每筆測資時限（秒）", timeout, h("small", { text: "Python 比 C++ 慢；本機電腦慢時可以調高。" })), h("label", { class: "field" }, "課程開始日期", start, h("small", { text: "用來計算『依課表你應該在第幾週』。" })), h("label", { class: "field" }, "內建練習題的題目語言", lang, h("small", { text: "自動：階段 0 中文、階段 1 中英對照、之後純英文。考場是英文，所以越後面越該習慣讀英文。比照考場的模擬考一律英文。" }))), h("div", { class: "mt" }, h("button", { class: "btn primary", onclick: saveLearn }, "儲存"))),
     h("section", { class: "card pad mt" }, h("div", { class: "card-h" }, h("h3", { text: "備份與搬家" })),

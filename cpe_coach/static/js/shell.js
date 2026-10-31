@@ -4,8 +4,9 @@ import { get, onConnection } from "./api.js";
 import { S, emit, pref, applyTheme, stageColor } from "./state.js";
 import { go, where } from "./router.js";
 import { openPalette } from "./palette.js";
+import { t } from "./i18n.js";
 
-const NAV = [["home", "今日", "home"], ["practice", "練習", "code"], ["course", "課程", "map"], ["exam", "考試", "target"], ["stats", "統計", "chart"], ["settings", "設定", "settings"]];
+const NAV = [["home", "今日", "home"], ["practice", "練習", "code"], ["course", "課程", "map"], ["exam", "考試", "target"], ["study", "學習", "bulb"], ["stats", "統計", "chart"], ["settings", "設定", "settings"]];
 let tick = null;
 
 export function buildShell() {
@@ -13,7 +14,7 @@ export function buildShell() {
   rail.append(h("a", { class: "brand", href: "#/home", "aria-label": "CPE 教練", title: "CPE 教練" }, icon("code", "lg")));
   NAV.forEach(([k, label, ic], i) => {
     if (k === "settings") rail.append(h("div", { class: "spacer" }));
-    rail.append(h("a", { class: "navbtn", href: "#/" + k, dataset: { nav: k } }, icon(ic), h("span", { text: label }), k === "home" ? h("span", { class: "dot", id: "dueDot", hidden: true }) : null));
+    rail.append(h("a", { class: "navbtn", href: "#/" + k, dataset: { nav: k } }, icon(ic), h("span", { text: t(label) }), k === "home" ? h("span", { class: "dot", id: "dueDot", hidden: true }) : null));
   });
   onConnection((ok) => { $("#offline").hidden = ok; });
   window.addEventListener("routechange", markNav);

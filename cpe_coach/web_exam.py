@@ -94,6 +94,15 @@ class ExamMixin:
     def cpe_progress(self) -> Dict[str, Any]:
         return dict(self._cpe_job)
 
+    def exam_focus(self, body: Dict[str, Any]) -> Dict[str, Any]:
+        """考場模式：瀏覽器回報「離開了考試視窗」（切到別的分頁或視窗）。只在考試進行中記錄；不記是去了哪裡。"""
+        ws = self.ws()
+        exam = ws.exam()
+        if not exam:
+            return {"count": 0, "active": False}
+        ws.log("focus_lost", seconds=max(0, min(int(body.get("seconds", 0) or 0), 36000)))
+        return {"count": dashboard.focus_lost(ws, exam), "active": True}
+
     def past_start(self, body: Dict[str, Any]) -> Dict[str, Any]:
         ws = self.ws()
         course_mod.start_past(ws, bank_mod.load_bank(ws), body["date"], body.get("lang") or "py", bool(body.get("partial")))

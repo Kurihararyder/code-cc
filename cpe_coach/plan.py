@@ -60,7 +60,7 @@ def build(ws: Workspace, minutes: int = 30) -> Dict[str, Any]:
                          f"無提示重寫（第 {p['review_stage'] + 1}/3 次）", pid in ac_today))
     rp, mfit = memory.build(ws, bank)                                      # 1b. 記憶排程：所有解出過的題（含一次就過的），預測保留率降到 90% 的先複習
     srs_ids = {pid for pid, _ in srs.due_list(st, now)}
-    for di in [d for d in memory.due_now(rp.cards, now, mfit.k) if d.pid not in srs_ids and d.pid in bank][:5]:
+    for di in [d for d in memory.due_now(rp.cards, now, mfit.k, due_fn=memory.make_due_fn(ws)) if d.pid not in srs_ids and d.pid in bank][:5]:
         pool.append(item("review", di.pid, bank_mod.resolve(bank, di.pid)["title"], calibrate.est_minutes(bank, di.pid, ef, factor, review=True),
                          f"記憶排程：預測保留率約 {round(100 * di.r_now)}%（降到 90% 以下就該複習）", di.pid in ac_today))
     u = course_mod.current_unit(ws, course)

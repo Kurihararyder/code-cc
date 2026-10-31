@@ -128,6 +128,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("id")
     s = sub.add_parser("export", help="匯出備份（zip）")
     s.add_argument("-o", "--out", help="輸出檔名（預設在工作區內 cpe-backup-時間.zip）")
+    s.add_argument("--encrypt", action="store_true", help="用密碼加密（AES-256，靠系統的 openssl）；密碼從環境變數 CPE_BACKUP_PASSWORD 讀，沒有就詢問")
     s = sub.add_parser("restore", help="從備份還原")
     s.add_argument("file")
     s.add_argument("--dir", default=".", help="還原到哪個資料夾（預設目前資料夾）")

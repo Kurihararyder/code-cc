@@ -46,6 +46,17 @@ class Workspace {
       b.last = now;
     });
     this.saveSoon = debounce(() => this.save(false), 900); this.dirty = false;
+    if (V.exam) this.examMode();
+  }
+  // 考場模式（考試進行中）：禁止貼上、回報離開考試視窗的次數（只記次數與秒數，不記去了哪裡）；可以按鈕進入全螢幕。交卷時計分板會顯示離開次數。
+  examMode() {
+    this.editor.ta.addEventListener("paste", (e) => { e.preventDefault(); toast("考場模式：不能貼上（比照真實考試）", "warn", 2500); });
+    let hiddenAt = 0;
+    this._vis = () => {
+      if (document.hidden) { hiddenAt = Date.now(); return; }
+      if (hiddenAt) { const sec = Math.round((Date.now() - hiddenAt) / 1000); hiddenAt = 0; post("/api/exam/focus", { seconds: sec }).then((r) => { if (r.active) toast(`你離開了考試視窗（${r.count} 次，會記在成績單上）`, "warn", 3500); }).catch(() => {}); }
+    };
+    document.addEventListener("visibilitychange", this._vis);
   }
   // ---------- 掛載 ----------
   mount() {
@@ -94,7 +105,7 @@ class Workspace {
     return () => this.destroy();
   }
   setTabDefault() { this.ws.dataset.tab = this.V.code === null ? "stmt" : "code"; this.mt.querySelectorAll("button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.t === this.ws.dataset.tab))); }
-  destroy() { this.ask?.destroy(); if (this.dirty) this.save(false); this.view.style.overflow = ""; }
+  destroy() { this.ask?.destroy(); if (this._vis) document.removeEventListener("visibilitychange", this._vis); if (this.dirty) this.save(false); this.view.style.overflow = ""; }
   tab(k) { this.ws.dataset.tab = k; this.mt.querySelectorAll("button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.t === k))); }
 
   tabBtn(label, k, sel) { return h("button", { role: "tab", "aria-selected": String(!!sel), onclick: (e) => this.setLeft(k, e.currentTarget.parentElement) }, label); }
@@ -299,7 +310,7 @@ class Workspace {
     const modeBtn = (k, label) => h("button", { class: "btn sm" + (this.traceView === k ? " primary" : ""), onclick: () => { this.traceView = k; this.paintTrace(); } }, label);
     this.resBody.append(h("div", { class: "row gap-sm", style: { "margin-bottom": "6px" } }, modeBtn("table", "表格"), modeBtn("viz", "圖像（一步一步看變數）")));
     if (this.traceView === "viz") {
-      const steps = t.steps; const i = Math.min(this.vizStep ?? 0, steps.length - 1);
+      const steps = t.steps; const firstWithVars = Math.max(0, steps.findIndex((x) => Object.keys(x.vars).length)); const i = Math.min(this.vizStep ?? firstWithVars, steps.length - 1);
       const slider = h("input", { type: "range", min: 0, max: Math.max(steps.length - 1, 0), value: i, "aria-label": "追蹤的步驟", oninput: (e) => { this.vizStep = +e.target.value; this.paintTrace(); } });
       const s0 = steps[i];
       this.resBody.append(h("div", { class: "vz-step" }, h("button", { class: "btn sm", disabled: i <= 0, onclick: () => { this.vizStep = i - 1; this.paintTrace(); } }, "◀"), slider,

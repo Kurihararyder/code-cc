@@ -80,7 +80,9 @@ export function examPanel(exam) {
   return h("div", { class: "card examcard pad mt" },
     h("div", { class: "row wrap" }, icon("clock", "xl"), h("div", { class: "grow" }, h("h2", { text: exam.gate ? "單元檢核進行中" : exam.past ? `歷屆整場進行中（${exam.past}）` : "考試進行中" }), h("div", { class: "muted small", text: "AI 詢問與提示已鎖定。時間到之後的提交不計分。字典（選取單字）仍可使用。" })),
       h("div", { class: "timer", id: "examBig", "data-left": left, text: fmtDur(left) }),
+      h("button", { class: "btn", title: "比照考場：全螢幕、不能貼上、離開視窗會被記錄", onclick: () => { document.documentElement.requestFullscreen?.().catch(() => {}); } }, "全螢幕"),
       h("button", { class: "btn primary", onclick: finishExam }, "交卷")),
+    exam.focus_lost ? h("div", { class: "callout warn mt" }, icon("alert"), h("span", { text: `考場模式：你離開過考試視窗 ${exam.focus_lost} 次（真實考試通常不允許）。` })) : null,
     exam.board ? h("div", { class: "mt" }, scoreboard(exam.board)) : h("div", { class: "chips mt" }, exam.problems.map((p) => h("button", { class: "pchip" + (p.solved ? " solved" : ""), onclick: () => go("/practice/" + p.id) },
       p.id, p.solved ? icon("check") : (p.wrong ? h("span", { class: "bad", text: "✗" + p.wrong }) : null)))));
 }

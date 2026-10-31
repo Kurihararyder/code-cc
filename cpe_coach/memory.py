@@ -201,9 +201,17 @@ class DueItem(NamedTuple):
     overdue_days: float
 
 
-def schedule(cards: Dict[str, Card], now: float, k: float = 1.0, cap: int = 8, spread: int = 2) -> List[DueItem]:
+def make_due_fn(ws):
+    """自我實驗（cpe exp）開啟時，一半的題改用固定間隔排程；沒開就回傳 None（全部用 FSRS）。"""
+    from . import experiment
+    if not experiment.enabled(ws):
+        return None
+    return lambda pid, c, k: experiment.fixed_due(c.log) if experiment.arm(ws, pid) == "fixed" else c.due(k)
+
+
+def schedule(cards: Dict[str, Card], now: float, k: float = 1.0, cap: int = 8, spread: int = 2, due_fn=None) -> List[DueItem]:
     """所有題目的到期時間；平準：一天最多排 cap 題，超過的往後移最多 spread 天（越快忘的越先排）。"""
-    raw = sorted(((c.due(k), pid, c) for pid, c in cards.items() if c.reps), key=lambda x: x[0])
+    raw = sorted(((due_fn(pid, c, k) if due_fn else c.due(k), pid, c) for pid, c in cards.items() if c.reps), key=lambda x: x[0])
     load: Dict[int, int] = {}
     out: List[DueItem] = []
     for due, pid, c in raw:
@@ -216,13 +224,13 @@ def schedule(cards: Dict[str, Card], now: float, k: float = 1.0, cap: int = 8, s
     return out
 
 
-def due_now(cards: Dict[str, Card], now: float, k: float = 1.0, cap: int = 8) -> List[DueItem]:
-    return sorted([x for x in schedule(cards, now, k, cap) if x.day == 0 and x.due_ts <= now + 1], key=lambda x: x.r_now)
+def due_now(cards: Dict[str, Card], now: float, k: float = 1.0, cap: int = 8, due_fn=None) -> List[DueItem]:
+    return sorted([x for x in schedule(cards, now, k, cap, due_fn=due_fn) if x.day == 0 and x.due_ts <= now + 1], key=lambda x: x.r_now)
 
 
-def forecast(cards: Dict[str, Card], now: float, days: int = 14, k: float = 1.0, cap: int = 8) -> List[int]:
+def forecast(cards: Dict[str, Card], now: float, days: int = 14, k: float = 1.0, cap: int = 8, due_fn=None) -> List[int]:
     out = [0] * days
-    for it in schedule(cards, now, k, cap):
+    for it in schedule(cards, now, k, cap, due_fn=due_fn):
         if it.day < days:
             out[it.day] += 1
     return out

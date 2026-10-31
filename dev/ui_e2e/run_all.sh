@@ -14,7 +14,7 @@ cleanup() { kill "$LLM" "$GH" 2>/dev/null; [ -f "$E2E_DIR/web.pid" ] && kill "$(
 trap cleanup EXIT
 sleep 1
 status=0
-for t in ui gate mobile a11y exam learn cpe; do
+for t in ui gate mobile a11y exam learn cpe study; do
   "$HERE/fresh.sh" >/dev/null || { echo "fresh.sh 失敗"; exit 1; }
   echo "=== $t"
   (cd "$E2E_DIR" && timeout 600 node "$HERE/$t.js" 2>&1) | tee "$E2E_DIR/$t.log"

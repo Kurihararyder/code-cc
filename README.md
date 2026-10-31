@@ -99,6 +99,41 @@ cpe new uva10008              # 開始練
 
 網頁「考試」頁的「CPE 原題」卡片有同樣的按鈕。轉換用內建的 PDF 擷取器（只用標準函式庫）：範例輸入輸出已經逐詞和 poppler 的 `pdftotext -layout` 比對過（89 份 PDF 沒有差異）；**算式、表格、矩陣與圖在題目敘述裡擷取得不完整**，那些題請對照工作區 `statements/uvaN.pdf`。匯入只讀 PDF，不會執行 repo 裡別人寫的解答。只有題目裡的範例會變成測資，請自己再補邊界測資。該 repo 沒有 11332 與 1034 的 PDF，這兩題要自己貼上題目。單元 15／16 把一星題依 UVA 題號分成前 25／後 24 題（官網的順序我沒有拿到；你有的話在 `.cpe/cpe_order.json` 寫 `{"one": [題號, ...]}` 就會照那個順序）。每題的類型標籤、先修單元、難度與提示是我依題意寫的，沒有官方核對，提示也可能有錯，以題目為準。通過只有範例的題後，可以寫一個暴力解用 `cpe fuzz` 自己找出範例沒涵蓋的錯。練習頁的「開啟原 PDF 對照」可以看原始題目。
 
+## 學習科學：記憶、診斷、練習形式、目標
+
+網頁的「學習」頁與下面的指令。全部在本機用你的紀錄算（`.cpe/events.jsonl` 重播），沒有額外的追蹤；估計類的功能資料不夠時會直接說不夠。
+
+| 想做什麼 | 指令（網頁：學習頁） |
+|---|---|
+| 現在該複習哪些題、預測保留率、未來 14 天的量 | `cpe mem`／`cpe mem due`／`cpe mem forecast`／`cpe mem fit`／`cpe mem concepts` |
+| 每個知識點掌握多少、下一題做什麼、時段與疲勞 | `cpe insight` |
+| 最常犯哪種錯（19 種錯因）、改自動分類 | `cpe err`／`cpe err tag <題號> <錯因>` |
+| 找慢寫法與新手錯誤 | `cpe lint <題號>`（也會在執行測試後出現在「提醒」分頁） |
+| 失敗的輸入縮到最小（delta debugging） | `cpe shrink <題號> [--brute 暴力解.py]` |
+| 實測時間複雜度 | `cpe complexity <題號> [--gen 產生器.py] [--nmax N]` |
+| 解法屬於哪一類演算法 | `cpe algo <題號>` |
+| 適性診斷／知識點測驗 | `cpe quiz`／`cpe quiz graph` |
+| 微課、示範題、留白練習、排序題、找 bug、預測輸出、解法比較、術語表 | `cpe study list` 看全部；`cpe study lesson dp`、`worked w-sum`、`faded w-sum --level 1 --answer 檔案`、`parsons w-sum`、`bug b-range --line 3`、`predict p-float --answer …`、`compare c-pairs`、`glossary subsequence` |
+| 思路／回想／反思筆記、自我解釋評分 | `cpe note add reflect "…"`、`cpe recall <題號> "解法大綱"`、`cpe explain <題號> "用自己的話解釋"` |
+| 設定目標並看進度與預測 | `cpe goal set --date 2027-03-20 --problems 60`／`cpe goal` |
+| 週報月報、給老師的報告 | `cpe report --days 7 --out 資料夾`；老師的留言：`cpe coach import 檔案.json` |
+| 成就（看品質）、考試時間策略、落點預測、考前清單 | `cpe achievements`／`cpe strategy`／`cpe predict`／`cpe final --days 5` |
+| 複習提醒（桌面通知） | `cpe remind check`；每天自動：`cpe remind install`（列出指令，加 `--apply` 才安裝） |
+| 兩台電腦同步 | `cpe sync <共用資料夾>`（Dropbox／隨身碟都行） |
+| 匯出 Anki／xAPI、加密備份、隱私清單 | `cpe anki 檔.tsv`、`cpe xapi 檔.json`、`cpe export --encrypt`、`cpe privacy` |
+| 和同學交換進度、校準難度 | `cpe group card`／`cpe group show 卡片…`；`cpe stats-export 檔`、`cpe calibrate-merge 檔…` |
+| 檢驗排程是不是真的有效 | `cpe exp start`（約一半的題改用固定間隔，資料夠了才下結論） |
+
+**要知道的限制：**
+- 記憶模型用 FSRS-4.5 公開的預設參數（用大量 Anki 資料訓練），不是用寫程式題訓練的；你複習滿 10 次後才會個人化，而且只調一個參數。
+- 題目難度（含診斷題）是我估的；`cpe stats-export`／`cpe calibrate-merge` 可以用大家自願給的匿名檔校準，但需要別人的檔案（至少 5 人），單人做不了。
+- 落點預測假設考試是 7 題、難度大致 ★1×2、★2×2、★3×2、★4×1（我的假設，不是官方公布）；樣本少時只是粗估。
+- 錯因分類、演算法類型、編輯行為判斷都是規則，會誤判；`cpe err tag` 可以修正錯因。
+- 沒有影片或動畫講解（內容成本太高）；逐行追蹤的「圖像」檢視只畫 Python 的變數（list／dict）。
+- 提醒的桌面通知、排程安裝和加密備份只在 Linux 驗證過，沒有在真的 macOS／Windows 桌面上跑過；加密靠系統的 openssl（Windows 可用 Git for Windows 附的）。
+- 英文介面只涵蓋導覽列與「學習」頁；其他頁面仍是中文。
+- 沒有雲端帳號、排行榜或伺服器：和老師、同學、不同電腦之間都是「交換檔案」。
+
 ## 題目語言：中文 → 中英對照 → 英文
 
 考場題目是英文。內建 107 題都有英文版（`statement.en.md`，Input／Output／Sample Input／Sample Output 的格式比照 UVA），並依階段逐步過渡：

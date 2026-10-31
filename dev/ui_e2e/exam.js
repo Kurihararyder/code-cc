@@ -132,7 +132,7 @@ const STMT = (n) => `Problem ${n}\n\nRead one integer from the standard input an
   const sw = await q.evaluate(() => [document.documentElement.scrollWidth, innerWidth]);
   log(sw[0] <= sw[1] + 1, `手機：考試頁無橫向捲動（${sw[0]} ≤ ${sw[1]}）`);
   const navs = await q.locator('.rail .navbtn').evaluateAll(els => els.map(e => { const r = e.getBoundingClientRect(); return [r.left, r.right]; }));
-  log(navs.length === 6 && navs.every(([l, r]) => l >= 0 && r <= 391), '手機：底部 6 個導覽項目都在畫面內');
+  log(navs.length === 7 && navs.every(([l, r]) => l >= 0 && r <= 391), '手機：底部 7 個導覽項目都在畫面內');
   await q.screenshot({ path: 'shots/e6-mobile-exam.png' });
   await q.goto(BASE + '#/home'); await q.waitForSelector('.plan');
   const sw2 = await q.evaluate(() => [document.documentElement.scrollWidth, innerWidth]);
