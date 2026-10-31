@@ -67,7 +67,7 @@ jobs:
       - name: GUI tests (wizard, control panel, uninstall - real windows, buttons pressed by the tests)
         env:
           CPE_REQUIRE_GUI: "1"
-        run: xvfb-run -a -s "-screen 0 1280x800x24" python -X faulthandler -m unittest tests.test_launcher_gui -v
+        run: xvfb-run -a -s "-screen 0 1280x800x24" python -X faulthandler -m unittest tests.test_launcher_gui tests.test_launcher_panel_gui -v
       - name: Screenshots of every screen
         run: xvfb-run -a -s "-screen 0 1280x800x24" python dev/launcher_screens.py "$RUNNER_TEMP/launcher-screens"
       - uses: actions/upload-artifact@v4

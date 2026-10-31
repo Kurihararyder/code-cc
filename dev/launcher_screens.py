@@ -23,6 +23,22 @@ from cpe_coach.launcher.envcheck import Ctx  # noqa: E402
 from cpe_coach.launcher.osinfo import detect  # noqa: E402
 
 
+def seed_learning(ws_dir: Path) -> None:
+    import json
+    from cpe_coach.store import Workspace, new_problem_state
+    ws = Workspace(ws_dir)
+    t = time.time() - 20 * 86400
+    with ws.events_path.open("a", encoding="utf-8") as f:
+        for i, pid in enumerate(("d001", "d002", "d003")):
+            f.write(json.dumps({"ts": t + i, "kind": "test", "problem": pid, "verdict": "AC", "lang": "py", "clean": True}) + "\n")
+    st = ws.state()
+    for pid in ("d001", "d002", "d003"):
+        d = new_problem_state()
+        d["first_pass"] = t
+        st["problems"][pid] = d
+    ws.save_state(st)
+
+
 def main(out_dir: str) -> int:
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
@@ -67,6 +83,9 @@ def main(out_dir: str) -> int:
     snap(app, "05-done")
     w.btn_next.invoke()
     p = app.view
+    seed_learning(tmp / "CPE學習進度")                      # 讓首頁「今天」卡片有東西可以顯示（20 天前解出兩題 → 現在該複習）
+    p.load_today()
+    app.pump(lambda: bool(p.today_info), 30)
     snap(app, "06-panel-stopped")
     with mock.patch.object(server, "open_ui", return_value="browser"):
         p.btn_main.invoke()

@@ -468,7 +468,7 @@ class PanelTests(GuiBase):
         app = self.open()
         p = app.view
         p.show_tab("tools")
-        self.assertEqual(sorted(p.tool_btns), ["backup", "doctor", "log", "repair", "uninstall", "update"])
+        self.assertEqual(sorted(p.tool_btns), ["backup", "backup_enc", "doctor", "log", "privacy", "remind", "repair", "sync", "uninstall", "update"])
         p.tool_btns["doctor"].invoke()
         self.assertTrue(app.pump(lambda: not p.busy and "安裝診斷" in self.text_widgets(p.content), 30))
         p.tool_btns["backup"].invoke()

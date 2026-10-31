@@ -691,3 +691,87 @@ def report_text(plat: Plat, ctx: Ctx) -> str:
     for c in envcheck.run_checks(ctx, st.cfg.version if st.cfg else None):
         lines.append(f"{MARK[c.status]} {c.label}：{c.detail}" + (f"　→ {c.hint}" if c.hint and c.status != "ok" else ""))
     return "\n".join(lines)
+
+
+# ---------- 控制台：學習摘要與 2.7 的工具（都在背景執行緒呼叫；任何失敗都回傳說明，不丟例外讓畫面當掉） ----------
+def learning_summary(cfg: LauncherConfig) -> Dict[str, Any]:
+    """首頁「今天」卡片要顯示的：到期複習幾題、目標進度、距離上次練習幾天。唯讀；工作區不存在或壞掉時回傳 {"error": …}。"""
+    try:
+        from .. import bank as bank_mod
+        from .. import memory, planning
+        from ..store import Workspace
+        ws = Workspace(Path(cfg.workspace))
+        now = ws.now()
+        bank = bank_mod.load_bank(ws)
+        rp, ft = memory.build(ws, bank)
+        due = memory.due_now(rp.cards, now, ft.k, due_fn=memory.make_due_fn(ws))
+        tests = [e for e in ws.events() if e.get("kind") == "test"]
+        days_since = None if not tests else max(0.0, (now - float(tests[-1]["ts"])) / 86400.0)
+        g = planning.goal_status(ws)
+        goal = None
+        if g.get("set"):
+            goal = f"目標 {g['target']} 題（{g['date']} 前）：已 {g['solved']} 題，剩 {g['days_left']} 天"
+        return {"due": len(due), "due_ids": [d.pid for d in due[:3]], "cards": len(rp.cards), "goal": goal, "goal_status": g.get("status"), "days_since": days_since,
+                "solved": sum(1 for p in ws.state()["problems"].values() if p.get("first_pass"))}
+    except Exception as e:                                           # 工作區還沒建立、檔案被改壞…都只是「今天卡片」顯示不出來，不能影響控制台本身
+        return {"error": f"{type(e).__name__}: {e}"}
+
+
+def summary_lines(s: Dict[str, Any]) -> List[str]:
+    """把 learning_summary 變成幾行好讀的文字（圖形與文字模式共用）。"""
+    if s.get("error"):
+        return ["（讀不到學習紀錄：" + s["error"] + "）"]
+    out = []
+    if s["due"]:
+        out.append(f"有 {s['due']} 題的記憶快要退了，建議先複習（" + "、".join(s["due_ids"]) + ("…" if s["due"] > 3 else "") + "）")
+    elif s["cards"]:
+        out.append("目前沒有到期的複習。")
+    else:
+        out.append("還沒有解出過的題；開始練習後，這裡會顯示該複習什麼。")
+    if s["goal"]:
+        out.append(s["goal"] + {"behind": "　⚠ 照目前速度趕不上", "ahead": "　✓ 進度超前", "on_track": "　進度正常"}.get(s.get("goal_status"), ""))
+    if s["days_since"] is not None:
+        d = s["days_since"]
+        out.append("今天已經練習過了。" if d < 1 else f"距離上次練習 {int(d)} 天。" + ("　休息夠了，回來動動手吧。" if d >= 3 else ""))
+    return out
+
+
+def encrypted_backup_now(cfg: LauncherConfig, dest_dir: Path, password: str) -> Path:
+    from .. import exchange
+    from ..store import Workspace
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    dest = dest_dir / f"CPE進度備份-{time.strftime('%Y%m%d-%H%M%S')}.zip.enc"
+    ws = Workspace(Path(cfg.workspace))
+    with ws.lock():
+        return exchange.encrypted_backup(ws, dest, password)
+
+
+def sync_now(cfg: LauncherConfig, folder: Path) -> str:
+    from .. import sync
+    from ..store import Workspace
+    r = sync.sync_folder(Workspace(Path(cfg.workspace)), Path(folder))
+    lines = [f"同步完成：本機新增 {r['events_added_local']} 筆紀錄、共用資料夾新增 {r['events_added_remote']} 筆；檔案拉下 {r['files_pulled']} 個、推上 {r['files_pushed']} 個。"]
+    lines += [f"衝突：{c['file']}（留下{c['kept']}的版本，另一份存在 {c['other_saved_as']}）" for c in r["conflicts"]]
+    return "\n".join(lines)
+
+
+def reminder_plan(cfg: LauncherConfig, hour: int = 19, minute: int = 30) -> Dict[str, Any]:
+    from .. import reminder
+    from ..store import Workspace
+    return reminder.install_plan(Workspace(Path(cfg.workspace)), hour, minute, python=cfg.python)
+
+
+def install_reminder(cfg: LauncherConfig, hour: int = 19, minute: int = 30) -> str:
+    from .. import reminder
+    ok, msg = reminder.apply_install(reminder_plan(cfg, hour, minute))
+    if not ok:
+        raise EngineError(msg)
+    return f"已安裝每天 {hour:02d}:{minute:02d} 的複習提醒（有到期的複習才會通知）。"
+
+
+def privacy_text(cfg: LauncherConfig) -> str:
+    from .. import exchange
+    from ..store import Workspace
+    inv = exchange.inventory(Workspace(Path(cfg.workspace)))
+    rows = [f"{r['name']:<24}{r['bytes']:>9} bytes  {r['meaning']}" for r in inv["meta"] + inv["other"]]
+    return "學習資料位置：" + inv["root"] + "\n" + "\n".join(rows) + "\n\n" + inv["sent_out"]

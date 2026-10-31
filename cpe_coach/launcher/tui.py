@@ -21,6 +21,7 @@ BAR = "─" * 54
 class TUI:
     def __init__(self, plat: Plat, ctx: Ctx, inp: Optional[Callable[[str], str]] = None, out: Callable[[str], None] = print, assume_yes: bool = False):
         self.plat, self.ctx, self.out, self.assume_yes = plat, ctx, out, assume_yes
+        self.custom_input = inp is not None
         self.inp = inp if inp is not None else (lambda prompt="": input(prompt))         # 呼叫當下才取 input（預設參數會在定義時就綁死，測試無法替換）
 
     # ---------- 輸入輸出 ----------
@@ -208,6 +209,23 @@ class TUI:
         self.say(f"✓ 已解除安裝。{'學習進度已刪除。' if r['workspace_removed'] else '學習進度保留在 ' + r['workspace']}")
         return 0
 
+    def guarded(self, fn: Callable[[], None]) -> None:
+        """控制台的工具失敗時只顯示原因，回到選單，不要整個程式崩潰。"""
+        try:
+            fn()
+        except (EngineError, ValueError, OSError) as e:
+            self.say(f"✗ {e}")
+
+    def encrypted_backup(self, cfg) -> None:
+        import getpass
+        prompt = "備份密碼（至少 8 個字元；忘了就救不回來）"
+        pw = self.ask(prompt, "") if (self.custom_input or self.assume_yes) else getpass.getpass(prompt + "：")      # 真人在終端機輸入時不顯示密碼
+        if len(pw) < 8:
+            self.say("✗ 密碼至少 8 個字元，沒有備份。")
+            return
+        dest = self.plat.desktop_dir if self.plat.desktop_dir.is_dir() else self.plat.home
+        self.guarded(lambda: self.say(f"✓ 已加密備份：{engine.encrypted_backup_now(cfg, dest, pw)}"))
+
     # ---------- 控制台 ----------
     def panel(self) -> int:
         while True:
@@ -219,9 +237,12 @@ class TUI:
             sv = server.status(cfg, self.plat)
             state = {"running": f"● 執行中  {sv.url}", "stopped": "○ 已關閉", "unresponsive": "! 沒有回應"}[sv.state]
             self.say(f"\n{BAR}\n  {C.APP_NAME} 控制台　版本 {cfg.version}\n  狀態：{state}\n{BAR}")
+            for line in engine.summary_lines(engine.learning_summary(cfg)):
+                self.say("  今天：" + line)
             for p in st.problems:
                 self.say(f" ! {p}")
-            items = ["關閉服務" if sv.running else "開啟（啟動並開啟學習畫面）", "重新開啟學習畫面", "檢查並套用更新", "備份學習進度", "開啟學習進度資料夾", "環境檢測", "修復", "解除安裝"]
+            items = ["關閉服務" if sv.running else "開啟（啟動並開啟學習畫面）", "重新開啟學習畫面", "檢查並套用更新", "備份學習進度", "開啟學習進度資料夾", "環境檢測", "修復", "解除安裝",
+                     "加密備份", "同步到共用資料夾", "安裝每日複習提醒", "資料與隱私（存了什麼、什麼會連網）"]
             n = self.menu("要做什麼？", items, default=1)
             if n == 0:
                 return 0
@@ -243,6 +264,17 @@ class TUI:
             elif n == 8:
                 if self.uninstall_flow(cfg) == 0:
                     return 0
+            elif n == 9:
+                self.encrypted_backup(cfg)
+            elif n == 10:
+                folder = self.ask("共用資料夾的路徑（Dropbox、隨身碟…）", "")
+                self.guarded(lambda: self.say(engine.sync_now(cfg, Path(folder)))) if folder else self.say("沒有輸入資料夾。")
+            elif n == 11:
+                self.say(engine.reminder_plan(cfg)["text"])
+                if self.yes("要現在安裝每天 19:30 的複習提醒嗎？", False):
+                    self.guarded(lambda: self.say("✓ " + engine.install_reminder(cfg)))
+            elif n == 12:
+                self.say(engine.privacy_text(cfg))
 
 
 def stdout_is_tty() -> bool:

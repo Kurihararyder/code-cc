@@ -861,6 +861,7 @@ class Wizard:
 # ====================== 控制台 ======================
 class Panel:
     TABS = [("home", "首頁"), ("settings", "設定"), ("tools", "維護")]
+    TOOL_HINT = "把滑鼠移到按鈕上會顯示說明；執行的結果顯示在下面。"
 
     def __init__(self, app: GuiApp, cfg: LauncherConfig):
         self.app, self.th, self.cfg = app, app.th, cfg
@@ -870,6 +871,8 @@ class Panel:
         self.alive = True
         self.after_id: Optional[str] = None
         self.check_id: Optional[str] = None
+        self.today_id: Optional[str] = None
+        self.today_info: Dict[str, Any] = {}
         self.tab = "home"
         self.nav: Dict[str, tk.Label] = {}
         self.update_info: Optional[Dict[str, Any]] = None
@@ -931,6 +934,19 @@ class Panel:
         self.btn_main.pack(side="left")
         self.btn_show = Btn(row, th, "開啟學習畫面", self.show_ui, "secondary", bg=PAL["surface"])
         self.btn_show.pack(side="left", padx=10)
+        today = self.today_card = self.card(self.content)
+        ti = tk.Frame(today, bg=PAL["surface"])
+        ti.pack(fill="x", padx=22, pady=14)
+        tk.Label(ti, text="今天", bg=PAL["surface"], fg=PAL["text3"], font=th.f(9, True), anchor="w").pack(fill="x")
+        self.today_text = tk.Label(ti, text="讀取學習紀錄…", bg=PAL["surface"], fg=PAL["text"], font=th.f(10), anchor="w", justify="left", wraplength=500)
+        self.today_text.pack(fill="x", pady=(2, 8))
+        trow = tk.Frame(ti, bg=PAL["surface"])
+        trow.pack(fill="x")
+        self.btn_review = Btn(trow, th, "去複習／看學習洞察", lambda: self.open_page("study/insights"), "secondary", bg=PAL["surface"])
+        self.btn_review.pack(side="left")
+        self.btn_plan = Btn(trow, th, "今日計畫", lambda: self.open_page("home"), "ghost", bg=PAL["surface"])
+        self.btn_plan.pack(side="left", padx=8)
+        self.load_today()
         self.upd_card = tk.Frame(self.content, bg=PAL["accent_soft"], highlightthickness=1, highlightbackground=PAL["border"])
         self.upd_label = tk.Label(self.upd_card, text="", bg=PAL["accent_soft"], fg=PAL["accent"], font=th.f(10, True), anchor="w")
         self.upd_label.pack(side="left", padx=12, pady=8)
@@ -948,6 +964,33 @@ class Panel:
                 Btn(r, th, act[0], act[1], "ghost", bg=PAL["surface"]).pack(side="right")
         if self.update_info and self.update_info.get("status") == "available":
             self.show_update_banner()
+
+    def load_today(self) -> None:
+        """首頁「今天」卡片：在背景讀學習紀錄（到期複習、目標進度、距離上次練習）。讀不到只是卡片顯示說明，不影響控制台。"""
+        if not self.alive or self.tab != "home":
+            return
+        cfg = self.cfg
+        self.app.runner.submit(lambda rep: engine.learning_summary(cfg), self.today_loaded)
+
+    def today_loaded(self, res: Any, err: Optional[BaseException]) -> None:
+        if not self.alive or self.tab != "home" or not hasattr(self, "today_text") or not self.today_text.winfo_exists():
+            return
+        lines = engine.summary_lines(res) if isinstance(res, dict) else [f"（讀不到學習紀錄：{err}）"]
+        self.today_text.configure(text="\n".join(lines))
+        self.today_info = res if isinstance(res, dict) else {}
+        try:
+            self.today_id = self.app.root.after(60000, self.load_today)                # 練習完回到控制台時，一分鐘內會更新
+        except tk.TclError:
+            pass
+
+    def open_page(self, path: str) -> None:
+        """直接開啟學習畫面的某一頁（例如 study/insights）。服務還沒開就先啟動再開那一頁。"""
+        if self.busy:
+            return
+        if self.status.running:
+            server.open_ui(self.status.url.rstrip("/") + "/#/" + path, self.cfg, self.app.plat, self.say)
+        else:
+            self.start_server(path)
 
     def auto_check(self) -> None:
         """像遊戲的啟動器：開啟控制台時在背景悄悄檢查一次有沒有新版本（沒網路或查不到就什麼都不顯示）。"""
@@ -969,7 +1012,7 @@ class Panel:
         if self.tab != "home" or not hasattr(self, "upd_card"):
             return
         self.upd_label.configure(text="有新版本可以更新")
-        self.upd_card.pack(fill="x", pady=(0, 12), before=self.info_card)
+        self.upd_card.pack(fill="x", pady=(0, 12), before=self.today_card)
 
     # ---- 狀態 ----
     def refresh(self) -> None:
@@ -981,7 +1024,7 @@ class Panel:
 
     def dispose(self) -> None:
         self.alive = False
-        for name in ("after_id", "check_id"):
+        for name in ("after_id", "check_id", "today_id"):
             token = getattr(self, name)
             if token is not None:
                 try:
@@ -1049,16 +1092,16 @@ class Panel:
         else:
             self.stop_server()
 
-    def start_server(self) -> None:
+    def start_server(self, page: str = "") -> None:
         if self.busy:
             return
         self.set_busy(True, "啟動中…")
-        open_ui, cfg, plat = bool(self.cfg.opt("open_browser")), self.cfg, self.app.plat
+        open_ui, cfg, plat = bool(self.cfg.opt("open_browser")) or bool(page), self.cfg, self.app.plat
 
         def work(rep: Reporter) -> Any:
             st = server.start(cfg, plat, log=rep.log)
             if open_ui:
-                server.open_ui(st.url, cfg, plat, rep.log)
+                server.open_ui(st.url.rstrip("/") + "/#/" + page if page else st.url, cfg, plat, rep.log)
             return st
         self.app.runner.submit(work, self.started, on_log=self.say)
 
@@ -1147,20 +1190,25 @@ class Panel:
         self.tool_btns: Dict[str, Btn] = {}
         tools = [("update", "檢查更新", "看看有沒有新版本；有的話可以直接更新", self.check_update),
                  ("backup", "備份學習進度", "把解答與紀錄打包成 zip，放到桌面", self.do_backup),
+                 ("backup_enc", "加密備份…", "用密碼加密（AES-256，需要系統有 openssl）；忘了密碼就救不回來", self.do_backup_encrypted),
+                 ("sync", "同步到共用資料夾…", "兩台電腦用同一個資料夾（Dropbox、隨身碟）合併進度", self.do_sync),
+                 ("remind", "每日複習提醒…", "每天固定時間檢查，有到期的複習才跳出通知", self.do_reminder),
+                 ("privacy", "資料與隱私", "列出存了哪些資料、哪些會連網", self.do_privacy),
                  ("doctor", "環境檢測", "檢查 Python、git、網路、編譯器…", self.do_doctor),
                  ("repair", "修復安裝", "程式壞了、捷徑不見、Python 換位置時用", self.do_repair),
                  ("log", "查看紀錄", "安裝與服務的紀錄，出問題時貼給我看", self.do_log),
                  ("uninstall", "解除安裝…", "移除程式、捷徑與指令；學習進度預設保留", self.do_uninstall)]
-        grid.columnconfigure(0, weight=1, uniform="tools")
-        grid.columnconfigure(1, weight=1, uniform="tools")
+        for col in range(3):
+            grid.columnconfigure(col, weight=1, uniform="tools")
+        self.tool_hint = tk.Label(c, text=self.TOOL_HINT, bg=PAL["surface"], fg=PAL["text3"], font=th.f(9), anchor="w", justify="left", wraplength=480)
         for i, (key, text, desc, fn) in enumerate(tools):
-            cell = tk.Frame(grid, bg=PAL["surface"])
-            cell.grid(row=i // 2, column=i % 2, sticky="new", padx=6, pady=6)
-            b = Btn(cell, th, text, fn, "danger" if key == "uninstall" else "secondary", bg=PAL["surface"])
-            b.pack(anchor="w")
-            tk.Label(cell, text=desc, bg=PAL["surface"], fg=PAL["text3"], font=th.f(9), anchor="w", wraplength=210, justify="left").pack(anchor="w", pady=(3, 0))
+            b = Btn(grid, th, text, fn, "danger" if key == "uninstall" else "secondary", bg=PAL["surface"])
+            b.grid(row=i // 3, column=i % 3, sticky="w", padx=6, pady=5)
+            b.bind("<Enter>", lambda e, d=desc: self.tool_hint.configure(text=d), add="+")             # 說明放在按鈕下面一行：10 個按鈕＋說明塞不進視窗，輸出框會被擠掉
+            b.bind("<Leave>", lambda e: self.tool_hint.configure(text=self.TOOL_HINT), add="+")
             self.tool_btns[key] = b
-        self.out = tk.Text(self.content, height=9, bg=PAL["surface"], fg=PAL["text2"], font=th.m(9), relief="flat", wrap="word", state="disabled", padx=10, pady=8,
+        self.tool_hint.pack(fill="x", padx=18, pady=(0, 10))
+        self.out = tk.Text(self.content, height=8, bg=PAL["surface"], fg=PAL["text2"], font=th.m(9), relief="flat", wrap="word", state="disabled", padx=10, pady=8,
                            highlightthickness=1, highlightbackground=PAL["border"])
         self.out.pack(fill="both", expand=True)
 
@@ -1243,6 +1291,88 @@ class Panel:
     def backup_done(self, res: Any, err: Optional[BaseException]) -> None:
         self.set_busy(False)
         self.write_out(f"✗ 備份失敗：{err}" if err else f"✓ 已備份：{res}", clear=True)
+
+    # ---- 2.7 的維護工具 ----
+    def ask_password(self) -> Optional[str]:
+        """問備份密碼（輸入時不顯示、要輸入兩次）。回傳 None 代表取消。測試時可以替換。"""
+        win = tk.Toplevel(self.app.root)
+        win.title("備份密碼")
+        win.transient(self.app.root)
+        win.configure(bg=PAL["bg"], padx=20, pady=16)
+        result: Dict[str, Optional[str]] = {"v": None}
+        tk.Label(win, text="設定備份密碼（至少 8 個字元）\n忘了密碼，這份備份就打不開。", bg=PAL["bg"], fg=PAL["text"], font=self.th.f(10), justify="left").pack(anchor="w")
+        e1, e2 = tk.Entry(win, show="•", width=32), tk.Entry(win, show="•", width=32)
+        for lab, e in (("密碼", e1), ("再輸入一次", e2)):
+            tk.Label(win, text=lab, bg=PAL["bg"], fg=PAL["text2"], font=self.th.f(9)).pack(anchor="w", pady=(8, 0))
+            e.pack(anchor="w")
+        msg = tk.Label(win, text="", bg=PAL["bg"], fg=PAL["bad"], font=self.th.f(9))
+        msg.pack(anchor="w", pady=(6, 0))
+
+        def ok() -> None:
+            if len(e1.get()) < 8:
+                msg.configure(text="密碼至少 8 個字元")
+            elif e1.get() != e2.get():
+                msg.configure(text="兩次輸入的不一樣")
+            else:
+                result["v"] = e1.get()
+                win.destroy()
+        row = tk.Frame(win, bg=PAL["bg"])
+        row.pack(anchor="e", pady=(10, 0))
+        Btn(row, self.th, "取消", win.destroy, "ghost", bg=PAL["bg"]).pack(side="left")
+        Btn(row, self.th, "備份", ok, "primary", bg=PAL["bg"]).pack(side="left", padx=(8, 0))
+        e1.focus_set()
+        win.grab_set()
+        self.app.root.wait_window(win)
+        return result["v"]
+
+    def do_backup_encrypted(self) -> None:
+        if self.busy:
+            return
+        pw = self.ask_password()
+        if not pw:
+            return
+        dest = self.app.plat.desktop_dir if self.app.plat.desktop_dir.is_dir() else self.app.plat.home
+        self.set_busy(True, "加密備份中…")
+        cfg = self.cfg
+        self.app.runner.submit(lambda rep: engine.encrypted_backup_now(cfg, dest, pw), self.backup_done)
+
+    def do_sync(self) -> None:
+        if self.busy:
+            return
+        folder = filedialog.askdirectory(parent=self.app.root, title="選一個共用資料夾（Dropbox、OneDrive 或隨身碟）")
+        if not folder:
+            return
+        if self.status.running and not messagebox.askyesno(C.APP_NAME, "學習服務還開著。同步前建議先按「關閉」，以免它同時寫入。\n\n還是要現在同步嗎？", parent=self.app.root):
+            return
+        self.set_busy(True, "同步中…")
+        cfg = self.cfg
+        self.app.runner.submit(lambda rep: engine.sync_now(cfg, Path(folder)), self.tool_text_done)
+
+    def do_reminder(self) -> None:
+        if self.busy:
+            return
+        try:
+            plan = engine.reminder_plan(self.cfg)
+        except Exception as e:
+            self.write_out(f"✗ 無法產生排程：{e}", clear=True)
+            return
+        self.write_out(plan["text"], clear=True)
+        if not messagebox.askyesno(C.APP_NAME, "要現在安裝每天 19:30 的複習提醒嗎？\n（只有有到期的複習才會通知；之後可以在系統的排程裡移除）", parent=self.app.root):
+            return
+        self.set_busy(True, "安裝提醒中…")
+        cfg = self.cfg
+        self.app.runner.submit(lambda rep: engine.install_reminder(cfg), self.tool_text_done)
+
+    def do_privacy(self) -> None:
+        if self.busy:
+            return
+        self.set_busy(True, "讀取中…")
+        cfg = self.cfg
+        self.app.runner.submit(lambda rep: engine.privacy_text(cfg), self.tool_text_done)
+
+    def tool_text_done(self, res: Any, err: Optional[BaseException]) -> None:
+        self.set_busy(False)
+        self.write_out(f"✗ {err}" if err else str(res), clear=True)
 
     def do_doctor(self) -> None:
         if self.busy:
