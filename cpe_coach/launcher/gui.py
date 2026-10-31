@@ -1186,7 +1186,7 @@ class Panel:
         tk.Label(self.content, text="維護", bg=PAL["bg"], fg=PAL["text"], font=th.f(18, True), anchor="w").pack(fill="x", pady=(0, 10))
         c = self.card(self.content)
         grid = tk.Frame(c, bg=PAL["surface"])
-        grid.pack(fill="x", padx=16, pady=12)
+        grid.pack(fill="x", padx=16, pady=(8, 6))
         self.tool_btns: Dict[str, Btn] = {}
         tools = [("update", "檢查更新", "看看有沒有新版本；有的話可以直接更新", self.check_update),
                  ("backup", "備份學習進度", "把解答與紀錄打包成 zip，放到桌面", self.do_backup),
@@ -1203,12 +1203,12 @@ class Panel:
         self.tool_hint = tk.Label(c, text=self.TOOL_HINT, bg=PAL["surface"], fg=PAL["text3"], font=th.f(9), anchor="w", justify="left", wraplength=480)
         for i, (key, text, desc, fn) in enumerate(tools):
             b = Btn(grid, th, text, fn, "danger" if key == "uninstall" else "secondary", bg=PAL["surface"])
-            b.grid(row=i // 3, column=i % 3, sticky="w", padx=6, pady=5)
+            b.grid(row=i // 3, column=i % 3, sticky="w", padx=6, pady=3)
             b.bind("<Enter>", lambda e, d=desc: self.tool_hint.configure(text=d), add="+")             # 說明放在按鈕下面一行：10 個按鈕＋說明塞不進視窗，輸出框會被擠掉
             b.bind("<Leave>", lambda e: self.tool_hint.configure(text=self.TOOL_HINT), add="+")
             self.tool_btns[key] = b
-        self.tool_hint.pack(fill="x", padx=18, pady=(0, 10))
-        self.out = tk.Text(self.content, height=8, bg=PAL["surface"], fg=PAL["text2"], font=th.m(9), relief="flat", wrap="word", state="disabled", padx=10, pady=8,
+        self.tool_hint.pack(fill="x", padx=18, pady=(0, 8))
+        self.out = tk.Text(self.content, height=6, bg=PAL["surface"], fg=PAL["text2"], font=th.m(9), relief="flat", wrap="word", state="disabled", padx=10, pady=8,
                            highlightthickness=1, highlightbackground=PAL["border"])
         self.out.pack(fill="both", expand=True)
 

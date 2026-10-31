@@ -324,6 +324,17 @@ class ExchangeTests(unittest.TestCase):
                 exchange.encrypted_backup(ws, Path(tmp.name) / "c.enc", "short")
             shutil.rmtree(z.parent, ignore_errors=True)
 
+    @unittest.skipUnless(shutil.which("openssl"), "沒有 openssl")
+    def test_non_ascii_file_names_work(self):
+        tmp, ws, clock = make_ws()
+        with tmp:
+            solve(ws, "d001")
+            enc = exchange.encrypted_backup(ws, Path(tmp.name) / "CPE進度備份-測試.zip.enc", "long enough pw")      # Windows 的 openssl 開不了中文檔名，所以改用標準輸入輸出
+            self.assertTrue(enc.exists() and enc.stat().st_size > 100)
+            z = exchange.decrypt_to_zip(enc, "long enough pw")
+            self.assertTrue(z.read_bytes().startswith(b"PK"))
+            shutil.rmtree(z.parent, ignore_errors=True)
+
     def test_missing_openssl_is_a_clear_error(self):
         tmp, ws, clock = make_ws()
         with tmp, mock.patch("cpe_coach.exchange.shutil.which", return_value=None):

@@ -101,22 +101,27 @@ def _openssl() -> str:
     return exe
 
 
+def _openssl_pipe(args, data: bytes, password: str) -> subprocess.CompletedProcess:
+    """資料用標準輸入／輸出傳給 openssl，不把檔案路徑交給它：Windows 上 openssl 開不了含中文的檔名（會變成問號），而備份檔名是「CPE進度備份…」。"""
+    return subprocess.run([_openssl(), "enc", *args, "-pbkdf2", "-iter", "200000", "-pass", "env:CPE_BACKUP_PW"], input=data, capture_output=True,
+                          env=dict(os.environ, CPE_BACKUP_PW=password), timeout=300)
+
+
 def encrypt_file(src: Path, dest: Path, password: str) -> Path:
     if len(password) < 8:
         raise ValueError("密碼至少 8 個字元")
-    p = subprocess.run([_openssl(), "enc", "-aes-256-cbc", "-pbkdf2", "-iter", "200000", "-salt", "-in", str(src), "-out", str(dest), "-pass", "env:CPE_BACKUP_PW"],
-                       capture_output=True, env=dict(os.environ, CPE_BACKUP_PW=password), timeout=120)
+    p = _openssl_pipe(["-aes-256-cbc", "-salt"], Path(src).read_bytes(), password)
     if p.returncode != 0:
         raise ValueError("加密失敗：" + p.stderr.decode("utf-8", "replace").strip()[:200])
+    Path(dest).write_bytes(p.stdout)
     return dest
 
 
 def decrypt_file(src: Path, dest: Path, password: str) -> Path:
-    p = subprocess.run([_openssl(), "enc", "-d", "-aes-256-cbc", "-pbkdf2", "-iter", "200000", "-in", str(src), "-out", str(dest), "-pass", "env:CPE_BACKUP_PW"],
-                       capture_output=True, env=dict(os.environ, CPE_BACKUP_PW=password), timeout=120)
+    p = _openssl_pipe(["-d", "-aes-256-cbc"], Path(src).read_bytes(), password)
     if p.returncode != 0:
-        dest.unlink(missing_ok=True)
         raise ValueError("解密失敗：密碼不對，或檔案不是用 cpe export --encrypt 產生的。")
+    Path(dest).write_bytes(p.stdout)
     return dest
 
 
