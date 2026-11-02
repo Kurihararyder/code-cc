@@ -320,6 +320,10 @@ def check(id: str, rounds: Optional[int] = None, verbose: bool = False) -> List[
 
 
 def main(argv):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")        # Windows 的預設編碼印不出 ✓／✗ 與中文
+    except Exception:
+        pass
     quick = "--quick" in argv
     load()
     ids = [a for a in argv if not a.startswith("--")] or [d["id"] for d in DRILLS]

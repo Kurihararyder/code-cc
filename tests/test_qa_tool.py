@@ -1,14 +1,16 @@
 """dev/qa.py（題目與測資的品質檢查）本身要能用：挑幾題跑，並確認『壞題』真的會被抓到。"""
+import os
 import subprocess
 import sys
 import unittest
 from pathlib import Path
 
 DEV = Path(__file__).resolve().parent.parent / "dev"
+ENV = dict(os.environ, PYTHONIOENCODING="utf-8")
 
 
 def run_qa(*ids):
-    return subprocess.run([sys.executable, str(DEV / "qa.py"), "--quick", *ids], capture_output=True, text=True, timeout=300, cwd=str(DEV))
+    return subprocess.run([sys.executable, str(DEV / "qa.py"), "--quick", *ids], capture_output=True, text=True, encoding="utf-8", timeout=300, cwd=str(DEV), env=ENV)
 
 
 class QaToolTests(unittest.TestCase):
@@ -30,7 +32,7 @@ q = qa.QA["d007"]; q["nrand"] = 0
 probs = qa.check("d007", rounds=5)
 print("\n".join(probs))
 """ % str(DEV)
-        r = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, timeout=300, cwd=str(DEV))
+        r = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, encoding="utf-8", timeout=300, cwd=str(DEV), env=ENV)
         self.assertIn("錯誤解沒被測資抓到", r.stdout + r.stderr)
 
 
