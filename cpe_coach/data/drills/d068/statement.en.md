@@ -5,7 +5,7 @@
 There are n items; item i has weight w and value v. The knapsack has capacity W. Each item can be taken at most once. Find the maximum total value.
 
 ## Input
-The first line contains n and W (n ≤ 100, W ≤ 10^4); then n lines `w v`.
+The first line contains n and W (1 ≤ n ≤ 100, 0 ≤ W ≤ 10^4); then n lines `w v` (1 ≤ w ≤ 10^4, 1 ≤ v ≤ 10^9).
 
 ## Output
 One integer.

@@ -8,7 +8,7 @@ D("e101", "成績排名", 1, "排序／輸出格式",
   "排序＋名次＋輸出格式", "sorted(key=(-分數, 姓名))；名次 = 前面比他分數高的人數 + 1；注意空行的位置。",
   "t=int(input())\nfor k in range(1,t+1):\n    n=int(input());rows=[]\n    for _ in range(n):\n        a,b=input().split();rows.append((a,int(b)))\n    rows.sort(key=lambda r:(-r[1],r[0]))\n    if k>1: print()\n    print(f'Case #{k}:')\n    for a,b in rows: print(sum(1 for x in rows if x[1]>b)+1,a,b)",
   ["2\n3\nbob 90\nalice 90\ncarol 80\n2\nz 0\ny 100\n", "1\n1\nsolo 50\n", "1\n4\na 5\nb 5\nc 5\nd 5\n",
-   (lambda r: lines(30, *sum([[ (n := r.randint(1, 40)) ] + [f"{''.join(r.choice('abcde') for _ in range(3))}{i} {r.randint(0,100)}" for i in range(n)] for _ in range(30)], [])))(rng(101))],
+   (lambda r: lines(30, *sum([[ (n := r.randint(1, 40)) ] + [f"{''.join(r.choice('abcde') for _ in range(2 + i % 4))} {r.randint(0,100)}" for i in range(n)] for _ in range(30)], [])))(rng(101))],
   "把前面學的 I/O 格式、排序、計數組合起來。", diff=2, reserve=True)
 
 D("e102", "密碼強度", 1, "字串",
@@ -51,7 +51,7 @@ D("e203", "括號生成", 2, "回溯",
   "一個整數。", "每個合法字串一行。",
   "回溯＋可行性剪枝", "遞迴時記錄已放的左括號數與右括號數：左 < n 才可放左；右 < 左 才可放右。先放左再放右自然就是字典序。",
   "n=int(input())\ndef go(s,l,r):\n    if l==n and r==n: print(s);return\n    if l<n: go(s+'(',l+1,r)\n    if r<l: go(s+')',l,r+1)\ngo('',0,0)",
-  ["2\n", "1\n", "3\n", "8\n"],
+  ["2\n", "1\n", "3\n", "8\n", "4\n", "5\n", "6\n", "7\n"],
   "不必先生成所有 2^(2n) 個字串再過濾，在生成途中剪枝。", diff=2, reserve=True)
 
 # ---------------- 階段 3 ----------------
@@ -83,7 +83,7 @@ D("e303", "分成兩堆", 3, "背包",
   "和 d068 同一類，只是要先想到轉化。", diff=3, reserve=True)
 
 # ---------------- 階段 4 ----------------
-D("e401", "和為 K 的子陣列", 4, "前綴和＋dict",
+D("e401", "和為 K 的子陣列", 2, "前綴和＋dict",
   "給 n 個整數（可為負）與 K，數有幾個連續子陣列的和恰為 K。",
   "第一行 n K（n ≤ 20000）；第二行 n 個整數（|a| ≤ 1000）。", "一個整數。",
   "前綴和 + 雜湊表", "pre[j]-pre[i]=K ⟺ pre[i]=pre[j]-K。掃描時用 dict 記錄各前綴和出現次數。O(n)。",
@@ -92,7 +92,7 @@ D("e401", "和為 K 的子陣列", 4, "前綴和＋dict",
    (lambda r: lines("20000 0", " ".join(str(r.randint(-3,3)) for _ in range(20000))))(rng(401))],
   "負數讓雙指標失效，要改用前綴和＋雜湊。", diff=2, reserve=True)
 
-D("e402", "直方圖最大矩形", 4, "單調 stack",
+D("e402", "直方圖最大矩形", 2, "單調 stack",
   "直方圖有 n 根寬度為 1 的柱子，高度為 h[i]。求最大的矩形面積（矩形必須由連續的柱子組成，高度取其中最低者）。",
   "第一行 n（≤ 20000），第二行 n 個整數（0 ≤ h ≤ 10^9）。", "一個整數。",
   "單調 stack", "維持高度遞增的 stack；遇到較矮的柱子就彈出並以被彈出者為最低高度計算面積，寬度由新的 stack 頂到目前位置決定。",

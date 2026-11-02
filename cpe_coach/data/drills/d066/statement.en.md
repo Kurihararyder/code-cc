@@ -5,7 +5,7 @@
 There are n distinct denominations, each available in unlimited quantity. How many combinations (order does not matter) make the amount A? Print the answer modulo 1000000007.
 
 ## Input
-The first line contains n and A (n ≤ 50, A ≤ 10^4); the second line contains n denominations (≤ 10^4).
+The first line contains n and A (1 ≤ n ≤ 50, 0 ≤ A ≤ 10^4); the second line contains n distinct denominations (1–10^4).
 
 ## Output
 One integer.

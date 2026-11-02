@@ -23,7 +23,7 @@ def make_ws():
 
 class EnglishContentTests(unittest.TestCase):
     def test_every_drill_has_an_english_version(self):
-        self.assertEqual(len(DRILL_IDS), 107)
+        self.assertEqual(len(DRILL_IDS), 200)
         for pid in DRILL_IDS:
             self.assertTrue(bank_mod.has_english(pid), pid)
             self.assertTrue(BANK[pid].get("title_en"), pid)

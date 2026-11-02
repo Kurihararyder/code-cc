@@ -5,7 +5,7 @@
 Given an array of length n and a window size k, print the maximum of every window of k consecutive elements (n-k+1 values), separated by spaces.
 
 ## Input
-The first line contains n and k; the second line contains n integers. n ≤ 40000.
+The first line contains n and k; the second line contains n integers (absolute value ≤ 10^9). n ≤ 50000.
 
 ## Output
 One line.

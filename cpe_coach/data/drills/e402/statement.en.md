@@ -1,6 +1,6 @@
 # e402 Largest Rectangle in a Histogram
 
-**Stage 4 · Difficulty ★★★ · Topic: Monotonic stack**
+**Stage 2 · Difficulty ★★★ · Topic: Monotonic stack**
 
 A histogram has n bars of width 1 and heights h[i]. Find the largest rectangle area (the rectangle must consist of consecutive bars; its height is limited by the lowest bar).
 

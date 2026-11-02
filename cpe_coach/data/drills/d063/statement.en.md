@@ -5,7 +5,7 @@
 An undirected weighted graph has n nodes and m edges. Find the shortest distance from node 1 to node n; print -1 if they are not connected.
 
 ## Input
-The first line contains n and m (n ≤ 5000, m ≤ 2×10^4), followed by m lines `u v w` (1 ≤ w ≤ 1000).
+The first line contains n and m (1 ≤ n ≤ 5000, 0 ≤ m ≤ 2×10^4), followed by m lines `u v w` (1 ≤ w ≤ 1000, multi-edges possible).
 
 ## Output
 One integer.

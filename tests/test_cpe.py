@@ -305,7 +305,7 @@ class CourseTests(unittest.TestCase):
             self.assertEqual((u["n"], u["start"]), (i, w))
             w += u["weeks"]
         self.assertEqual(w - 1, self.c["total_weeks"])
-        self.assertEqual(self.c["total_weeks"], 126)
+        self.assertEqual(self.c["total_weeks"], 132)
 
     def test_stages_monotonic(self):
         stages = [u["stage"] for u in self.c["units"]]
@@ -342,7 +342,7 @@ class CourseTests(unittest.TestCase):
 
     def test_expected_unit(self):
         self.assertEqual(course.expected_unit(self.c, 1)["n"], 1)
-        self.assertEqual(course.expected_unit(self.c, 126)["n"], 52)
+        self.assertEqual(course.expected_unit(self.c, self.c["total_weeks"])["n"], 52)
         self.assertEqual(course.expected_unit(self.c, 9999)["n"], 52)
 
     def test_drill_files_complete(self):
@@ -463,7 +463,7 @@ class CliSmokeTests(unittest.TestCase):
                 rc, out = self.run_cli("new", "d001")
                 self.assertEqual(rc, 0)
                 self.assertTrue((Path("statements") / "d001.md").exists())
-                self.assertEqual(len(list(Path("tests/d001").glob("*.in"))), 3)
+                self.assertGreaterEqual(len(list(Path("tests/d001").glob("*.in"))), 8)
                 # 空白模板應失敗；L1 在還沒嘗試前被擋；試過一次後可以
                 self.assertNotEqual(self.run_cli("test", "d001")[0], 0)
                 Path("solutions/d001.py").write_text("print(f\"Hello, {input().strip()}!\")\n", encoding="utf-8")

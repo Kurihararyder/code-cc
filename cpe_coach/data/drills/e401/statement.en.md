@@ -1,6 +1,6 @@
 # e401 Subarrays With Sum K
 
-**Stage 4 · Difficulty ★★ · Topic: Prefix sums + dict**
+**Stage 2 · Difficulty ★★ · Topic: Prefix sums + dict**
 
 Given n integers (possibly negative) and K, count the contiguous subarrays whose sum is exactly K.
 

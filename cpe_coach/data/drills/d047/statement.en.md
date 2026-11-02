@@ -5,7 +5,7 @@
 Given an array sorted in non-decreasing order, for each query x print the smallest position i (1-indexed) such that a[i] ≥ x; if there is none, print n+1.
 
 ## Input
-The first line contains n and q; the second line contains n non-decreasing integers; the third line contains q queries. n, q ≤ 20000.
+The first line contains n and q; the second line contains n non-decreasing integers; the third line contains q queries. n, q ≤ 50000, absolute values of a and x ≤ 10^9.
 
 ## Output
 q numbers separated by spaces, on one line.

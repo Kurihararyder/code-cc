@@ -5,7 +5,7 @@
 Given two lines of text, print `YES` if the characters of the first line can be rearranged to form the second line (case-sensitive; spaces count as characters), otherwise print `NO`.
 
 ## Input
-Two lines, each of length ≤ 1000.
+Two lines, each of length 1–1000.
 
 ## Output
 YES or NO.

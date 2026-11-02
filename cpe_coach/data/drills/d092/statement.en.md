@@ -14,7 +14,11 @@ One line per query.
 ```
 3 5
 1 3 4
-0 1 2 3 7
+0
+1
+2
+3
+7
 ```
 
 ## Sample Output

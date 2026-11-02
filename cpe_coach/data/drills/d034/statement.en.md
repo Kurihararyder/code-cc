@@ -5,7 +5,7 @@
 The first line contains t; then t lines follow, each containing an integer n. For the k-th case print `Case #k:` and on the next line print 1+2+…+n. **Print one blank line between consecutive cases, but none after the last case.**
 
 ## Input
-t ≤ 100, n ≤ 10^6.
+t ≤ 100, 0 ≤ n ≤ 10^6.
 
 ## Output
 See the sample.

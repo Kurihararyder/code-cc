@@ -2,7 +2,8 @@
 import io, json, os, sys, tempfile, contextlib
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent)); sys.path.insert(0, str(Path(__file__).parent.parent))
-import drills_s0, drills_s1, drills_s2, drills_s3, drills_s4, drills_e
+import qa
+qa.load()
 from common import DRILLS
 from cpe_coach import cli, course as course_mod
 from cpe_coach.store import Workspace

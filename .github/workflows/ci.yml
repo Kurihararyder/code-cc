@@ -29,6 +29,18 @@ jobs:
         run: |
           python dev/gen_lab.py
           git diff --exit-code cpe_coach/data/lab
+      - name: Problem-set quality (independent solutions, input limits, wrong and slow solutions - dev/qa.py)
+        if: matrix.os == 'ubuntu-latest' && matrix.python == '3.12'
+        env:
+          QA_REF_MAX: "4.0"
+        run: python dev/qa.py --quick
+      - name: Drill data is reproducible (regenerate the tests by executing the reference solutions, expect no diff)
+        if: matrix.os == 'ubuntu-latest' && matrix.python == '3.12'
+        run: |
+          python dev/gen_drills.py
+          python dev/gen_drills_en.py
+          python dev/gen_course.py
+          git diff --exit-code cpe_coach/data COURSE.md
       - name: Unit tests
         run: python -m unittest discover -s tests -v
 

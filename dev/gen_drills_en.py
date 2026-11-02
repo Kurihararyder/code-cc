@@ -9,9 +9,11 @@ OUT = ROOT / "cpe_coach" / "data" / "drills"
 sys.path.insert(0, str(Path(__file__).parent / "en"))
 
 import en_s0a, en_s1, en_s2  # noqa: E402
+sys.path.insert(0, str(Path(__file__).parent))
+import drills_n  # noqa: E402
 
 EN = {}
-for m in (en_s0a, en_s1, en_s2):
+for m in (en_s0a, en_s1, en_s2, drills_n):
     EN.update(m.EN)
 
 

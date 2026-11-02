@@ -5,6 +5,8 @@ const REF = {
   d002: 'import sys\nfor l in sys.stdin:\n    p=l.split()\n    if p: print(int(p[0])+int(p[1]))\n',
   d003: 'w,h=map(int,input().split())\nprint(w*h,2*(w+h))\n',
   d004: 'import sys\nfor l in sys.stdin:\n    if l.strip(): print(f"{int(l)*9/5+32:.1f}")\n',
+  d096: 'import sys\nfor l in sys.stdin:\n    if l.strip():\n        s=int(l);print(s//3600,s%3600//60,s%60)\n',
+  d097: 'import sys\nfor l in sys.stdin:\n    if l.strip():\n        n=int(l);o=[]\n        for c in (50,10,5,1): o.append(n//c);n%=c\n        print(*o)\n',
 };
 let PAGE;
 (async () => {
@@ -17,22 +19,22 @@ let PAGE;
     const tok = document.querySelector('meta[name="cpe-token"]').content;
     const r = await fetch(path, { method: 'POST', headers: { 'X-CPE-Token': tok, 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); return r.json();
   }, [path, body]);
-  for (const id of ['d001', 'd002', 'd003']) { await api('/api/new', { id }); const r = await api('/api/test', { id, code: REF[id] }); if (r.verdict !== 'AC') log(false, id + ' ' + r.verdict); }
-  await p.reload(); await p.waitForSelector('text=開始單元檢核'); log(true, '三題必做完成 → 首頁出現「開始單元檢核」');
+  for (const id of ['d001', 'd002', 'd003', 'd096']) { await api('/api/new', { id }); const r = await api('/api/test', { id, code: REF[id] }); if (r.verdict !== 'AC') log(false, id + ' ' + r.verdict); }
+  await p.reload(); await p.waitForSelector('text=開始單元檢核'); log(true, '四題必做完成 → 首頁出現「開始單元檢核」');
   await p.screenshot({ path: 'shots/g1-home.png' });
   await p.click('text=開始單元檢核'); await p.waitForSelector('.modal'); log((await p.textContent('.modal')).includes('AI 詢問與提示全部鎖定'), '檢核前顯示規則確認');
   await p.click('.modal-f .primary'); await p.waitForSelector('.examcard'); log(true, '檢核開始 → 首頁出現考試面板（倒數計時）');
   log(await p.locator('#examChip').count() === 1, '頂列出現考試倒數');
   await p.screenshot({ path: 'shots/g2-exam.png' });
   await p.click('.examcard .scoreboard .linkish >> nth=0'); await p.waitForSelector('.editor'); await p.waitForTimeout(300);
-  const id0 = await p.evaluate(() => location.hash.split('/').pop()); log(['d004', 'd002'].includes(id0), '從考試面板開啟題目 ' + id0);
+  const id0 = await p.evaluate(() => location.hash.split('/').pop()); log(['d097', 'd004'].includes(id0), '從考試面板開啟題目 ' + id0);
   log((await p.locator('.pill.bad', { hasText: '考試中' }).count()) === 1, '題目頁標示「考試中」');
   // 考試中 AI 鎖定
   await p.fill('.ta', REF[id0]); await p.dblclick('.ta', { position: { x: 40, y: 16 } });
   await p.waitForSelector('.pop'); log((await p.locator('.pop .opt:disabled').count()) === 3, '考試中：三種問法全部鎖定');
   await p.keyboard.press('Escape');
   await p.click('text=執行測試'); await p.waitForSelector('.verdict .badge.AC'); log(true, id0 + ' 在考試中通過');
-  const other = id0 === 'd004' ? 'd002' : 'd004';
+  const other = id0 === 'd004' ? 'd097' : 'd004';
   await p.goto('http://127.0.0.1:8793/#/practice/' + other); await p.waitForSelector(`.pchip.cur:has-text("${other}")`); await p.waitForSelector('.editor'); await p.fill('.ta', REF[other]);
   await p.click('text=執行測試'); await p.waitForSelector('.verdict .badge.AC'); log(true, other + ' 在考試中通過');
   await p.goto('http://127.0.0.1:8793/#/home'); await p.waitForSelector('.examcard');

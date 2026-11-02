@@ -1,6 +1,6 @@
 # d091 Grid Paths With Obstacles
 
-**Stage 4 · Difficulty ★★★ · Topic: DP (counting)**
+**Stage 3 · Difficulty ★★★ · Topic: DP (counting)**
 
 An R×C grid: `#` is an obstacle and `.` is free. Moving only right or down, how many ways are there to go from the top-left to the bottom-right corner? Print the answer modulo 1000000007. (If the start or the end is an obstacle the answer is 0.)
 

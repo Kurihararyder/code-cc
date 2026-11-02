@@ -36,7 +36,7 @@ function build(d) {
         u.gate_ready ? h("button", { class: "btn lg" + (d.next ? "" : " primary"), onclick: () => startGate(u) }, icon("target"), "開始單元檢核") : null,
         !u.has_gate ? h("button", { class: "btn lg", onclick: async () => { try { await post("/api/course/next"); notify(); go("/home"); } catch (e) { toast(e.message, "bad"); } } }, "標記單元完成（實際報考後）") : null,
         h("button", { class: "btn lg ghost", onclick: () => go("/course/" + u.n) }, "單元內容"))));
-  } else page.append(h("div", { class: "card hero mt" }, h("h2", { class: "hero-t", text: "🎓 課程全部完成" }), h("p", { text: "你已經走完 126 週。接下來每週做一次全真模擬，並規劃報考。" })));
+  } else page.append(h("div", { class: "card hero mt" }, h("h2", { class: "hero-t", text: "🎓 課程全部完成" }), h("p", { text: "你已經走完整份課程。接下來每週做一次全真模擬，並規劃報考。" })));
 
   page.append(h("div", { class: "kpis mt" },
     kpi("check", d.stats.solved, "已通過題數"), kpi("target", d.stats.mastered, "精熟題數", "ok"), kpi("flame", d.stats.streak, "連續練習天數"),
@@ -65,7 +65,7 @@ function build(d) {
 function onboarding() {
   let i = 0; const total = 3; const body = h("div"); let m;
   const slides = [
-    () => [h("p", { text: "這是一套從零基礎到 CPE 一次 6 題的自學系統：126 週課程、100 多題內建練習題、本地判題。" }),
+    () => [h("p", { text: "這是一套從零基礎到 CPE 一次 6 題的自學系統：完整週課表、近 200 題內建練習題（測資都經過獨立解與錯誤解驗證）、本地判題。" }),
       h("ul", null, h("li", { text: "每個單元都有必做題與限時檢核，通過才前進。" }), h("li", { text: "AI 只負責『提問』，對錯永遠由測資決定。" }), h("li", { text: "用了提示的題目，隔天要無提示重寫。" })),
       h("p", { class: "muted small", text: "6 題是全國前 1% 的成績，沒有人能保證你達成；真實的 CPE 成績才是最終檢核。" })],
     () => { const key = h("input", { type: "password", placeholder: "sk-…", autocomplete: "off", "aria-label": "OpenAI API 金鑰" }); const st = h("div", { class: "small muted mt", text: S.ai.available ? "AI 已就緒。" : "沒有金鑰也能用其他功能，之後可以在『設定』補上。" });

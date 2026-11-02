@@ -5,7 +5,7 @@
 There are n distinct denominations, each available in unlimited quantity. What is the minimum number of coins needed to make the amount A? Print -1 if it is impossible.
 
 ## Input
-The first line contains n and A (n ≤ 100, A ≤ 10^4); the second line contains n denominations.
+The first line contains n and A (1 ≤ n ≤ 100, 0 ≤ A ≤ 10^4); the second line contains n distinct denominations (1–10^4).
 
 ## Output
 One integer.

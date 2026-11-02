@@ -1,0 +1,8 @@
+Case #1:
+1 bcc 100
+2 bba 90
+3 aba 4
+4 bc 0
+
+Case #2:
+1 aa 0

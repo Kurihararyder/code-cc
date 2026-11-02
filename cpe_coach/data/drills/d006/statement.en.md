@@ -5,7 +5,7 @@
 Given three integers, print the largest one.
 
 ## Input
-Each line contains three integers a, b and c, until EOF.
+Each line contains three integers a, b and c (absolute value ≤ 10^9), until EOF.
 
 ## Output
 One answer per line.

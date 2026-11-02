@@ -5,7 +5,7 @@
 Given n integers, keep the first occurrence of every number, delete the later duplicates, and print the rest in the original order.
 
 ## Input
-The first line contains n (≤ 10^5); the second line contains n integers.
+The first line contains n (1 ≤ n ≤ 10^5); the second line contains n integers (absolute value ≤ 10^9).
 
 ## Output
 One line.

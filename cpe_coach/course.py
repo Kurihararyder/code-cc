@@ -1,4 +1,4 @@
-"""課程：126 週、52 個單元。進度、時程對照與檢核（gate）。"""
+"""課程：週數與單元數見 data/course.json（由 dev/gen_course.py 產生）。進度、時程對照與檢核（gate）。"""
 from __future__ import annotations
 
 import datetime as dt

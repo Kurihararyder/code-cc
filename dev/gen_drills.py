@@ -51,7 +51,9 @@ def render(d, sample_in, sample_out):
 
 
 def main():
-    import drills_s0, drills_s1, drills_s2, drills_s3, drills_s4, drills_e  # noqa: F401  (註冊題目)
+    import qa
+    qa.load()
+    from drills_n import CONCEPTS                      # 註冊全部題目與它們的品質檢查（隨機小測資、大測資都由 qa 提供）
     if OUT.exists():
         shutil.rmtree(OUT)
     OUT.mkdir(parents=True)
@@ -61,9 +63,8 @@ def main():
     for d in DRILLS:
         base = OUT / d["id"]
         (base / "tests").mkdir(parents=True)
-        for i, text in enumerate(d["cases"], 1):
-            if isinstance(text, tuple):      # (輸入, 預期輸出覆蓋)
-                text = text[0]
+        cases = qa.all_inputs(d)
+        for i, text in enumerate(cases, 1):
             out = run_ref(d["ref"], text, d["timeout"])
             (base / "tests" / f"case{i:02d}.in").write_text(text, encoding="utf-8")
             (base / "tests" / f"case{i:02d}.out").write_text(out, encoding="utf-8")
@@ -74,8 +75,10 @@ def main():
                      "course_stage": d["stage"], "difficulty": d["diff"], "topic": d["topic"],
                      "hint_category": d["cat"], "hint_insight": d["insight"], "url": None,
                      "official_one_star": False, "drill": True, "reserve": d["reserve"]})
+        if d["id"] in CONCEPTS:
+            bank[-1]["concepts"] = CONCEPTS[d["id"]]
     (OUT / "index.json").write_text(json.dumps(bank, ensure_ascii=False, indent=1), encoding="utf-8")
-    total = sum(len(d["cases"]) for d in DRILLS)
+    total = sum(len(list((OUT / d["id"] / "tests").glob("*.in"))) for d in DRILLS)
     size = sum(f.stat().st_size for f in OUT.rglob("*") if f.is_file())
     print(f"{len(DRILLS)} 題，{total} 組測資，{size/1024:.0f} KB")
 

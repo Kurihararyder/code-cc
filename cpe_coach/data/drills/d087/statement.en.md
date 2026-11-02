@@ -5,7 +5,7 @@
 Given an array of length n and q queries `l r` (1-indexed), print min(a[l..r]).
 
 ## Input
-The first line contains n and q (≤ 15000); the second line contains n integers; then q lines.
+The first line contains n and q (≤ 50000); the second line contains n integers (absolute value ≤ 10^9); then q lines.
 
 ## Output
 One line per query.

@@ -1,6 +1,6 @@
 # d093 Euler's Totient
 
-**Stage 4 · Difficulty ★★★ · Topic: Number theory**
+**Stage 3 · Difficulty ★★★ · Topic: Number theory**
 
 φ(n) is the number of integers in 1..n that are coprime to n. For each query n print φ(n).
 

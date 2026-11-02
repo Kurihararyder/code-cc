@@ -98,7 +98,7 @@
    "url": "https://git-scm.com/book/zh-tw/v2"
   }
  },
- "total_weeks": 126,
+ "total_weeks": 132,
  "units": [
   {
    "stage": 0,
@@ -115,7 +115,8 @@
    "drills": [
     "d001",
     "d002",
-    "d003"
+    "d003",
+    "d096"
    ],
    "anchors": [],
    "pool": [
@@ -138,8 +139,8 @@
    "gate": {
     "type": "set",
     "problems": [
-     "d004",
-     "d002"
+     "d097",
+     "d004"
     ],
     "minutes": 45,
     "need": 2,
@@ -165,7 +166,8 @@
    "drills": [
     "d005",
     "d006",
-    "d007"
+    "d007",
+    "d098"
    ],
    "anchors": [],
    "pool": [],
@@ -185,8 +187,8 @@
    "gate": {
     "type": "set",
     "problems": [
-     "d008",
-     "d005"
+     "d099",
+     "d008"
     ],
     "minutes": 45,
     "need": 2,
@@ -214,7 +216,8 @@
     "d009",
     "d010",
     "d011",
-    "d024"
+    "d024",
+    "d101"
    ],
    "anchors": [],
    "pool": [],
@@ -234,8 +237,8 @@
    "gate": {
     "type": "set",
     "problems": [
-     "d012",
-     "d010"
+     "d100",
+     "d012"
     ],
     "minutes": 60,
     "need": 2,
@@ -265,7 +268,8 @@
     "d014",
     "d015",
     "d017",
-    "d018"
+    "d018",
+    "d102"
    ],
    "anchors": [],
    "pool": [],
@@ -286,7 +290,7 @@
     "type": "set",
     "problems": [
      "d016",
-     "d015"
+     "d103"
     ],
     "minutes": 60,
     "need": 2,
@@ -311,9 +315,10 @@
     "第一次接觸複雜度：list 的 `in` 是 O(n)，set 是 O(1)"
    ],
    "drills": [
+    "d104",
     "d019",
     "d020",
-    "d025"
+    "d029"
    ],
    "anchors": [],
    "pool": [],
@@ -333,7 +338,7 @@
     "type": "set",
     "problems": [
      "d028",
-     "d029"
+     "d105"
     ],
     "minutes": 60,
     "need": 2,
@@ -349,18 +354,22 @@
   },
   {
    "stage": 0,
-   "weeks": 1,
+   "weeks": 2,
    "title": "數學基礎與進位制",
    "goal": "能寫質數判斷、gcd、費氏數列、進位轉換等基本數學程式。",
    "learn": [
     "質數試除法到 √n；gcd 輾轉相除法；費氏數列的迭代寫法（遞迴版為什麼慢）",
     "進位制：用 `%` 與 `//` 反覆取餘數；`bin()`、`int(s, base)`",
-    "把重複出現的程式碼抽成函式"
+    "把重複出現的程式碼抽成函式",
+    "質因數分解：從 2 試除到 √n，邊除邊記次數，最後剩下的大於 1 的數本身是質數",
+    "數根與『重複做某件事直到條件成立』的 while 寫法"
    ],
    "drills": [
     "d021",
     "d022",
-    "d023"
+    "d025",
+    "d027",
+    "d107"
    ],
    "anchors": [],
    "pool": [],
@@ -379,10 +388,10 @@
    "gate": {
     "type": "set",
     "problems": [
-     "d027",
-     "d021"
+     "d106",
+     "d023"
     ],
-    "minutes": 45,
+    "minutes": 60,
     "need": 2,
     "lang": "py"
    },
@@ -395,16 +404,20 @@
   },
   {
    "stage": 0,
-   "weeks": 1,
+   "weeks": 2,
    "title": "二維 list 與簡單模擬",
    "goal": "能建立與走訪二維陣列，並把一串指令模擬成狀態變化。",
    "learn": [
     "二維 list：`[[0]*C for _ in range(R)]`（不要寫成 `[[0]*C]*R`）",
     "走訪列與行；轉置；`zip(*a)`",
-    "模擬題的標準步驟：讀指令 → 修改狀態 → 輸出"
+    "模擬題的標準步驟：讀指令 → 修改狀態 → 輸出",
+    "八方向鄰居（掃雷）：用 `(di, dj)` 的偏移表，並檢查邊界",
+    "旋轉／轉置的索引關係：先在紙上畫 2×3 的例子"
    ],
    "drills": [
-    "d026"
+    "d026",
+    "d108",
+    "d110"
    ],
    "anchors": [],
    "pool": [],
@@ -422,10 +435,10 @@
    "gate": {
     "type": "set",
     "problems": [
-     "d030",
-     "d026"
+     "d109",
+     "d030"
     ],
-    "minutes": 45,
+    "minutes": 60,
     "need": 2,
     "lang": "py"
    },
@@ -434,7 +447,7 @@
     "Python 官方教學 5.1.3『List Comprehension』（巢狀）"
    ],
    "n": 7,
-   "start": 11
+   "start": 12
   },
   {
    "stage": 0,
@@ -462,10 +475,10 @@
    "gate": {
     "type": "set",
     "problems": [
-     "d014",
+     "d013",
      "d020",
      "d022",
-     "d013"
+     "d107"
     ],
     "minutes": 120,
     "need": 3,
@@ -474,7 +487,7 @@
    "lang": "py",
    "read": [],
    "n": 8,
-   "start": 12
+   "start": 14
   },
   {
    "stage": 1,
@@ -516,7 +529,7 @@
     "type": "set",
     "problems": [
      "d034",
-     "d031"
+     "e101"
     ],
     "minutes": 60,
     "need": 2,
@@ -525,7 +538,7 @@
    "lang": "py",
    "read": [],
    "n": 9,
-   "start": 13
+   "start": 15
   },
   {
    "stage": 1,
@@ -536,12 +549,15 @@
     "`f'{x:.4f}'`、`:>8`、`:02d`；round 的銀行家捨入陷阱",
     "用 dict 或字串做映射（羅馬數字、摩斯碼、鍵盤位移）",
     "字串分組掃描（run-length）與『最後一段』的收尾",
-    "整數運算優於浮點運算：能用整數比大小就別用除法"
+    "整數運算優於浮點運算：能用整數比大小就別用除法",
+    "分級邊界：類別用『四捨五入前』的值判斷，顯示用四捨五入後的值——兩者可能不一致",
+    "摩斯電碼這類查表題：先把編碼表做成 dict"
    ],
    "drills": [
     "d035",
     "d039",
-    "d043"
+    "d043",
+    "d112"
    ],
    "anchors": [
     "uva10082",
@@ -565,8 +581,8 @@
    "gate": {
     "type": "set",
     "problems": [
-     "d045",
-     "d043"
+     "d111",
+     "e102"
     ],
     "minutes": 60,
     "need": 2,
@@ -575,7 +591,7 @@
    "lang": "py",
    "read": [],
    "n": 10,
-   "start": 15
+   "start": 17
   },
   {
    "stage": 1,
@@ -586,10 +602,14 @@
     "Python int 沒有上限（但 3.11 起字串轉換有 4300 位的限制，考場 3.9 沒有）",
     "任意進位：`int(s, b)` 與手寫轉換",
     "字串反轉相加類題目（Reverse and Add）",
-    "二進位位元計數與 `bin()`"
+    "二進位位元計數與 `bin()`",
+    "逐位模擬（直式加法的進位）：不要用大數直接加，因為題目問的是過程",
+    "用字串左半邊鏡射產生回文數，而不是一個一個試"
    ],
    "drills": [
-    "d036"
+    "d036",
+    "d037",
+    "d113"
    ],
    "anchors": [
     "uva10106",
@@ -615,8 +635,8 @@
    "gate": {
     "type": "set",
     "problems": [
-     "d037",
-     "d036"
+     "d115",
+     "d114"
     ],
     "minutes": 60,
     "need": 2,
@@ -625,7 +645,7 @@
    "lang": "py",
    "read": [],
    "n": 11,
-   "start": 17
+   "start": 19
   },
   {
    "stage": 1,
@@ -636,10 +656,14 @@
     "埃拉托斯特尼篩法；『先預處理、再 O(1) 查詢』",
     "因數成對找到 √n；完全平方數的因數個數是奇數",
     "數根（digital root）、平方數個數 isqrt 公式",
-    "遇到數學題先手算小例子找規律"
+    "遇到數學題先手算小例子找規律",
+    "約數的成對性質：能整除 i 就也能整除 n//i；完全數／盈數／虧數的分類",
+    "哥德巴赫分拆與孿生質數：篩一次，之後都是查表"
    ],
    "drills": [
-    "d038"
+    "d038",
+    "d116",
+    "d118"
    ],
    "anchors": [
     "uva10110",
@@ -664,17 +688,17 @@
    "gate": {
     "type": "set",
     "problems": [
-     "d038",
-     "d025"
+     "d117",
+     "d116"
     ],
-    "minutes": 45,
+    "minutes": 60,
     "need": 2,
     "lang": "py"
    },
    "lang": "py",
    "read": [],
    "n": 12,
-   "start": 19
+   "start": 21
   },
   {
    "stage": 1,
@@ -685,11 +709,16 @@
     "方向陣列 `dirs=[(0,1),(1,0),(0,-1),(-1,0)]` 與轉向（%4）",
     "邊界檢查 `0<=nx<R and 0<=ny<C`",
     "鄰居計數（八方向，如踩地雷）",
-    "把『題目的規則』逐條翻成程式，不要跳步"
+    "把『題目的規則』逐條翻成程式，不要跳步",
+    "狀態更新型模擬（骰子翻滾）：只追蹤必要的幾個面，其他由『對面和為 7』推得",
+    "斜線（反對角線）上的格子，列號加行號是定值",
+    "在方陣裡沿八個方向找單字：方向表 + 逐字比對 + 邊界"
    ],
    "drills": [
     "d041",
-    "d042"
+    "d042",
+    "d119",
+    "d121"
    ],
    "anchors": [
     "uva10189",
@@ -714,8 +743,8 @@
    "gate": {
     "type": "set",
     "problems": [
-     "d042",
-     "d041"
+     "d120",
+     "d119"
     ],
     "minutes": 60,
     "need": 2,
@@ -726,7 +755,7 @@
     "Python 文件：sys.stdin"
    ],
    "n": 13,
-   "start": 21
+   "start": 23
   },
   {
    "stage": 1,
@@ -736,11 +765,16 @@
    "learn": [
     "datetime.date 與 weekday()；也要會用 Zeller 公式自己算",
     "進位換算（秒→時分秒）、12/24 小時制邊界",
-    "split 後依 token 處理的解析模式"
+    "split 後依 token 處理的解析模式",
+    "後序運算式（postfix）與 stack：先放入的是左運算元",
+    "時鐘夾角這類『先換成同一個單位再算』的技巧（全部乘 2 避免小數）"
    ],
    "drills": [
     "d040",
-    "d044"
+    "d045",
+    "d044",
+    "d123",
+    "d124"
    ],
    "anchors": [],
    "pool": [
@@ -759,8 +793,8 @@
    "gate": {
     "type": "set",
     "problems": [
-     "d040",
-     "d044"
+     "d122",
+     "e103"
     ],
     "minutes": 60,
     "need": 2,
@@ -769,7 +803,7 @@
    "lang": "py",
    "read": [],
    "n": 14,
-   "start": 23
+   "start": 25
   },
   {
    "stage": 1,
@@ -798,9 +832,9 @@
    "gate": {
     "type": "set",
     "problems": [
-     "e101",
-     "e102",
-     "e103"
+     "d109",
+     "d115",
+     "d124"
     ],
     "minutes": 90,
     "need": 2,
@@ -809,7 +843,7 @@
    "lang": "py",
    "read": [],
    "n": 15,
-   "start": 25
+   "start": 27
   },
   {
    "stage": 1,
@@ -845,7 +879,7 @@
     "CPE 官網『考生使用手冊』（含 Python I/O 範例）"
    ],
    "n": 16,
-   "start": 27
+   "start": 29
   },
   {
    "stage": 2,
@@ -859,7 +893,9 @@
     "開始建 Git 習慣：每天的程式碼 commit"
    ],
    "drills": [
-    "d049"
+    "d049",
+    "d125",
+    "d046"
    ],
    "anchors": [
     "uva10041",
@@ -888,8 +924,8 @@
    "gate": {
     "type": "set",
     "problems": [
-     "d049",
-     "d028"
+     "d126",
+     "e201"
     ],
     "minutes": 60,
     "need": 2,
@@ -900,7 +936,7 @@
     "Competitive Programmer's Handbook 第 2 章『Time complexity』、第 3 章『Sorting』"
    ],
    "n": 17,
-   "start": 29
+   "start": 31
   },
   {
    "stage": 2,
@@ -910,11 +946,14 @@
    "learn": [
     "前綴和：pre[i]；區間和 = pre[r]-pre[l-1]；二維前綴和（選修）",
     "二分搜尋：lower_bound / upper_bound 語意；迴圈不變量；`bisect` 模組",
-    "『對答案二分』的入門概念（最小化最大值）"
+    "『對答案二分』的入門概念（最小化最大值）",
+    "二維前綴和（容斥）與差分陣列（區間加值、最後一次還原）",
+    "對答案二分：『答案越大越不可能』這種單調性，例如切繩子"
    ],
    "drills": [
-    "d046",
-    "d047"
+    "d047",
+    "d128",
+    "d130"
    ],
    "anchors": [
     "uva10474"
@@ -942,8 +981,8 @@
    "gate": {
     "type": "set",
     "problems": [
-     "d046",
-     "d047"
+     "d129",
+     "e401"
     ],
     "minutes": 60,
     "need": 2,
@@ -954,11 +993,11 @@
     "Competitive Programmer's Handbook 第 3 章（Binary search）、第 9 章『Range queries』（Static array queries）"
    ],
    "n": 18,
-   "start": 31
+   "start": 33
   },
   {
    "stage": 2,
-   "weeks": 1,
+   "weeks": 2,
    "title": "雙指標與滑動視窗",
    "goal": "能用雙指標把 O(n²) 降成 O(n)。",
    "learn": [
@@ -966,7 +1005,10 @@
     "證明為什麼指標只需要單向移動"
    ],
    "drills": [
-    "d048"
+    "d048",
+    "d055",
+    "d131",
+    "d132"
    ],
    "anchors": [
     "uva11057",
@@ -986,10 +1028,10 @@
    "gate": {
     "type": "set",
     "problems": [
-     "d048",
-     "d047"
+     "d139",
+     "d131"
     ],
-    "minutes": 45,
+    "minutes": 60,
     "need": 2,
     "lang": "py"
    },
@@ -998,7 +1040,7 @@
     "Competitive Programmer's Handbook 第 8 章『Amortized analysis』（Two pointers）"
    ],
    "n": 19,
-   "start": 33
+   "start": 35
   },
   {
    "stage": 2,
@@ -1008,10 +1050,13 @@
    "learn": [
     "stack（list）、queue / deque（`collections.deque`）；括號配對、單調 stack／deque",
     "模擬類題目（Rails、Ferry Loading）",
-    "找規律取代模擬（約瑟夫）"
+    "找規律取代模擬（約瑟夫）",
+    "用 stack 判斷『能不能依這個順序出站』（火車調度）",
+    "單調 stack：下一個更大的數、直方圖最大矩形"
    ],
    "drills": [
     "d050",
+    "d133",
     "d051",
     "d053"
    ],
@@ -1041,8 +1086,8 @@
    "gate": {
     "type": "set",
     "problems": [
-     "d050",
-     "d053"
+     "d135",
+     "e402"
     ],
     "minutes": 90,
     "need": 2,
@@ -1053,11 +1098,11 @@
     "Competitive Programmer's Handbook 第 4 章『Data structures』（Deque、Stack）"
    ],
    "n": 20,
-   "start": 34
+   "start": 37
   },
   {
    "stage": 2,
-   "weeks": 1,
+   "weeks": 2,
    "title": "heap 與優先佇列",
    "goal": "會用 heapq 與 dict 做動態維護最小／中位數。",
    "learn": [
@@ -1066,7 +1111,9 @@
     "動態中位數（bisect.insort 或雙 heap）"
    ],
    "drills": [
-    "d052"
+    "d052",
+    "d136",
+    "d127"
    ],
    "anchors": [
     "uva10954",
@@ -1089,8 +1136,8 @@
    "gate": {
     "type": "set",
     "problems": [
-     "d052",
-     "d020"
+     "d137",
+     "d052"
     ],
     "minutes": 60,
     "need": 2,
@@ -1101,7 +1148,7 @@
     "Competitive Programmer's Handbook 第 4 章（Priority queues）"
    ],
    "n": 21,
-   "start": 36
+   "start": 39
   },
   {
    "stage": 2,
@@ -1114,7 +1161,8 @@
     "反例思維：寫完貪心後，用 5 分鐘找反例"
    ],
    "drills": [
-    "d054"
+    "d054",
+    "d140"
    ],
    "anchors": [
     "uva10020",
@@ -1138,8 +1186,8 @@
    "gate": {
     "type": "set",
     "problems": [
-     "d055",
-     "d054"
+     "d138",
+     "e202"
     ],
     "minutes": 75,
     "need": 2,
@@ -1150,7 +1198,7 @@
     "Competitive Programmer's Handbook 第 6 章『Greedy algorithms』"
    ],
    "n": 22,
-   "start": 37
+   "start": 41
   },
   {
    "stage": 2,
@@ -1161,10 +1209,14 @@
     "遞迴三要素：終止條件、縮小問題、合併結果；呼叫堆疊（用 Python Tutor 看）",
     "回溯：選擇 → 遞迴 → 還原；全排列、N 皇后、子集合",
     "剪枝：提早放棄不可能的分支；可行性剪枝與最優性剪枝",
-    "`sys.setrecursionlimit` 與遞迴深度的限制"
+    "`sys.setrecursionlimit` 與遞迴深度的限制",
+    "河內塔與組合列舉：遞迴參數帶『下一個可選的最小值』避免重複",
+    "質數環：邊放邊檢查的剪枝"
    ],
    "drills": [
     "d056",
+    "d141",
+    "d142",
     "d057"
    ],
    "anchors": [
@@ -1189,8 +1241,8 @@
    "gate": {
     "type": "set",
     "problems": [
-     "d056",
-     "d057"
+     "d143",
+     "e203"
     ],
     "minutes": 75,
     "need": 2,
@@ -1201,7 +1253,7 @@
     "Competitive Programmer's Handbook 第 5 章『Complete search』"
    ],
    "n": 23,
-   "start": 39
+   "start": 43
   },
   {
    "stage": 2,
@@ -1211,11 +1263,13 @@
    "learn": [
     "& | ^ ~ << >> 與常用技巧（判斷第 i 位、設定、清除、lowbit）",
     "n≤20 時 `for mask in range(1<<n)` 枚舉子集合",
-    "XOR 的性質（a^a=0）"
+    "XOR 的性質（a^a=0）",
+    "位元 1 的總數：逐位看週期，不要逐個數"
    ],
    "drills": [
-    "d058",
-    "d059"
+    "d059",
+    "d145",
+    "d058"
    ],
    "anchors": [],
    "pool": [
@@ -1235,8 +1289,8 @@
    "gate": {
     "type": "set",
     "problems": [
-     "d058",
-     "d059"
+     "d144",
+     "d058"
     ],
     "minutes": 60,
     "need": 2,
@@ -1247,7 +1301,7 @@
     "Competitive Programmer's Handbook 第 10 章『Bit manipulation』"
    ],
    "n": 24,
-   "start": 42
+   "start": 46
   },
   {
    "stage": 2,
@@ -1283,7 +1337,7 @@
    "lang": "py",
    "read": [],
    "n": 25,
-   "start": 44
+   "start": 48
   },
   {
    "stage": 3,
@@ -1297,7 +1351,9 @@
     "Python 遞迴深度限制：大圖一律寫迭代"
    ],
    "drills": [
-    "d060"
+    "d060",
+    "d147",
+    "d148"
    ],
    "anchors": [
     "uva572",
@@ -1326,8 +1382,8 @@
    "gate": {
     "type": "set",
     "problems": [
-     "d060",
-     "d056"
+     "d146",
+     "e301"
     ],
     "minutes": 60,
     "need": 2,
@@ -1338,7 +1394,7 @@
     "Competitive Programmer's Handbook 第 11 章『Basics of graphs』、第 12 章『Graph traversal』"
    ],
    "n": 26,
-   "start": 45
+   "start": 49
   },
   {
    "stage": 3,
@@ -1348,10 +1404,13 @@
    "learn": [
     "Union-Find：路徑壓縮 + 按大小合併；維護集合大小",
     "離線處理：先排序再合併（Kruskal 的基礎）",
-    "字串節點→編號的 dict"
+    "字串節點→編號的 dict",
+    "用並查集偵測環：加邊前兩端已在同一組，這條邊就形成環；樹的判斷 = m = n−1 且無環"
    ],
    "drills": [
-    "d061"
+    "d061",
+    "d150",
+    "d151"
    ],
    "anchors": [
     "uva10608",
@@ -1375,8 +1434,8 @@
    "gate": {
     "type": "set",
     "problems": [
-     "d061",
-     "d060"
+     "d149",
+     "d061"
     ],
     "minutes": 60,
     "need": 2,
@@ -1387,7 +1446,7 @@
     "Competitive Programmer's Handbook 第 15 章『Spanning trees』（Union-find）"
    ],
    "n": 27,
-   "start": 47
+   "start": 51
   },
   {
    "stage": 3,
@@ -1397,10 +1456,12 @@
    "learn": [
     "Kahn 演算法（入度）與 DFS 後序；字典序最小要用 heap",
     "DAG 上的 DP（最長路徑）",
-    "依賴關係題：先建圖再想順序"
+    "依賴關係題：先建圖再想順序",
+    "分層的 Kahn：每一輪取出所有入度 0 的點，輪數就是最少學期數（DAG 最長路徑的點數）"
    ],
    "drills": [
-    "d062"
+    "d062",
+    "d153"
    ],
    "anchors": [
     "uva10305",
@@ -1423,8 +1484,8 @@
    "gate": {
     "type": "set",
     "problems": [
-     "d062",
-     "d061"
+     "d152",
+     "e302"
     ],
     "minutes": 60,
     "need": 2,
@@ -1435,7 +1496,7 @@
     "Competitive Programmer's Handbook 第 16 章『Directed graphs』（Topological sorting）"
    ],
    "n": 28,
-   "start": 49
+   "start": 53
   },
   {
    "stage": 3,
@@ -1445,11 +1506,14 @@
    "learn": [
     "Dijkstra：dist + heapq、lazy deletion；為什麼不能有負權",
     "Floyd–Warshall：k 在最外層；O(n³) 適用 n≤400（C++）／n≤100（Python）",
-    "變形：最小化最大邊（minimax）、多源最短路、路徑還原"
+    "變形：最小化最大邊（minimax）、多源最短路、路徑還原",
+    "最短路徑計數：Dijkstra 時同時維護 cnt（更短→覆蓋，相等→累加）",
+    "最小瓶頸路徑：最小生成樹上兩點之間的最大邊"
    ],
    "drills": [
     "d063",
-    "d065"
+    "d065",
+    "d154"
    ],
    "anchors": [
     "uva10986",
@@ -1479,8 +1543,8 @@
    "gate": {
     "type": "set",
     "problems": [
-     "d063",
-     "d065"
+     "d156",
+     "d154"
     ],
     "minutes": 75,
     "need": 2,
@@ -1491,7 +1555,7 @@
     "Competitive Programmer's Handbook 第 13 章『Shortest paths』"
    ],
    "n": 29,
-   "start": 51
+   "start": 55
   },
   {
    "stage": 3,
@@ -1501,10 +1565,12 @@
    "learn": [
     "Kruskal：邊排序 + 並查集；Prim：堆積版",
     "MST 的性質（切割性質、環性質）",
-    "變形：總長減去 MST、次小生成樹（選修）"
+    "變形：總長減去 MST、次小生成樹（選修）",
+    "最小生成森林：Kruskal 不需要連通，組數 = n − 成功合併次數"
    ],
    "drills": [
-    "d064"
+    "d064",
+    "d158"
    ],
    "anchors": [
     "uva10034",
@@ -1530,8 +1596,8 @@
    "gate": {
     "type": "set",
     "problems": [
-     "d064",
-     "d063"
+     "d157",
+     "d064"
     ],
     "minutes": 75,
     "need": 2,
@@ -1542,7 +1608,7 @@
     "Competitive Programmer's Handbook 第 15 章『Spanning trees』（Kruskal、Prim）"
    ],
    "n": 30,
-   "start": 54
+   "start": 58
   },
   {
    "stage": 3,
@@ -1556,7 +1622,10 @@
     "貪心 vs DP：何時貪心會錯"
    ],
    "drills": [
+    "d159",
+    "d160",
     "d071",
+    "d066",
     "d067"
    ],
    "anchors": [
@@ -1586,7 +1655,7 @@
    "gate": {
     "type": "set",
     "problems": [
-     "d066",
+     "d161",
      "d067"
     ],
     "minutes": 75,
@@ -1598,7 +1667,7 @@
     "Competitive Programmer's Handbook 第 7 章『Dynamic programming』（Coin problem）"
    ],
    "n": 31,
-   "start": 56
+   "start": 60
   },
   {
    "stage": 3,
@@ -1611,7 +1680,8 @@
     "二維→一維滾動陣列"
    ],
    "drills": [
-    "d068"
+    "d068",
+    "d163"
    ],
    "anchors": [
     "uva10130",
@@ -1636,8 +1706,8 @@
    "gate": {
     "type": "set",
     "problems": [
-     "d068",
-     "d066"
+     "d164",
+     "e303"
     ],
     "minutes": 75,
     "need": 2,
@@ -1648,7 +1718,7 @@
     "Competitive Programmer's Handbook 第 7 章（Knapsack）"
    ],
    "n": 32,
-   "start": 58
+   "start": 62
   },
   {
    "stage": 3,
@@ -1658,11 +1728,14 @@
    "learn": [
     "LIS O(n²) 與 O(n log n)（tails + bisect）；嚴格 vs 非嚴格",
     "LCS 二維表；編輯距離；路徑還原（前驅陣列）",
-    "滾動陣列省空間"
+    "滾動陣列省空間",
+    "編輯距離（插入／刪除／替換）、最長回文子序列（= 字串與其反轉的 LCS）、LIS 計數"
    ],
    "drills": [
+    "d069",
     "d070",
-    "d069"
+    "d166",
+    "d168"
    ],
    "anchors": [
     "uva10131",
@@ -1685,8 +1758,8 @@
    "gate": {
     "type": "set",
     "problems": [
-     "d069",
-     "d070"
+     "d167",
+     "d168"
     ],
     "minutes": 75,
     "need": 2,
@@ -1697,7 +1770,7 @@
     "Competitive Programmer's Handbook 第 7 章（Longest increasing subsequence、Edit distance）"
    ],
    "n": 33,
-   "start": 60
+   "start": 64
   },
   {
    "stage": 3,
@@ -1707,10 +1780,14 @@
    "learn": [
     "dp[i][j] 由上與左轉移；邊界處理",
     "字典序最小路徑要由後往前 DP（Unidirectional TSP）",
-    "有障礙、有權重、可繞回（列循環）的變形"
+    "有障礙、有權重、可繞回（列循環）的變形",
+    "數字三角形（由下往上）、最大全 1 正方形（上、左、左上取最小）、格子路徑數（組合數的 DP 版本）"
    ],
    "drills": [
-    "d072"
+    "d170",
+    "d072",
+    "d169",
+    "d091"
    ],
    "anchors": [
     "uva116",
@@ -1732,10 +1809,10 @@
    "gate": {
     "type": "set",
     "problems": [
-     "d072",
-     "d071"
+     "d171",
+     "d091"
     ],
-    "minutes": 60,
+    "minutes": 75,
     "need": 2,
     "lang": "py"
    },
@@ -1744,7 +1821,7 @@
     "Competitive Programmer's Handbook 第 7 章（Paths in a grid）"
    ],
    "n": 34,
-   "start": 62
+   "start": 66
   },
   {
    "stage": 3,
@@ -1754,10 +1831,14 @@
    "learn": [
     "狀態 dp[l][r]；依區間長度由小到大計算；枚舉分割點",
     "矩陣連乘、切木棍、最佳二元搜尋樹、取兩端博弈",
-    "O(n³) 的規模：Python n≈100 內，C++ n≈400 內"
+    "O(n³) 的規模：Python n≈100 內，C++ n≈400 內",
+    "石子合併（只能合併相鄰）與 d052 合併成本（任兩堆）的差別——前者是區間 DP，後者是貪心",
+    "回文切割：先預處理 is_pal[i][j]，再做一維 DP"
    ],
    "drills": [
-    "d073"
+    "d073",
+    "d173",
+    "d174"
    ],
    "anchors": [
     "uva10003",
@@ -1779,8 +1860,8 @@
    "gate": {
     "type": "set",
     "problems": [
-     "d073",
-     "d072"
+     "d172",
+     "d173"
     ],
     "minutes": 75,
     "need": 2,
@@ -1791,7 +1872,7 @@
     "Competitive Programmer's Handbook 第 7 章；搜尋『interval DP』"
    ],
    "n": 35,
-   "start": 64
+   "start": 68
   },
   {
    "stage": 3,
@@ -1804,7 +1885,8 @@
     "固定最低位未選者來避免重複計數"
    ],
    "drills": [
-    "d074"
+    "d074",
+    "d176"
    ],
    "anchors": [
     "uva10911",
@@ -1825,8 +1907,8 @@
    "gate": {
     "type": "set",
     "problems": [
-     "d074",
-     "d058"
+     "d175",
+     "d074"
     ],
     "minutes": 75,
     "need": 2,
@@ -1837,21 +1919,25 @@
     "Competitive Programmer's Handbook 第 7 章（Counting tilings 之前的 bit 技巧）；搜尋『bitmask DP』"
    ],
    "n": 36,
-   "start": 66
+   "start": 70
   },
   {
    "stage": 3,
-   "weeks": 2,
+   "weeks": 3,
    "title": "數論：模運算、質因數與組合數",
    "goal": "會模運算、快速冪、模逆元、質因數分解與組合數預處理。",
    "learn": [
     "模運算規則；快速冪 `pow(a,b,m)` 與手寫；費馬小定理求逆元",
     "質因數分解（試除、篩法最小質因數）；歐拉函數",
     "組合數取模：階乘 + 逆元階乘預處理；帕斯卡三角形",
-    "擴展歐幾里得（選修）"
+    "擴展歐幾里得（選修）",
+    "模逆元與擴展歐幾里得（模數不是質數時也能用）",
+    "篩出最小質因數 spf，批次質因數分解"
    ],
    "drills": [
     "d075",
+    "d177",
+    "d178",
     "d093"
    ],
    "anchors": [
@@ -1876,8 +1962,8 @@
    "gate": {
     "type": "set",
     "problems": [
-     "d075",
-     "d038"
+     "d179",
+     "d178"
     ],
     "minutes": 75,
     "need": 2,
@@ -1888,7 +1974,7 @@
     "Competitive Programmer's Handbook 第 21 章『Number theory』、第 22 章『Combinatorics』"
    ],
    "n": 37,
-   "start": 68
+   "start": 72
   },
   {
    "stage": 3,
@@ -1924,7 +2010,7 @@
    "lang": "py",
    "read": [],
    "n": 38,
-   "start": 70
+   "start": 75
   },
   {
    "stage": 4,
@@ -1974,7 +2060,7 @@
     "learncpp.com 第 0–8 章"
    ],
    "n": 39,
-   "start": 71
+   "start": 76
   },
   {
    "stage": 4,
@@ -2024,7 +2110,7 @@
     "cppreference：<vector>、<algorithm>、<set>、<map>、<queue>"
    ],
    "n": 40,
-   "start": 75
+   "start": 80
   },
   {
    "stage": 4,
@@ -2069,7 +2155,7 @@
    "lang": "cpp",
    "read": [],
    "n": 41,
-   "start": 79
+   "start": 84
   },
   {
    "stage": 4,
@@ -2080,10 +2166,15 @@
     "向量、叉積（方向）、點積；三點共線；整數幾何優先",
     "線段相交（含端點、共線）；點在多邊形內（射線法）；多邊形面積（鞋帶公式）",
     "凸包（Andrew monotone chain）",
-    "浮點誤差：eps 的使用；盡量用整數"
+    "浮點誤差：eps 的使用；盡量用整數",
+    "全整數幾何：叉積判方向、內積判角度、距離比較用平方——不要用 sqrt 與浮點",
+    "點在多邊形內（射線法與邊上的判斷）、矩形交集、兩圓關係"
    ],
    "drills": [
     "d082",
+    "d181",
+    "d183",
+    "d184",
     "d081",
     "d080"
    ],
@@ -2110,8 +2201,8 @@
    "gate": {
     "type": "set",
     "problems": [
-     "d080",
-     "d082"
+     "d182",
+     "d080"
     ],
     "minutes": 90,
     "need": 2,
@@ -2122,7 +2213,7 @@
     "Competitive Programmer's Handbook 第 29 章『Geometry』"
    ],
    "n": 42,
-   "start": 83
+   "start": 88
   },
   {
    "stage": 4,
@@ -2133,11 +2224,13 @@
     "Bellman-Ford 與負環偵測；SPFA 的風險",
     "強連通分量（Kosaraju / Tarjan）；縮點成 DAG",
     "最大流入門（Edmonds–Karp）——CPE 少考，建立概念即可",
-    "無向圖的橋與關節點（選修）"
+    "無向圖的橋與關節點（選修）",
+    "樹的直徑（雙 BFS）與最近共同祖先（倍增）；樹一律寫成迭代"
    ],
    "drills": [
     "d088",
     "d089",
+    "d186",
     "d090"
    ],
    "anchors": [],
@@ -2157,8 +2250,8 @@
    "gate": {
     "type": "set",
     "problems": [
-     "d089",
-     "d088"
+     "d187",
+     "e403"
     ],
     "minutes": 90,
     "need": 2,
@@ -2169,7 +2262,7 @@
     "Competitive Programmer's Handbook 第 17 章『Strong connectivity』、第 20 章『Flows and cuts』"
    ],
    "n": 43,
-   "start": 87
+   "start": 92
   },
   {
    "stage": 4,
@@ -2180,11 +2273,15 @@
     "前綴函數（KMP 失敗函數）與週期；Z 函數（選修）",
     "迴文：中心擴展、Manacher",
     "字串雜湊（選修）；Trie（選修）",
-    "運算式解析：遞迴下降（expr / term / factor）"
+    "運算式解析：遞迴下降（expr / term / factor）",
+    "KMP 計數（可重疊）、Z 函數與前綴相似度、排序＋二分的前綴查詢（或字典樹）"
    ],
    "drills": [
     "d083",
-    "d084"
+    "d084",
+    "d189",
+    "d190",
+    "d095"
    ],
    "anchors": [
     "uva10010",
@@ -2206,8 +2303,8 @@
    "gate": {
     "type": "set",
     "problems": [
-     "d095",
-     "d083"
+     "d191",
+     "d189"
     ],
     "minutes": 90,
     "need": 2,
@@ -2218,7 +2315,7 @@
     "Competitive Programmer's Handbook 第 26 章『String algorithms』"
    ],
    "n": 44,
-   "start": 91
+   "start": 96
   },
   {
    "stage": 4,
@@ -2229,11 +2326,14 @@
     "樹 DP（選／不選）、換根（選修）；用迭代避免遞迴深度問題",
     "數位 DP：貼上界旗標 tight",
     "博弈 DP：必勝／必敗狀態、Nim（選修）",
-    "格子路徑計數與取模"
+    "格子路徑計數與取模",
+    "樹上最大路徑和：每個點維護『往下最大』與『最大兩條的和』",
+    "Nim 與 XOR：先手必勝 ⇔ 所有堆的 XOR 不為 0"
    ],
    "drills": [
     "d085",
-    "d091",
+    "d092",
+    "d193",
     "d094"
    ],
    "anchors": [
@@ -2255,8 +2355,8 @@
    "gate": {
     "type": "set",
     "problems": [
-     "d092",
-     "d085"
+     "d194",
+     "d092"
     ],
     "minutes": 90,
     "need": 2,
@@ -2267,21 +2367,23 @@
     "Competitive Programmer's Handbook 第 14 章『Tree algorithms』、第 25 章『Game theory』"
    ],
    "n": 45,
-   "start": 95
+   "start": 100
   },
   {
    "stage": 4,
-   "weeks": 1,
+   "weeks": 2,
    "title": "進階資料結構",
    "goal": "會稀疏表、BIT、分治計數。",
    "learn": [
     "Sparse Table（RMQ）；樹狀陣列 BIT；線段樹（選修）",
     "分治：合併排序算逆序對",
-    "座標壓縮"
+    "座標壓縮",
+    "樹狀陣列（BIT）與線段樹：支援『修改』的區間查詢；稀疏表只能處理靜態資料"
    ],
    "drills": [
     "d086",
-    "d087"
+    "d087",
+    "d195"
    ],
    "anchors": [],
    "pool": [],
@@ -2300,8 +2402,8 @@
    "gate": {
     "type": "set",
     "problems": [
-     "d086",
-     "d087"
+     "d196",
+     "d195"
     ],
     "minutes": 90,
     "need": 2,
@@ -2312,7 +2414,7 @@
     "Competitive Programmer's Handbook 第 9 章『Range queries』、第 28 章『More segment trees』"
    ],
    "n": 46,
-   "start": 99
+   "start": 104
   },
   {
    "stage": 4,
@@ -2344,7 +2446,7 @@
    "lang": "py",
    "read": [],
    "n": 47,
-   "start": 100
+   "start": 106
   },
   {
    "stage": 5,
@@ -2361,7 +2463,8 @@
    "drills": [],
    "anchors": [],
    "pool": [
-    "每週一場完整模擬（3 小時），賽後必檢討每一題"
+    "每週一場完整模擬（3 小時），賽後必檢討每一題",
+    "`cpe mock start --kind full` 會從內建題庫（每題的測資都經過獨立解與錯誤解驗證）抽 7 題：3 題 ★、2 題 ★★、1 題 ★★★、1 題 ★★★★；加 `--real` 只出有英文題目的題"
    ],
    "resources": [
     "cpe"
@@ -2379,7 +2482,7 @@
    "lang": "py",
    "read": [],
    "n": 48,
-   "start": 101
+   "start": 107
   },
   {
    "stage": 5,
@@ -2414,7 +2517,7 @@
    "lang": "py",
    "read": [],
    "n": 49,
-   "start": 105
+   "start": 111
   },
   {
    "stage": 5,
@@ -2430,7 +2533,8 @@
    "anchors": [],
    "pool": [
     "CPE 歷屆三、四顆星題全部（約 4 場／年 × 2 題）",
-    "Codeforces rating 1400–1800"
+    "Codeforces rating 1400–1800",
+    "內建的 ★★★★ 題當熱身：d074 旅行推銷員、d080 凸包、d081 線段相交、d088 負環、d089 強連通分量、d094 數位 DP、d187 LCA、d194 樹上最大路徑、d196 線段樹、e403 分層最短路——限時 60 分鐘，失敗後走提示階梯，24 小時後重寫"
    ],
    "resources": [
     "cpe",
@@ -2449,7 +2553,7 @@
    "lang": "py",
    "read": [],
    "n": 50,
-   "start": 111
+   "start": 117
   },
   {
    "stage": 5,
@@ -2464,7 +2568,8 @@
    "drills": [],
    "anchors": [],
    "pool": [
-    "自己出模擬：`cpe mock start`；也用歷屆題組出整場"
+    "自己出模擬：`cpe mock start`（內建題庫抽題）；也用歷屆題組出整場",
+    "把每場模擬的題目、卡關點、解法分類記進錯題本（`cpe err`），週末照『弱點修補』的方法補"
    ],
    "resources": [
     "cpe"
@@ -2486,7 +2591,7 @@
    "lang": "py",
    "read": [],
    "n": 51,
-   "start": 119
+   "start": 125
   },
   {
    "stage": 5,
@@ -2515,7 +2620,7 @@
    "lang": "py",
    "read": [],
    "n": 52,
-   "start": 125
+   "start": 131
   }
  ]
 }

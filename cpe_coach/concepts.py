@@ -24,6 +24,8 @@ def _norm(s: str) -> str:
 def of_problem(p: Dict[str, Any]) -> List[str]:
     """一題屬於哪些知識點：用 topic、標籤、標題比對關鍵字；全都比不到就歸到 loop（一般模擬題）。
     比對時用「長關鍵字優先」，一個關鍵字只算一次。"""
+    if p.get("concepts"):                  # 題目自己標明的知識點優先（內建題 2.8.0 起逐題標註）
+        return [c for c in p["concepts"] if c in load()] or ["loop"]
     hay = _norm(" ".join([str(p.get("topic", "")), " ".join(p.get("cpe_tags", []) or []), str(p.get("title", ""))]))
     found: List[str] = []
     for cid, c in load().items():

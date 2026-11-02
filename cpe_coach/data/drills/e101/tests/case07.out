@@ -1,0 +1,19 @@
+Case #1:
+1 ca 72
+2 aa 50
+2 cac 50
+4 ac 0
+4 b 0
+
+Case #2:
+1 ac 100
+2 cc 90
+3 ccb 50
+4 b 0
+4 bca 0
+
+Case #3:
+1 aaa 100
+2 b 50
+3 ab 0
+3 c 0

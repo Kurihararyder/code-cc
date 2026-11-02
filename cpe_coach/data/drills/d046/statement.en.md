@@ -5,7 +5,7 @@
 Given an array of length n and q queries, each query is l r (1-indexed); print a[l]+…+a[r].
 
 ## Input
-The first line contains n and q; the second line contains n integers; then q lines l r. n, q ≤ 20000, |a| ≤ 10^6.
+The first line contains n and q; the second line contains n integers; then q lines l r. n, q ≤ 50000, |a| ≤ 10^6.
 
 ## Output
 One line per query.
