@@ -5,16 +5,19 @@ import { S, emit, pref, applyTheme, stageColor } from "./state.js";
 import { go, where } from "./router.js";
 import { openPalette } from "./palette.js";
 import { t } from "./i18n.js";
+import { CLOUD, userButton, updatePill } from "./account.js";
 
 const NAV = [["home", "今日", "home"], ["practice", "練習", "code"], ["course", "課程", "map"], ["exam", "考試", "target"], ["study", "學習", "bulb"], ["stats", "統計", "chart"], ["settings", "設定", "settings"]];
 let tick = null;
 
 export function buildShell() {
   const rail = $("#rail"); clear(rail);
-  rail.append(h("a", { class: "brand", href: "#/home", "aria-label": "CPE 教練", title: "CPE 教練" }, icon("code", "lg")));
+  rail.append(h("a", { class: "brand" + (CLOUD.enabled ? " pcu" : ""), href: "#/home", "aria-label": "CPE 練功系統", title: CLOUD.enabled ? "靜宜大學 晶片設計學士學位學程" : "CPE 教練" },
+    CLOUD.enabled ? h("img", { src: "/static/img/icd-mark.png", alt: "晶片設計學士學位學程", width: 56, height: 28 }) : icon("code", "lg")));
   NAV.forEach(([k, label, ic], i) => {
     if (k === "settings") rail.append(h("div", { class: "spacer" }));
-    rail.append(h("a", { class: "navbtn", href: "#/" + k, dataset: { nav: k } }, icon(ic), h("span", { text: t(label) }), k === "home" ? h("span", { class: "dot", id: "dueDot", hidden: true }) : null));
+    if (k === "settings") rail.append(h("a", { class: "navbtn", href: "#/" + k, dataset: { nav: k } }, icon(ic), h("span", { text: t(label) })), userButton());
+    else rail.append(h("a", { class: "navbtn", href: "#/" + k, dataset: { nav: k } }, icon(ic), h("span", { text: t(label) }), k === "home" ? h("span", { class: "dot", id: "dueDot", hidden: true }) : null));
   });
   onConnection((ok) => { $("#offline").hidden = ok; });
   window.addEventListener("routechange", markNav);
@@ -34,8 +37,9 @@ export function paintTop() {
       h("span", { class: "hide-m muted", text: `單元 ${u.n}/${u.total}` }), h("b", { text: u.title }), h("span", { class: "hide-m muted", text: `· 第 ${u.weeks[0]}${u.weeks[1] > u.weeks[0] ? "–" + u.weeks[1] : ""} 週` })]
       : h("b", { text: "課程已完成 🎓" })),
     S.exam ? h("button", { class: "pill bad", id: "examChip", onclick: () => go("/exam"), title: "考試進行中" }, icon("clock"), h("span", { id: "examLeft", text: fmtDur(examLeft()) })) : null,
-    h("button", { class: "pill " + (S.ai.available ? "ok" : "warn"), onclick: () => go("/settings"), title: S.ai.available ? "AI 就緒" : "尚未設定 API 金鑰" },
-      h("span", { class: "led" + (S.ai.available ? " on" : "") }), h("span", { class: "hide-m", text: S.ai.available ? S.ai.model : "AI 未設定" })),
+    updatePill(),
+    h("button", { class: "pill " + (S.ai.available ? "ok" : "warn"), onclick: () => go("/settings"), title: S.ai.available ? "AI 就緒" : (S.ai.managed ? (S.ai.why || "AI 未授權") : "尚未設定 API 金鑰") },
+      h("span", { class: "led" + (S.ai.available ? " on" : "") }), h("span", { class: "hide-m", text: S.ai.available ? S.ai.model : (S.ai.managed ? "AI 未授權" : "AI 未設定") })),
     h("button", { class: "searchbtn", onclick: openPalette, "aria-label": "搜尋與指令" }, icon("search"), h("span", { class: "t", text: "搜尋題目與指令" }), h("kbd", { text: navigator.platform.includes("Mac") ? "⌘K" : "Ctrl K" })),
     h("button", { class: "btn ghost icon", onclick: cycleTheme, "aria-label": "切換外觀", title: "外觀：" + { auto: "跟隨系統", light: "淺色", dark: "深色" }[pref.get("theme", "auto")] },
       icon(effectiveDark() ? "moon" : "sun")));

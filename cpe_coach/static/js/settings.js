@@ -4,6 +4,7 @@ import { S, pref, applyTheme } from "./state.js";
 import { refreshState, paintTop } from "./shell.js";
 import { skeleton, empty } from "./widgets.js";
 import { lang as uiLang, applyA11y } from "./i18n.js";
+import { CLOUD, updateDialog, loadCloud } from "./account.js";
 
 export async function mountSettings(view) {
   view.append(h("div", { class: "page" }, h("div", { class: "card pad" }, skeleton(5))));
@@ -26,6 +27,7 @@ export async function mountSettings(view) {
       if (r.status === "up_to_date") { upd.className = "small mt ok"; upd.textContent = `✓ 已經是最新版（${r.version}）。`; }
       else if (r.status === "available") {
         upd.className = "small mt";
+        await loadCloud(); if (CLOUD.update) CLOUD.update.behind = r.behind; upd.append(h("div", null, h("button", { class: "btn primary", onclick: () => { CLOUD.update = Object.assign({}, CLOUD.update, { behind: r.behind, commits: r.commits }); updateDialog(); } }, "立即更新")));
         upd.append(h("div", { class: "warn", text: `有 ${r.behind} 個新的更新：` }), h("ul", null, r.commits.map((c) => h("li", null, h("span", { class: "mono", text: c.sha + " " }), c.subject))),
           h("div", null, "在終端機執行 ", h("code", { text: "cpe update" }), "，完成後結束這個網頁服務（Ctrl+C）再重新執行 ", h("code", { text: "cpe web" }), "。學習進度不會被動到。"));
       } else { upd.className = "small mt warn"; upd.textContent = r.reason || "無法檢查更新"; }
@@ -40,6 +42,10 @@ export async function mountSettings(view) {
   const saveLearn = async () => { try { await post("/api/settings", { timeout_sec: +timeout.value, start_date: start.value || undefined, statement_lang: lang.value }); toast("已儲存", "ok", 1500); } catch (e) { toast(e.message, "bad"); } };
 
   view.append(h("div", { class: "page", style: { "max-width": "820px" } }, h("div", { class: "page-head" }, h("div", null, h("h1", { text: "設定" }))),
+    st.ai.managed ? h("section", { class: "card pad" }, h("div", { class: "card-h" }, h("h3", null, icon("sparkle"), "AI（學程授權）")),
+      h("p", { class: "small " + (st.ai.available ? "ok" : "warn"), text: st.ai.available ? "✓ 你的帳號已被授權使用 AI。" : "目前無法使用 AI：" + (st.ai.why || "未授權") }),
+      h("p", { class: "muted small", text: "API 金鑰由學程管理員統一管理，存放在學程伺服器，不需要、也不能在這裡設定。每人每天有使用次數上限。" }),
+      h("div", { class: "row" }, h("button", { class: "btn", onclick: (e) => testAi(e.currentTarget) }, icon("refresh"), "測試連線"), status)) :
     h("section", { class: "card pad" }, h("div", { class: "card-h" }, h("h3", null, icon("sparkle"), "AI（OpenAI）")),
       h("p", { class: "muted small", text: "按下詢問時，你的程式與題目敘述會傳給 OpenAI，並產生 API 費用（每次約一兩千 token）。金鑰只保存在這個程式的記憶體；也可以改用環境變數 OPENAI_API_KEY。" }),
       h("div", { class: "col" }, h("label", { class: "field" }, "API 金鑰", h("div", { class: "row" }, key, show)), h("label", { class: "field" }, "模型", model, h("small", { text: "填你帳號可用的聊天模型名稱。" }))),

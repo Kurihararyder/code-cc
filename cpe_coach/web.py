@@ -23,6 +23,7 @@ from . import bank as bank_mod
 from . import course as course_mod
 from . import __version__, backup, dashboard, hints, judge, service, srs, updater
 from .llm import detect_client
+from .web_cloud import CloudMixin
 from .web_exam import ExamMixin
 from .web_sci import SciMixin
 from .web_learn import LearnMixin
@@ -32,15 +33,15 @@ from .store import Workspace, WorkspaceError
 STATIC = Path(__file__).parent / "static"
 MAX_BODY = 512 * 1024
 CTYPES = {".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".svg": "image/svg+xml",
-          ".png": "image/png", ".ico": "image/x-icon", ".json": "application/json", ".webmanifest": "application/manifest+json"}
+          ".png": "image/png", ".jpg": "image/jpeg", ".ico": "image/x-icon", ".json": "application/json", ".webmanifest": "application/manifest+json"}
 STATIC_RE = re.compile(r"^/static/[A-Za-z0-9_\-./]+$")
 CSP = ("default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; "
        "connect-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'")
 
 
-class App(PracticeMixin, ExamMixin, LearnMixin, SciMixin):
-    def __init__(self, root: Path, port: int):
-        self.root, self.port = Path(root), port
+class App(CloudMixin, PracticeMixin, ExamMixin, LearnMixin, SciMixin):
+    def __init__(self, root: Path, port: int, cloud=None):
+        self.root, self.port, self.cloud = Path(root), port, cloud
         self.token = secrets.token_urlsafe(24)
         self.key: Optional[str] = None
         self.lock = threading.Lock()
@@ -49,9 +50,14 @@ class App(PracticeMixin, ExamMixin, LearnMixin, SciMixin):
         return Workspace(self.root)
 
     def llm(self, ws: Workspace):
+        if self.cloud is not None:                       # 學程版：AI 一律走學程代理（金鑰在資料庫，由管理員授權）
+            return self.cloud.ai_client()
         return detect_client(ws.config(), key=self.key)
 
     def ai_info(self, ws: Workspace) -> Dict[str, Any]:
+        if self.cloud is not None:
+            ok, why = self.cloud.ai_available()
+            return {"available": ok, "model": "學程 AI", "managed": True, "why": why}
         llm = self.llm(ws)
         return {"available": llm is not None, "model": llm.model if llm else (ws.config().get("model") or "gpt-4o")}
 
@@ -192,7 +198,7 @@ def make_handler(app: App):
            "/api/lab/lesson": app.lab_lesson, "/api/lab/worked": app.lab_worked, "/api/lab/parsons": app.lab_parsons, "/api/lab/bug": app.lab_bug, "/api/lab/predict": app.lab_predict,
            "/api/lab/compare": app.lab_compare, "/api/lab/glossary": app.lab_glossary, "/api/cpe/progress": lambda q: app.cpe_progress(), "/api/vocab": lambda q: app.vocab_list(),
            "/api/plan": lambda q: app.plan(int(q.get("minutes", "30"))), "/api/calibration": lambda q: app.calibration(), "/api/weakness": lambda q: app.weakness(),
-           "/api/eng": lambda q: app.eng_list()}
+           "/api/eng": lambda q: app.eng_list(), "/api/cloud/status": app.cloud_status}
     POST = {"/api/new": app.new, "/api/save": app.save, "/api/test": app.test, "/api/trace": app.trace, "/api/fuzz": app.fuzz, "/api/ask": app.ask,
             "/api/hint": app.hint, "/api/giveup": app.giveup, "/api/solution": app.solution, "/api/gate": app.gate_start,
             "/api/mock": app.mock_start, "/api/exam/finish": app.exam_finish, "/api/goal/set": app.goal_set, "/api/exp": app.exp_set, "/api/notes/add": app.notes_add, "/api/explain": app.explain,
@@ -202,6 +208,9 @@ def make_handler(app: App):
             "/api/course/next": app.course_next, "/api/settings": app.set_settings, "/api/past/import": app.past_import, "/api/cpe/import": app.cpe_import,
             "/api/past/statement": app.past_statement, "/api/past/start": app.past_start, "/api/vocab/add": app.vocab_add,
             "/api/vocab/remove": app.vocab_remove, "/api/eng/start": app.eng_start, "/api/eng/verify": app.eng_verify, "/api/key": app.set_key, "/api/ai/test": app.ai_test, "/api/update/check": app.update_check}
+    NOLOCK = {"/api/cloud/login": app.cloud_login, "/api/cloud/logout": app.cloud_logout, "/api/cloud/password": app.cloud_password,
+              "/api/cloud/recheck": app.cloud_recheck, "/api/cloud/sync": app.cloud_sync, "/api/admin/rpc": app.admin_rpc, "/api/admin/fn": app.admin_fn,
+              "/api/admin/ai_test": app.admin_ai_test, "/api/update/apply": app.update_apply, "/api/restart": app.restart}
 
     class H(BaseHTTPRequestHandler):
         server_version = "cpe"
@@ -255,6 +264,9 @@ def make_handler(app: App):
                     return self._json(200, {"app": "cpe-coach", "version": __version__, "pid": os.getpid(), "port": app.port, "workspace": str(app.root)})
                 if self.headers.get("X-CPE-Token") != app.token:
                     return self._fail(403, "bad token")
+                blocked = app.gate(u.path, "GET")
+                if blocked is not None:
+                    return self._json(401, {"error": "請先登入", "login_required": True, "cloud": blocked})
                 if u.path == "/api/backup":
                     with app.ws().lock():
                         data = backup.export_bytes(app.ws())
@@ -288,7 +300,18 @@ def make_handler(app: App):
                 body = json.loads(self.rfile.read(n).decode("utf-8") or "{}")
             except json.JSONDecodeError:
                 return self._fail(400, "bad json")
-            fn = POST.get(urlparse(self.path).path)
+            path = urlparse(self.path).path
+            blocked = app.gate(path, "POST")
+            if blocked is not None:
+                return self._json(401, {"error": "請先登入", "login_required": True, "cloud": blocked})
+            if path in NOLOCK:                      # 雲端操作會連網、而且同步自己會鎖工作區：不要在全域鎖裡做
+                try:
+                    return self._json(200, NOLOCK[path](body))
+                except (KeyError, ValueError, WorkspaceError) as e:
+                    return self._fail(400, str(e))
+                except Exception as e:
+                    return self._fail(500, f"{type(e).__name__}: {e}")
+            fn = POST.get(path)
             if fn is None:
                 return self._fail(404, "not found")
             try:
@@ -320,8 +343,12 @@ def _stop_on_sigterm(signum, frame) -> None:
 
 
 def serve(root: Path, port: int = 8765, open_browser: bool = True, announce=print) -> None:
-    app = App(root, port)
+    from . import cloud as cloud_mod
+    cfg = cloud_mod.load_config()
+    app = App(root, port, cloud_mod.Cloud(cfg, Path(root)) if cfg else None)
     httpd = LocalServer(("127.0.0.1", port), make_handler(app))
+    app.httpd = httpd
+    app.bg_update()
     url = f"http://127.0.0.1:{port}/"
     announce(f"CPE 教練網頁介面：{url}　（Ctrl+C 結束）")
     if open_browser:

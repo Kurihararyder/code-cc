@@ -19,4 +19,4 @@ packages = ["cpe_coach", "cpe_coach.launcher"]
 version = {attr = "cpe_coach.__version__"}
 
 [tool.setuptools.package-data]
-cpe_coach = ["data/*.json", "data/*.md", "static/*.html", "static/*.svg", "static/css/*.css", "static/js/*.js", "data/drills/index.json", "data/drills/*/statement.md", "data/drills/*/statement.en.md", "data/drills/*/tests/*", "launcher/assets/*"]
+cpe_coach = ["data/*.json", "data/*.md", "static/*.html", "static/*.svg", "static/css/*.css", "static/img/*", "static/js/*.js", "data/drills/index.json", "data/drills/*/statement.md", "data/drills/*/statement.en.md", "data/drills/*/tests/*", "launcher/assets/*"]

@@ -11,7 +11,7 @@ from . import bank as bank_mod
 from .store import CPE_DIR, Workspace, WorkspaceError
 
 VERSION = 1
-SKIP_META = {"backups", "last_fail", "lock", "trace_input.txt"}
+SKIP_META = {"backups", "last_fail", "lock", "trace_input.txt", "cloud.json"}      # cloud.json：登入憑證，不進備份（備份會被傳來傳去）
 
 
 def _files(ws: Workspace) -> List[Path]:

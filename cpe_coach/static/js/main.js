@@ -11,9 +11,12 @@ import { mountSettings } from "./settings.js";
 import { mountExam } from "./exam.js";
 import { mountStudy } from "./study.js";
 import { applyA11y } from "./i18n.js";
+import { ensureAccess } from "./gate.js";
+import { loadCloud, showAnnouncement } from "./account.js";
+import { mountAdmin } from "./admin.js";
 
 applyTheme(); applyA11y();
-route("home", mountHome); route("practice", mountWorkspace); route("course", mountCourse); route("exam", mountExam); route("stats", mountStats); route("settings", mountSettings); route("study", mountStudy);
+route("home", mountHome); route("practice", mountWorkspace); route("course", mountCourse); route("exam", mountExam); route("stats", mountStats); route("settings", mountSettings); route("study", mountStudy); route("admin", mountAdmin);
 
 document.addEventListener("keydown", (e) => {
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openPalette(); return; }
@@ -25,7 +28,11 @@ function shortcuts() {
   modal({ title: "鍵盤快速鍵", body: h("dl", { class: "dl" }, rows.flatMap(([k, v]) => [h("dt", null, h("kbd", { text: k })), h("dd", { text: v })])), actions: [{ label: "關閉", kind: "primary" }] });
 }
 
+await ensureAccess();                   // 學程版：先登入（學號＋密碼），通過伺服器的授權檢查才進入
+await loadCloud();
 buildShell();
 await refreshState();
 await render();
+showAnnouncement();
 window.addEventListener("cpe:changed", refreshState);
+setInterval(async () => { await loadCloud(); const { paintTop } = await import("./shell.js"); paintTop(); }, 300000);

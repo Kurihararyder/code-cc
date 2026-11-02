@@ -8,7 +8,7 @@ rm -rf ws shots && mkdir shots
 export PYTHONPATH="$ROOT"
 python3 -m cpe_coach init ws >/dev/null
 cd ws
-CPE_API_BASE=http://127.0.0.1:8792/v1 OPENAI_API_KEY=fake nohup python3 -m cpe_coach web --no-open --port 8793 > "$E2E_DIR/web.log" 2>&1 &
+CPE_CLOUD=off CPE_API_BASE=http://127.0.0.1:8792/v1 OPENAI_API_KEY=fake nohup python3 -m cpe_coach web --no-open --port 8793 > "$E2E_DIR/web.log" 2>&1 &
 echo $! > "$E2E_DIR/web.pid"
 sleep 1.5
 curl -s -o /dev/null -w "server %{http_code}\n" http://127.0.0.1:8793/
