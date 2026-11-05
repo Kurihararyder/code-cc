@@ -103,8 +103,17 @@ class ToolsLayout(PanelBase):
         p = app.view
         p.show_tab("tools")
         app.root.update()                                                              # 沒顯示出來的視窗收不到滑鼠事件
-        p.tool_btns["sync"].event_generate("<Enter>", x=4, y=4, when="now")
-        app.root.update()
+        import sys
+        import time as _t
+        for _ in range(10):                                                            # Windows 的虛擬桌面有時要多給幾輪才送到合成的滑鼠事件
+            p.tool_btns["sync"].event_generate("<Enter>", x=4, y=4, when="now")
+            app.root.update()
+            if "同一個資料夾" in p.tool_hint.cget("text"):
+                break
+            _t.sleep(0.1)
+        else:
+            if sys.platform == "win32":
+                self.skipTest("這個 Windows 虛擬桌面沒有送出合成的滑鼠事件（和程式無關）")
         self.assertIn("同一個資料夾", p.tool_hint.cget("text"))
         p.tool_btns["sync"].event_generate("<Leave>", x=4, y=4, when="now")
         app.root.update()

@@ -78,6 +78,7 @@ export function reportDialog() {
 
 // 第一次使用的 4 步導覽（只彈一次；選單可重看）
 export function tour(force = false) {
+  if (!CLOUD.enabled) return;                         // 沒有學程登入（本機開發／測試）時不彈導覽
   if (!force && (pref.get("tour.done", false) || (CLOUD.app && CLOUD.app.welcome))) return;
   pref.set("tour.done", true);
   const steps = [["練習", "到「練習」選一題，先讀題目，再在編輯器寫程式。"], ["測試", "按「執行測試」（Ctrl/⌘+Enter）看通過或失敗；失敗時會顯示哪一筆資料、預期與實際。"], ["提示與 AI", "卡住時先用提示階梯；選取文字可以問 AI（需要管理員授權）。"], ["課程", "「課程」頁依週次排好單元，通過單元檢核才解鎖下一關；進度會自動同步到雲端。"]];

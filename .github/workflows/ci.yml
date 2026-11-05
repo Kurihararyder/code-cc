@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-24.04, macos-latest, windows-latest]
         python: ["3.9", "3.12"]
     steps:
       - uses: actions/checkout@v4
@@ -20,29 +20,29 @@ jobs:
       - name: Install pytest (used by the engineering-task acceptance tests)
         run: python -m pip install pytest
       - name: Static check (undefined names, unused imports)
-        if: matrix.os == 'ubuntu-latest' && matrix.python == '3.12'
+        if: matrix.os == 'ubuntu-24.04' && matrix.python == '3.12'
         run: |
           python -m pip install pyflakes
           python -m pyflakes cpe_coach tests dev/gen_cpe_sets.py dev/cpe_meta_src.py dev/gen_lab.py dev/lab_quiz_src.py dev/lab_worked_src.py dev/lab_text_src.py dev/launcher_screens.py dev/ci_installer_check.py dev/make_icons.py
       - name: Learning-workshop data is reproducible (regenerate by executing the sources, expect no diff)
-        if: matrix.os == 'ubuntu-latest' && matrix.python == '3.12'
+        if: matrix.os == 'ubuntu-24.04' && matrix.python == '3.12'
         run: |
           python dev/gen_lab.py
           git diff --exit-code cpe_coach/data/lab
       - name: Problem-set quality (independent solutions, input limits, wrong and slow solutions - dev/qa.py)
-        if: matrix.os == 'ubuntu-latest' && matrix.python == '3.12'
+        if: matrix.os == 'ubuntu-24.04' && matrix.python == '3.12'
         env:
           QA_REF_MAX: "4.0"
         run: python dev/qa.py --quick
       - name: Drill data is reproducible (regenerate the tests by executing the reference solutions, expect no diff)
-        if: matrix.os == 'ubuntu-latest' && matrix.python == '3.12'
+        if: matrix.os == 'ubuntu-24.04' && matrix.python == '3.12'
         run: |
           python dev/gen_drills.py
           python dev/gen_drills_en.py
           python dev/gen_course.py
           git diff --exit-code cpe_coach/data COURSE.md
       - name: Web UI scripts parse (ES modules)
-        if: matrix.os == 'ubuntu-latest' && matrix.python == '3.12'
+        if: matrix.os == 'ubuntu-24.04' && matrix.python == '3.12'
         run: for f in cpe_coach/static/js/*.js; do node --input-type=module --check < "$f" || exit 1; done
       - name: Unit tests (the school login gate is switched off; tests/test_cloud.py covers it with a fake server)
         env:
@@ -69,7 +69,7 @@ jobs:
 
   installer-gui:
     name: installer GUI on a virtual screen (Linux, Python ${{ matrix.python }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -99,7 +99,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-24.04, macos-latest, windows-latest]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -184,7 +184,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-24.04, windows-latest, macos-latest]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -203,7 +203,7 @@ jobs:
             echo "::warning::could not fetch commit $COMMIT of LuckyPigeon/CPE_Previous_Questions (deleted or network?) - real-data tests skipped"
           fi
       - name: Install poppler (reference extractor for the cross-check)
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-24.04'
         run: sudo apt-get update && sudo apt-get install -y poppler-utils
       - name: Real-data tests (89 PDFs, digests and pdftotext cross-check)
         if: env.CPE_QUESTIONS_DIR != ''
@@ -211,7 +211,7 @@ jobs:
 
   ui:
     name: browser UI tests (Playwright, Linux)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
