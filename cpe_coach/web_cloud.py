@@ -14,7 +14,7 @@ from .cloud import Cloud, CloudError
 
 ADMIN_RPC = {"admin_list_users", "admin_update_user", "admin_bulk_update", "admin_get_settings", "admin_set_setting", "admin_secret_status",
              "admin_set_secret", "admin_audit", "admin_overview", "admin_ai_usage", "admin_set_archived", "admin_set_notices", "admin_expiring",
-             "admin_insights", "admin_export"}
+             "admin_insights", "admin_export", "admin_reports", "admin_resolve_report", "admin_anomalies", "admin_auto_archive"}
 ADMIN_FN = {"create_users", "reset_password", "delete_user"}
 OPEN_GET = {"/api/ping", "/api/cloud/status"}
 OPEN_POST = {"/api/cloud/login", "/api/cloud/logout", "/api/cloud/password", "/api/cloud/recheck", "/api/update/check", "/api/update/apply", "/api/restart"}
@@ -91,6 +91,13 @@ class CloudMixin:
         except CloudError as e:
             raise ValueError(str(e))
         return {"sync": r}
+
+    def cloud_report(self, body: Dict[str, Any]) -> Dict[str, Any]:
+        try:
+            self.cloud.report_problem(str(body.get("id", "")), str(body.get("text", "")))
+        except CloudError as e:
+            raise ValueError(str(e))
+        return {"ok": True}
 
     def kick_sync(self) -> None:
         """背景同步（登入後、之後每 10 分鐘）；失敗只記下原因，不打斷學習。"""

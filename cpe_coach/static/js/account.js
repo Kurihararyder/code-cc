@@ -38,6 +38,8 @@ function openMenu(anchor) {
     CLOUD.is_admin ? h("button", { role: "menuitem", class: "um-item", onclick: () => { menu.remove(); go("/admin"); } }, icon("shield"), "管理後台") : null,
     h("button", { role: "menuitem", class: "um-item", onclick: async (e) => { const b = e.currentTarget; b.disabled = true; try { const r = await post("/api/cloud/sync"); toast(`已同步（拉回 ${r.sync.pulled_events} 筆、上傳 ${r.sync.pushed_events} 筆紀錄）`, "ok", 3000); await loadCloud(); menu.remove(); } catch (err) { toast(err.message, "bad"); b.disabled = false; } } }, icon("refresh"), "立即同步進度"),
     CLOUD.update && CLOUD.update.behind > 0 ? h("button", { role: "menuitem", class: "um-item", onclick: () => { menu.remove(); updateDialog(); } }, icon("external"), `有新版本（${CLOUD.update.behind} 項更新）`) : null,
+    h("button", { role: "menuitem", class: "um-item", onclick: () => { menu.remove(); reportDialog(); } }, icon("alert"), "回報題目問題"),
+    h("button", { role: "menuitem", class: "um-item", onclick: () => { menu.remove(); tour(true); } }, icon("help"), "使用導覽"),
     h("button", { role: "menuitem", class: "um-item", onclick: () => { menu.remove(); passwordDialog(); } }, icon("lock"), "變更密碼"),
     h("button", { role: "menuitem", class: "um-item bad", onclick: async () => { menu.remove(); try { await post("/api/cloud/logout"); } catch { /* ignore */ } location.reload(); } }, icon("x"), "登出"));
   document.body.append(menu);
@@ -65,6 +67,23 @@ export function offlinePill() {
   return h("span", { class: "pill " + (left != null && left < 12 ? "bad" : "warn"), title: "連不上學程伺服器，目前使用上次驗證通過的結果；超過寬限就必須連網重新驗證" }, icon("alert"), h("span", { class: "hide-m", text: left != null ? `離線，剩 ${left} 小時` : "離線" }));
 }
 
+export function reportDialog() {
+  const m = location.hash.match(/#\/practice\/([^/]+)/);
+  const id = h("input", { type: "text", value: m ? decodeURIComponent(m[1]) : "", placeholder: "例如 d019", "aria-label": "題號", autofocus: true });
+  const text = h("textarea", { rows: 5, placeholder: "哪裡有問題？例如：題目敘述不清楚、範例輸出和說明不一致、某筆測資疑似有誤…", "aria-label": "說明" });
+  const msg = h("div", { class: "small bad" });
+  modal({ title: "回報題目問題", body: h("div", { class: "col" }, h("label", { class: "field" }, "題號", id), h("label", { class: "field" }, "說明", text), msg),
+    actions: [{ label: "取消" }, { label: "送出", kind: "primary", onClick: async () => { try { await post("/api/cloud/report", { id: id.value.trim(), text: text.value.trim() }); toast("已送出，謝謝你的回報", "ok", 2500); } catch (e) { msg.textContent = e.message; return false; } } }] });
+}
+
+// 第一次使用的 4 步導覽（只彈一次；選單可重看）
+export function tour(force = false) {
+  if (!force && (pref.get("tour.done", false) || (CLOUD.app && CLOUD.app.welcome))) return;
+  pref.set("tour.done", true);
+  const steps = [["練習", "到「練習」選一題，先讀題目，再在編輯器寫程式。"], ["測試", "按「執行測試」（Ctrl/⌘+Enter）看通過或失敗；失敗時會顯示哪一筆資料、預期與實際。"], ["提示與 AI", "卡住時先用提示階梯；選取文字可以問 AI（需要管理員授權）。"], ["課程", "「課程」頁依週次排好單元，通過單元檢核才解鎖下一關；進度會自動同步到雲端。"]];
+  modal({ title: "60 秒上手", body: h("ol", { class: "tour" }, steps.map(([a, b]) => h("li", null, h("b", { text: a + "　" }), b))), actions: [{ label: "開始練習", kind: "primary" }] });
+}
+
 export function updatePill() {
   const up = CLOUD.update || {};
   if (!CLOUD.enabled && !(up.behind > 0)) return null;
@@ -90,6 +109,7 @@ export function showAnnouncement() {
     pref.set(key, true);
     toast("📢 " + a, "", 12000);
   }
+  tour();
   const w = CLOUD.app && CLOUD.app.welcome;
   if (w && !pref.get("welcome." + (w.length + ":" + w.slice(0, 24)), false)) {
     pref.set("welcome." + (w.length + ":" + w.slice(0, 24)), true);

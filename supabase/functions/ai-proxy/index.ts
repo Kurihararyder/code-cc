@@ -25,11 +25,19 @@ Deno.serve(async (req) => {
   const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
   const { count } = await sb.from("ai_usage").select("id", { count: "exact", head: true }).eq("user_id", u.user.id).gte("at", since);
   if ((count ?? 0) >= (cfg.daily_calls ?? 60)) return json({ error: `今天的 AI 次數已用完（上限 ${cfg.daily_calls ?? 60} 次／24 小時）`, reason: "ai_quota" }, 429);
+  if ((cfg.monthly_calls ?? 0) > 0) {                 // 全學程每月總次數上限（0＝不限）
+    const m = new Date(); m.setUTCDate(1); m.setUTCHours(0, 0, 0, 0);
+    const { count: mc } = await sb.from("ai_usage").select("id", { count: "exact", head: true }).gte("at", m.toISOString());
+    if ((mc ?? 0) >= cfg.monthly_calls) return json({ error: "本月全學程的 AI 預算已用完，請洽管理員", reason: "ai_budget" }, 429);
+  }
   const { data: sec } = await sb.from("app_secrets").select("value").eq("key", "openai_key").maybeSingle();
   if (!sec?.value) return json({ error: "管理員還沒有設定 API 金鑰", reason: "no_key" }, 503);
   const body = await req.json().catch(() => null);
   if (!body || !Array.isArray(body.messages)) return json({ error: "格式不對" }, 400);
-  const payload: Record<string, unknown> = { model: cfg.model || "gpt-4o", messages: body.messages, max_tokens: Math.min(Number(body.max_tokens) || cfg.max_tokens || 1500, cfg.max_tokens || 1500) };
+  const msgs = cfg.mode === "socratic"                // 蘇格拉底模式：只引導，不直接給完整答案
+    ? [{ role: "system", content: "你是程式競賽助教。不要直接給完整程式碼或最終答案；用提問、提示與反例引導學生自己找出問題，每次只推進一小步。" }, ...body.messages]
+    : body.messages;
+  const payload: Record<string, unknown> = { model: cfg.model || "gpt-4o", messages: msgs, max_tokens: Math.min(Number(body.max_tokens) || cfg.max_tokens || 1500, cfg.max_tokens || 1500) };
   if (body.response_format) payload.response_format = body.response_format;
   if (typeof body.temperature === "number") payload.temperature = body.temperature;
   const r = await fetch("https://api.openai.com/v1/chat/completions", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${sec.value}` }, body: JSON.stringify(payload) });

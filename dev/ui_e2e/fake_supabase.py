@@ -7,6 +7,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 USERS = {}
 LOG = []
+REPORTS = []
 SETTINGS = {"ip_policy": {"enabled": False, "cidrs": []}, "ai": {"enabled": False, "model": "gpt-4o", "daily_calls": 60, "max_tokens": 1500},
             "app": {"latest_version": "2.9.0", "min_version": "2.9.0", "announcement": "", "update_note": ""}, "offline": {"grace_hours": 72}, "notices": {"items": []}}
 
@@ -75,6 +76,9 @@ class H(BaseHTTPRequestHandler):
             LOG.append({"at": "2026-11-02T00:00:00Z", "student_id": u["student_id"], "action": "login", "ip": "1.2.3.4", "ok": True, "detail": None})
             return self.out(200, {"ok": u["active"], "reason": "ok" if u["active"] else "inactive", "role": u["role"], "student_id": u["student_id"], "name": u["name"], "cohort": u["cohort"],
                                   "ai_allowed": False, "must_change_pw": u["must_change_pw"], "valid_until": None, "ip": "1.2.3.4", "app": dict(SETTINGS["app"], grace_hours=72)})
+        if name == "report_problem":
+            REPORTS.append({"id": len(REPORTS) + 1, "at": "2026-11-02T00:00:00Z", "student_id": u["student_id"], "problem_id": d["p_pid"], "body": d["p_body"], "resolved": False})
+            return self.out(200, {"ok": True, "reason": "ok"})
         if name in ("my_notices", "load_progress", "save_progress", "pw_changed"):
             return self.out(200, [] if name == "my_notices" else {"ok": True, "data": None})
         if u["role"] != "admin":
@@ -104,6 +108,17 @@ class H(BaseHTTPRequestHandler):
             return self.out(200, {"set": False})
         if name == "admin_audit":
             return self.out(200, LOG[-50:])
+        if name == "admin_anomalies":
+            return self.out(200, {"multi_ip": [{"student_id": "s001", "ips": 3, "list": ["1.1.1.1", "2.2.2.2", "3.3.3.3"]}], "denied": [], "open_reports": sum(1 for r in REPORTS if not r["resolved"])})
+        if name == "admin_reports":
+            return self.out(200, [r for r in REPORTS if r["resolved"] == d["p_resolved"]])
+        if name == "admin_resolve_report":
+            for r in REPORTS:
+                if r["id"] == d["p_id"]:
+                    r["resolved"] = d["p"]
+            return self.out(200, None)
+        if name == "admin_auto_archive":
+            return self.out(200, 0)
         if name in ("admin_ai_usage", "admin_expiring"):
             return self.out(200, [])
         if name == "admin_insights":

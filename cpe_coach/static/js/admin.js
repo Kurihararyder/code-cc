@@ -22,7 +22,7 @@ function csvDownload(name, rows) {
 }
 const sw = (checked, onchange, label) => h("label", { class: "switch" }, h("input", { type: "checkbox", checked, onchange: (e) => onchange(e.target.checked) }), h("span", { class: "sw" }), label ? h("span", { text: label }) : null);
 
-const TABS = [["overview", "總覽", "chart"], ["users", "學員帳號", "users"], ["insights", "學習分析", "target"], ["network", "授權與網路", "lock"], ["ai", "AI 與金鑰", "sparkle"], ["release", "版本與公告", "bulb"], ["audit", "稽核紀錄", "list"]];
+const TABS = [["overview", "總覽", "chart"], ["users", "學員帳號", "users"], ["insights", "學習分析", "target"], ["network", "授權與網路", "lock"], ["ai", "AI 與金鑰", "sparkle"], ["release", "版本與公告", "bulb"], ["reports", "題目回報", "alert"], ["audit", "稽核紀錄", "list"]];
 
 export async function mountAdmin(view, params) {
   if (!CLOUD.is_admin) { view.append(h("div", { class: "page" }, empty("lock", "只有管理員可以使用"))); return; }
@@ -31,12 +31,13 @@ export async function mountAdmin(view, params) {
   view.append(h("div", { class: "page wide" }, h("div", { class: "page-head" }, h("div", null, h("h1", null, icon("shield"), " 管理後台"), h("p", { text: "靜宜大學 晶片設計學士學位學程 · CPE 練功系統" }))),
     h("div", { class: "tabs admin-tabs", role: "tablist" }, TABS.map(([k, t, ic]) => h("button", { role: "tab", "aria-selected": String(k === tab), onclick: () => { location.hash = "#/admin/" + k; } }, icon(ic), t))), body));
   body.append(h("div", { class: "card pad mt" }, skeleton(6)));
-  try { clear(body); await ({ overview, users, insights, network, ai, release, audit }[tab] || overview)(body); } catch (e) { clear(body); body.append(empty("alert", e.message)); }
+  try { clear(body); await ({ overview, users, insights, network, ai, release, reports, audit }[tab] || overview)(body); } catch (e) { clear(body); body.append(empty("alert", e.message)); }
 }
 
 // ---------------- 總覽 ----------------
 async function overview(body) {
   const [o, bad, ai, exp] = await Promise.all([rpc("admin_overview"), rpc("admin_audit", { p_limit: 8, p_action: "login" }), rpc("admin_ai_usage", { p_days: 1 }), rpc("admin_expiring", { p_days: 14 })]);
+  const an = await rpc("admin_anomalies");
   const kpi = (v, l, ic, cls = "") => h("div", { class: "card kpi" }, icon(ic), h("div", { class: "v " + cls, text: String(v) }), h("div", { class: "l", text: l }));
   body.append(h("div", { class: "kpis mt" }, kpi(o.students, "學員帳號", "users"), kpi(o.active, "目前可使用", "check", "ok"), kpi(o.pending, "待開通", "clock", o.pending ? "warn" : ""), kpi(o.expired, "授權已到期", "alert", o.expired ? "bad" : "")),
     h("div", { class: "kpis mt" }, kpi(o.expiring_7d, "7 天內到期", "clock", o.expiring_7d ? "warn" : ""), kpi(o.logins_24h, "24 小時登入次數", "code"), kpi(o.denied_24h, "24 小時被拒絕", "lock", o.denied_24h ? "bad" : ""), kpi(o.ai_allowed, "已授權 AI 的學員", "sparkle")),
@@ -45,6 +46,10 @@ async function overview(body) {
         o.cohorts.length ? h("ul", { class: "list" }, o.cohorts.map((c) => h("li", { class: "li static" }, h("span", { class: "grow", text: c.cohort || "（未分班）" }), h("b", { text: c.n + " 人" })))) : empty("users", "還沒有學員，先到「學員帳號」批次新增。")),
       h("section", { class: "card pad" }, h("div", { class: "card-h" }, h("h3", { text: "AI 使用（24 小時）" }), h("span", { class: "muted small", text: `${o.ai_calls_24h} 次 · 近 7 天 ${o.ai_tokens_7d.toLocaleString()} tokens` })),
         ai.length ? h("ul", { class: "list" }, ai.slice(0, 8).map((a) => h("li", { class: "li static" }, h("span", { class: "grow mono", text: a.student_id }), h("span", { text: `${a.calls} 次` })))) : empty("sparkle", "最近沒有人使用 AI。"))),
+    (an.multi_ip.length || an.denied.length || an.open_reports) ? h("section", { class: "card pad mt anomaly" }, h("div", { class: "card-h" }, h("h3", null, icon("alert"), "需要留意")),
+      h("ul", { class: "list" }, an.multi_ip.map((a) => h("li", { class: "li static" }, h("span", { class: "mono", text: a.student_id }), h("span", { class: "warn", text: `24 小時內從 ${a.ips} 個不同 IP 登入：${a.list.join("、")}（可能帳號外流）` }))),
+        an.denied.map((a) => h("li", { class: "li static" }, h("span", { class: "mono", text: a.student_id }), h("span", { class: "bad", text: `1 小時內被拒絕 ${a.n} 次` }))),
+        an.open_reports ? h("li", { class: "li static" }, h("a", { href: "#/admin/reports", text: `${an.open_reports} 則題目回報還沒處理` })) : null)) : null,
     exp.length ? h("section", { class: "card pad mt" }, h("div", { class: "card-h" }, h("h3", null, icon("clock"), "即將到期或剛到期（14 天內）"),
       h("button", { class: "btn sm primary", onclick: async () => { if (!(await confirmDialog("延長授權", `把這 ${exp.length} 位的授權都延長 30 天？`, "延長"))) return; for (const u of exp) { const base = u.valid_until && new Date(u.valid_until) > new Date() ? new Date(u.valid_until) : new Date(); base.setDate(base.getDate() + 30); await rpc("admin_update_user", { p_id: u.id, p: { valid_until: base.toISOString(), active: true } }); } toast("已延長 30 天", "ok", 2000); location.reload(); } }, "全部延長 30 天")),
       h("ul", { class: "list" }, exp.map((u) => h("li", { class: "li static" }, h("span", { class: "mono", text: u.student_id }), h("span", { class: "grow", text: `${u.name}　${u.cohort || ""}` }), h("span", { class: new Date(u.valid_until) < new Date() ? "bad" : "warn", text: (new Date(u.valid_until) < new Date() ? "已到期 " : "到期 ") + day(u.valid_until) }))))) : null,
@@ -58,6 +63,23 @@ async function exportBackup() {
     const a = h("a", { href: URL.createObjectURL(blob), download: `cpe-備份-${new Date().toISOString().slice(0, 10)}.json` }); document.body.append(a); a.click(); a.remove();
     toast("已下載（含學員名單、設定、進度與稽核紀錄；不含 API 金鑰與密碼）。請妥善保管。", "ok", 6000);
   } catch (e) { toast(e.message, "bad"); }
+}
+
+// ---------------- 題目回報 ----------------
+async function reports(body) {
+  let showDone = false;
+  const box = h("div", { class: "card mt" });
+  const load = async () => {
+    const rows = await rpc("admin_reports", { p_resolved: showDone }); clear(box);
+    if (!rows.length) return box.append(empty("check", showDone ? "沒有已處理的回報" : "沒有待處理的回報"));
+    box.append(h("div", { class: "tablewrap" }, h("table", { class: "tbl" }, h("thead", null, h("tr", null, ["時間", "學號", "題號", "說明", ""].map((x) => h("th", { text: x })))),
+      h("tbody", null, rows.map((r) => h("tr", null, h("td", { text: fmtT(r.at).slice(0, 16) }), h("td", { class: "mono", text: r.student_id || "" }), h("td", { class: "mono", text: r.problem_id }),
+        h("td", { text: r.body, style: { "white-space": "pre-wrap", "max-width": "520px" } }),
+        h("td", null, h("button", { class: "btn sm", onclick: async () => { await rpc("admin_resolve_report", { p_id: r.id, p: !showDone }); await load(); } }, showDone ? "重新開啟" : "標記已處理"))))))));
+  };
+  body.append(h("div", { class: "row wrap mt" }, h("div", { class: "seg" }, [[false, "待處理"], [true, "已處理"]].map(([k, t]) => h("button", { "aria-pressed": String(showDone === k), onclick: async (e) => { showDone = k; [...e.currentTarget.parentElement.children].forEach((b) => b.setAttribute("aria-pressed", String(b === e.currentTarget))); await load(); } }, t))),
+    h("span", { class: "muted small", text: "學員在左下角選單「回報題目問題」送出的勘誤" })), box);
+  await load();
 }
 
 // ---------------- 學習分析 ----------------
@@ -101,6 +123,7 @@ async function users(body) {
   const bulk = async (patch, label) => {
     if (!sel.size) return;
     if (!(await confirmDialog(label, `要對選取的 ${sel.size} 位學員執行「${label}」嗎？`, "執行"))) return;
+    if (sel.size >= 20 && prompt(`影響 ${sel.size} 人。請輸入「確認」才會執行`) !== "確認") { toast("已取消", "", 1500); return; }
     try { const n = await rpc("admin_bulk_update", { p_ids: [...sel], p: patch }); toast(`已更新 ${n} 位`, "ok", 2500); await refresh(); } catch (e) { toast(e.message, "bad"); }
   };
   const windowDialog = () => {
@@ -177,8 +200,10 @@ async function users(body) {
   function createDialog() {
     const t = h("textarea", { rows: 8, placeholder: "每行一位：學號, 姓名\n例如：\n114001, 王小明\n114002, 李小華\n（可直接從 Excel 貼上兩欄）", "aria-label": "名單" });
     const cohort = h("input", { type: "text", placeholder: "例如 114 級", "aria-label": "班級" }), a = h("input", { type: "date", "aria-label": "開始日" }), b = h("input", { type: "date", "aria-label": "結束日" });
+    const file = h("input", { type: "file", accept: ".csv,.txt,text/csv", "aria-label": "匯入 CSV", onchange: async (e) => { const f = e.target.files[0]; if (!f) return; let txt = await f.text(); txt = txt.replace(/^\ufeff/, ""); const rows = txt.split(/\r?\n/).filter((l) => l.trim()); if (/學號|student/i.test(rows[0] || "")) rows.shift(); t.value = rows.join("\n"); } });
     let act = true, ai = false;
-    modal({ title: "批次新增學員", wide: true, body: h("div", { class: "col" }, h("label", { class: "field" }, "名單（學號, 姓名）", t),
+    modal({ title: "批次新增學員", wide: true, body: h("div", { class: "col" }, h("label", { class: "field" }, "名單（學號, 姓名；第三欄可寫班級）", t),
+      h("div", { class: "row wrap" }, h("label", { class: "field grow" }, "或匯入 CSV／Excel 另存的 CSV（欄位：學號, 姓名[, 班級]）", file), h("button", { class: "btn sm", onclick: () => csvDownload("學員名單範本.csv", [["學號", "姓名", "班級"], ["114001", "王小明", "114"], ["114002", "李小華", "114"]]) }, icon("save"), "下載範本")),
       h("div", { class: "row wrap" }, h("label", { class: "field grow" }, "班級／屆別", cohort), h("label", { class: "field" }, "授權開始", a), h("label", { class: "field" }, "授權結束", b)),
       h("div", { class: "row wrap" }, sw(act, (v) => (act = v), "建立後立即啟用"), sw(ai, (v) => (ai = v), "開放 AI")),
       h("p", { class: "xs muted", text: "系統會為每個人產生一組隨機初始密碼，學員第一次登入必須改密碼。學號用英數字（3–24 字），系統一律轉小寫。" })),
@@ -230,14 +255,17 @@ async function ai(body) {
   let on = !!c.enabled;
   const model = h("input", { type: "text", value: c.model, list: "models", "aria-label": "模型" }), models = h("datalist", { id: "models" }, ["gpt-4o", "gpt-4o-mini", "gpt-4.1", "gpt-4.1-mini"].map((m) => h("option", { value: m })));
   const daily = h("input", { type: "number", min: 1, max: 1000, value: c.daily_calls, "aria-label": "每人每日次數", style: { width: "120px" } }), maxt = h("input", { type: "number", min: 100, max: 8000, value: c.max_tokens, "aria-label": "每次最大輸出 token", style: { width: "120px" } });
+  const monthly = h("input", { type: "number", min: 0, max: 1000000, value: c.monthly_calls || 0, "aria-label": "每月全學程總次數", style: { width: "140px" } });
+  const mode = h("select", { "aria-label": "AI 模式" }, [["normal", "一般（可直接講解與給範例）"], ["socratic", "蘇格拉底（只引導提問，不直接給完整答案）"]].map(([k, t]) => h("option", { value: k, text: t, selected: (c.mode || "normal") === k })));
   const key = h("input", { type: "password", autocomplete: "off", placeholder: sec.set ? "（已設定；輸入新金鑰可取代）" : "sk-…", "aria-label": "OpenAI API 金鑰" });
   const keyMsg = h("div", { class: "small mt", "aria-live": "polite" });
   body.append(h("div", { class: "grid2 mt" },
     h("section", { class: "card pad" }, h("div", { class: "card-h" }, h("h3", null, icon("sparkle"), "AI 授權")),
       h("p", { class: "muted small", text: "金鑰只存在資料庫，由學程伺服器代為呼叫 OpenAI；學員電腦上從來沒有金鑰，也看不到。要使用 AI，需要同時：① 這裡開放 ② 該學員被授權。" }),
       h("div", { class: "col" }, sw(on, (v) => (on = v), "開放學程學員使用 AI（總開關）"), h("label", { class: "field" }, "模型", model, models),
-        h("div", { class: "row wrap" }, h("label", { class: "field" }, "每人每 24 小時上限（次）", daily), h("label", { class: "field" }, "每次最大輸出 tokens", maxt)),
-        h("div", null, h("button", { class: "btn primary", onclick: async () => { try { await rpc("admin_set_setting", { p_key: "ai", p_value: { enabled: on, model: model.value.trim() || "gpt-4o", daily_calls: Math.max(1, +daily.value || 60), max_tokens: Math.max(100, +maxt.value || 1500) } }); toast("已儲存 AI 設定", "ok", 2000); } catch (e) { toast(e.message, "bad"); } } }, "儲存")))),
+        h("div", { class: "row wrap" }, h("label", { class: "field" }, "每人每 24 小時上限（次）", daily), h("label", { class: "field" }, "每次最大輸出 tokens", maxt), h("label", { class: "field" }, "每月全學程總次數（0＝不限）", monthly)),
+        h("label", { class: "field" }, "AI 模式", mode),
+        h("div", null, h("button", { class: "btn primary", onclick: async () => { try { await rpc("admin_set_setting", { p_key: "ai", p_value: { enabled: on, model: model.value.trim() || "gpt-4o", daily_calls: Math.max(1, +daily.value || 60), max_tokens: Math.max(100, +maxt.value || 1500), monthly_calls: Math.max(0, +monthly.value || 0), mode: mode.value } }); toast("已儲存 AI 設定", "ok", 2000); } catch (e) { toast(e.message, "bad"); } } }, "儲存")))),
     h("section", { class: "card pad" }, h("div", { class: "card-h" }, h("h3", null, icon("lock"), "OpenAI API 金鑰")),
       h("p", { class: "small", text: sec.set ? `已設定（結尾 ${sec.last4}，更新於 ${fmtT(sec.updated_at)}）` : "尚未設定金鑰。" }),
       h("div", { class: "col" }, key, h("div", { class: "row wrap" },
@@ -260,6 +288,7 @@ async function release(body) {
     h("div", { class: "col" }, h("div", { class: "row wrap" }, h("label", { class: "field" }, "最新版本", ver), h("label", { class: "field" }, "最低可使用版本（強制更新）", min)),
       h("label", { class: "field" }, "公告（登入頁與使用中顯示；留空＝不顯示）", ann), h("label", { class: "field" }, "更新說明（強制更新畫面顯示）", note), h("label", { class: "field" }, "歡迎訊息（每位學員第一次進入時顯示一次；留空＝不顯示）", welcome),
       h("div", null, h("button", { class: "btn primary", onclick: async () => { try { await rpc("admin_set_setting", { p_key: "app", p_value: { latest_version: ver.value.trim(), min_version: min.value.trim(), announcement: ann.value.trim(), update_note: note.value.trim(), welcome: welcome.value.trim() } }); toast("已儲存", "ok", 1800); } catch (e) { toast(e.message, "bad"); } } }, "儲存")),
+      h("div", { class: "row wrap" }, h("button", { class: "btn", onclick: async () => { const d = +prompt("封存授權已到期超過幾天的學員？", "30"); if (!d) return; if (!(await confirmDialog("自動封存", `封存授權到期超過 ${d} 天的學員？（可還原）`, "封存"))) return; try { const n = await rpc("admin_auto_archive", { p_days: d }); toast(`已封存 ${n} 位`, "ok", 2500); } catch (e) { toast(e.message, "bad"); } } }, "封存過期學員…")),
       h("p", { class: "xs muted", text: "提醒：把最低版本設得比大家目前的版本高，所有人都會被擋在更新畫面。發布新版後再調高。" }))),
     noticesCard(S.notices && S.notices.items ? S.notices.items : []));
 }

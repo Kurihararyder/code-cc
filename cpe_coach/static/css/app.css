@@ -432,3 +432,8 @@ textarea{resize:vertical}
 .barrow .bar{flex:1;height:10px;background:var(--surface-3);border-radius:999px;overflow:hidden}.barrow .bar i{display:block;height:100%;background:var(--accent);border-radius:999px}
 .notice-item{border:1px solid var(--border);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px}
 .notice-item input[type=text]{width:180px}.notice-item input[type=date]{width:150px}
+.anomaly{border-left:4px solid var(--warn)}
+.tour{padding-left:1.3em;line-height:1.8}.tour li{margin:.5em 0}
+@media (max-width:640px){.gate{padding:76px 12px 28px}.gate-logo{height:36px}.gate-card{padding:22px 18px}.tbl{font-size:12.5px}.page.wide{padding:14px 10px}.admin-tabs{flex-wrap:nowrap}.bulkbar .btn{flex:1 1 auto}}
+.admin-tabs button{white-space:nowrap;flex:none}.admin-tabs{scrollbar-width:thin}
+.tbl td,.tbl th{white-space:nowrap}.tbl td[style*="pre-wrap"]{white-space:pre-wrap}

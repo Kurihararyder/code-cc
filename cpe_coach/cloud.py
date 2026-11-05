@@ -244,9 +244,29 @@ class Cloud:
                 "user": {k: acc.get(k) for k in ("student_id", "name", "cohort", "role", "valid_from", "valid_until", "ai_allowed", "ip")} if logged else None,
                 "app": info, "notices": self.sess.get("notices") or [], "last_sync": self.last_sync, "last_error": self.last_error, "org": self.cfg.get("org", "")}
 
-    def change_password(self, new: str) -> None:
+    COMMON = {"password", "12345678", "123456789", "1234567890", "qwertyui", "qwerty123", "abcd1234", "11111111", "00000000", "iloveyou", "admin123", "password1", "init1234"}
+
+    def weak_password(self, new: str) -> str:
+        """回傳不合格的原因；合格回傳空字串。規則簡單但擋掉最常見的壞密碼。"""
+        sid = str(self.sess.get("sid", ""))
+        low = new.lower()
         if len(new) < 8:
-            raise CloudError("新密碼至少 8 個字")
+            return "新密碼至少 8 個字"
+        if new.isdigit() or len(set(new)) < 4:
+            return "新密碼不能只有數字或重複的字元"
+        if low in self.COMMON or (sid and sid in low):
+            return "新密碼太常見或包含學號，請換一個"
+        return ""
+
+    def report_problem(self, pid: str, body: str) -> None:
+        r = self.rpc("report_problem", {"p_pid": pid, "p_body": body})
+        if not r.get("ok"):
+            raise CloudError({"rate_limited": "今天回報太多次了，明天再試", "bad_input": "請輸入題號與至少 3 個字的說明"}.get(r.get("reason", ""), "回報失敗"))
+
+    def change_password(self, new: str) -> None:
+        why = self.weak_password(new)
+        if why:
+            raise CloudError(why)
         code, j = self._call("PUT", "/auth/v1/user", {"password": new}, self._token())
         if code >= 400:
             msg = (j or {}).get("msg") or (j or {}).get("message") or f"HTTP {code}" if isinstance(j, dict) else f"HTTP {code}"

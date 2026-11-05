@@ -209,7 +209,7 @@ def make_handler(app: App):
             "/api/past/statement": app.past_statement, "/api/past/start": app.past_start, "/api/vocab/add": app.vocab_add,
             "/api/vocab/remove": app.vocab_remove, "/api/eng/start": app.eng_start, "/api/eng/verify": app.eng_verify, "/api/key": app.set_key, "/api/ai/test": app.ai_test, "/api/update/check": app.update_check}
     NOLOCK = {"/api/cloud/login": app.cloud_login, "/api/cloud/logout": app.cloud_logout, "/api/cloud/password": app.cloud_password,
-              "/api/cloud/recheck": app.cloud_recheck, "/api/cloud/sync": app.cloud_sync, "/api/admin/rpc": app.admin_rpc, "/api/admin/fn": app.admin_fn,
+              "/api/cloud/recheck": app.cloud_recheck, "/api/cloud/sync": app.cloud_sync, "/api/cloud/report": app.cloud_report, "/api/admin/rpc": app.admin_rpc, "/api/admin/fn": app.admin_fn,
               "/api/admin/ai_test": app.admin_ai_test, "/api/update/apply": app.update_apply, "/api/restart": app.restart}
 
     class H(BaseHTTPRequestHandler):

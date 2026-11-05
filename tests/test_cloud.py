@@ -291,3 +291,13 @@ class SummaryTest(unittest.TestCase):
             self.assertEqual(len(s["weekly"]), 4)
             self.assertEqual(s["weekly"][-1], 1)                       # 今天有活動 → 最後一格（本週）是 1
             self.assertEqual(sum(cloud.summarize(ws, now=time.time() + 40 * 86400)["weekly"]), 0)
+
+
+class PasswordRuleTest(unittest.TestCase):
+    def test_weak_passwords_rejected(self):
+        with tempfile.TemporaryDirectory() as d:
+            c = cloud.Cloud(CFG, Path(d))
+            c.sess["sid"] = "114001"
+            for bad in ("short1", "12345678", "aaaaaaaa", "Password", "xx114001xx", "init1234"):
+                self.assertTrue(c.weak_password(bad), bad)
+            self.assertEqual(c.weak_password("blue-Pencil-42"), "")
