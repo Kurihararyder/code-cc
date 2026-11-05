@@ -13,7 +13,8 @@ from . import __version__, updater
 from .cloud import Cloud, CloudError
 
 ADMIN_RPC = {"admin_list_users", "admin_update_user", "admin_bulk_update", "admin_get_settings", "admin_set_setting", "admin_secret_status",
-             "admin_set_secret", "admin_audit", "admin_overview", "admin_ai_usage"}
+             "admin_set_secret", "admin_audit", "admin_overview", "admin_ai_usage", "admin_set_archived", "admin_set_notices", "admin_expiring",
+             "admin_insights", "admin_export"}
 ADMIN_FN = {"create_users", "reset_password", "delete_user"}
 OPEN_GET = {"/api/ping", "/api/cloud/status"}
 OPEN_POST = {"/api/cloud/login", "/api/cloud/logout", "/api/cloud/password", "/api/cloud/recheck", "/api/update/check", "/api/update/apply", "/api/restart"}

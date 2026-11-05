@@ -193,6 +193,10 @@ class Cloud:
             return self._offline_access()
         info = r.pop("app", None) or {}
         self.app_info = info
+        try:
+            self.sess["notices"] = self.rpc("my_notices", timeout=10) if r.get("ok") else []
+        except CloudError:
+            pass                                             # 公告取不到不影響授權
         self.sess.update(acc=r, app=info, checked_at=self.clock())
         self._save()
         return r
@@ -238,7 +242,7 @@ class Cloud:
                 "message": REASONS.get(acc.get("reason", ""), ""), "offline": bool(acc.get("offline")), "need_update": need_update,
                 "must_change_pw": bool(acc.get("must_change_pw")) and logged, "is_admin": acc.get("role") == "admin" and bool(acc.get("ok")),
                 "user": {k: acc.get(k) for k in ("student_id", "name", "cohort", "role", "valid_from", "valid_until", "ai_allowed", "ip")} if logged else None,
-                "app": info, "last_sync": self.last_sync, "last_error": self.last_error, "org": self.cfg.get("org", "")}
+                "app": info, "notices": self.sess.get("notices") or [], "last_sync": self.last_sync, "last_error": self.last_error, "org": self.cfg.get("org", "")}
 
     def change_password(self, new: str) -> None:
         if len(new) < 8:
@@ -352,13 +356,21 @@ def _unpack(data: Dict[str, Any], remote: Path) -> None:
         p.write_text(text, encoding="utf-8")
 
 
-def summarize(ws) -> Dict[str, Any]:
-    """給管理員看的進度摘要（不含程式碼）。"""
+def summarize(ws, now: Optional[float] = None) -> Dict[str, Any]:
+    """給管理員看的進度摘要（不含程式碼）：解題數、單元、活躍天數、近 4 週每週活躍天數、卡關的題（嘗試多次仍未通過）。"""
+    now = time.time() if now is None else now
     st = ws.state()
     probs = st.get("problems", {})
     evs = ws.events()
-    last = max((float(e.get("ts", 0)) for e in evs), default=0)
-    days = {time.strftime("%Y-%m-%d", time.localtime(float(e.get("ts", 0)))) for e in evs if e.get("ts")}
+    stamps = [float(e.get("ts", 0)) for e in evs if e.get("ts")]
+    last = max(stamps, default=0)
+    days = {time.strftime("%Y-%m-%d", time.localtime(t)) for t in stamps}
+    weekly = []
+    for w in range(3, -1, -1):                              # 最舊的在前：[3 週前, 2 週前, 上週, 本週]
+        lo, hi = now - (w + 1) * 7 * 86400, now - w * 7 * 86400
+        weekly.append(len({time.strftime("%Y-%m-%d", time.localtime(t)) for t in stamps if lo < t <= hi}))
+    stuck = sorted(({"id": pid, "attempts": int(p.get("attempts", 0))} for pid, p in probs.items() if int(p.get("attempts", 0)) >= 4 and not p.get("first_pass")),
+                   key=lambda x: -x["attempts"])[:5]
     return {"solved": sum(1 for p in probs.values() if p.get("first_pass")), "attempted": sum(1 for p in probs.values() if p.get("attempts")),
             "unit": (st.get("course") or {}).get("unit", 1), "events": len(evs), "last_active": last or None, "active_days": len(days),
-            "exams": len(st.get("exams", []))}
+            "exams": len(st.get("exams", [])), "weekly": weekly, "stuck": stuck}

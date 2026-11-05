@@ -274,3 +274,20 @@ class BackupExcludesCredentialsTest(unittest.TestCase):
             (ws.meta / "cloud.json").write_text('{"refresh": "SECRET"}', encoding="utf-8")
             names = [f.name for f in backup._files(ws)]
             self.assertNotIn("cloud.json", names)
+
+
+class SummaryTest(unittest.TestCase):
+    def test_summary_has_weekly_activity_and_stuck_problems(self):
+        import time
+        with tempfile.TemporaryDirectory() as d:
+            ws = Workspace.create(Path(d) / "w", "2026-11-01")
+            st = ws.state()
+            st["problems"] = {"d001": {"attempts": 1, "first_pass": 5}, "d019": {"attempts": 7, "first_pass": None}, "d020": {"attempts": 2}}
+            ws.save_state(st)
+            ws.log("note", x=1)
+            s = cloud.summarize(ws)
+            self.assertEqual(s["solved"], 1)
+            self.assertEqual(s["stuck"], [{"id": "d019", "attempts": 7}])
+            self.assertEqual(len(s["weekly"]), 4)
+            self.assertEqual(s["weekly"][-1], 1)                       # 今天有活動 → 最後一格（本週）是 1
+            self.assertEqual(sum(cloud.summarize(ws, now=time.time() + 40 * 86400)["weekly"]), 0)

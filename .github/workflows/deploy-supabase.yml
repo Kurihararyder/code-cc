@@ -1,0 +1,24 @@
+name: deploy-supabase
+# 推送 supabase/functions 的變更時自動部署 Edge Function。需要在 GitHub 的 Settings → Secrets 加上：
+#   SUPABASE_ACCESS_TOKEN（Supabase 帳號的 personal access token）
+# 資料庫結構（supabase/migrations）請手動審核後套用，不自動執行。
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["supabase/functions/**"]
+jobs:
+  functions:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Deploy admin and ai-proxy
+        run: |
+          test -n "$SUPABASE_ACCESS_TOKEN" || { echo "SUPABASE_ACCESS_TOKEN secret is not set"; exit 1; }
+          supabase functions deploy admin --project-ref rtwmvezudjtqelrrprsj
+          supabase functions deploy ai-proxy --project-ref rtwmvezudjtqelrrprsj

@@ -22,7 +22,7 @@ function csvDownload(name, rows) {
 }
 const sw = (checked, onchange, label) => h("label", { class: "switch" }, h("input", { type: "checkbox", checked, onchange: (e) => onchange(e.target.checked) }), h("span", { class: "sw" }), label ? h("span", { text: label }) : null);
 
-const TABS = [["overview", "總覽", "chart"], ["users", "學員帳號", "users"], ["network", "授權與網路", "lock"], ["ai", "AI 與金鑰", "sparkle"], ["release", "版本與公告", "bulb"], ["audit", "稽核紀錄", "list"]];
+const TABS = [["overview", "總覽", "chart"], ["users", "學員帳號", "users"], ["insights", "學習分析", "target"], ["network", "授權與網路", "lock"], ["ai", "AI 與金鑰", "sparkle"], ["release", "版本與公告", "bulb"], ["audit", "稽核紀錄", "list"]];
 
 export async function mountAdmin(view, params) {
   if (!CLOUD.is_admin) { view.append(h("div", { class: "page" }, empty("lock", "只有管理員可以使用"))); return; }
@@ -31,12 +31,12 @@ export async function mountAdmin(view, params) {
   view.append(h("div", { class: "page wide" }, h("div", { class: "page-head" }, h("div", null, h("h1", null, icon("shield"), " 管理後台"), h("p", { text: "靜宜大學 晶片設計學士學位學程 · CPE 練功系統" }))),
     h("div", { class: "tabs admin-tabs", role: "tablist" }, TABS.map(([k, t, ic]) => h("button", { role: "tab", "aria-selected": String(k === tab), onclick: () => { location.hash = "#/admin/" + k; } }, icon(ic), t))), body));
   body.append(h("div", { class: "card pad mt" }, skeleton(6)));
-  try { clear(body); await ({ overview, users, network, ai, release, audit }[tab] || overview)(body); } catch (e) { clear(body); body.append(empty("alert", e.message)); }
+  try { clear(body); await ({ overview, users, insights, network, ai, release, audit }[tab] || overview)(body); } catch (e) { clear(body); body.append(empty("alert", e.message)); }
 }
 
 // ---------------- 總覽 ----------------
 async function overview(body) {
-  const [o, bad, ai] = await Promise.all([rpc("admin_overview"), rpc("admin_audit", { p_limit: 8, p_action: "login" }), rpc("admin_ai_usage", { p_days: 1 })]);
+  const [o, bad, ai, exp] = await Promise.all([rpc("admin_overview"), rpc("admin_audit", { p_limit: 8, p_action: "login" }), rpc("admin_ai_usage", { p_days: 1 }), rpc("admin_expiring", { p_days: 14 })]);
   const kpi = (v, l, ic, cls = "") => h("div", { class: "card kpi" }, icon(ic), h("div", { class: "v " + cls, text: String(v) }), h("div", { class: "l", text: l }));
   body.append(h("div", { class: "kpis mt" }, kpi(o.students, "學員帳號", "users"), kpi(o.active, "目前可使用", "check", "ok"), kpi(o.pending, "待開通", "clock", o.pending ? "warn" : ""), kpi(o.expired, "授權已到期", "alert", o.expired ? "bad" : "")),
     h("div", { class: "kpis mt" }, kpi(o.expiring_7d, "7 天內到期", "clock", o.expiring_7d ? "warn" : ""), kpi(o.logins_24h, "24 小時登入次數", "code"), kpi(o.denied_24h, "24 小時被拒絕", "lock", o.denied_24h ? "bad" : ""), kpi(o.ai_allowed, "已授權 AI 的學員", "sparkle")),
@@ -45,7 +45,36 @@ async function overview(body) {
         o.cohorts.length ? h("ul", { class: "list" }, o.cohorts.map((c) => h("li", { class: "li static" }, h("span", { class: "grow", text: c.cohort || "（未分班）" }), h("b", { text: c.n + " 人" })))) : empty("users", "還沒有學員，先到「學員帳號」批次新增。")),
       h("section", { class: "card pad" }, h("div", { class: "card-h" }, h("h3", { text: "AI 使用（24 小時）" }), h("span", { class: "muted small", text: `${o.ai_calls_24h} 次 · 近 7 天 ${o.ai_tokens_7d.toLocaleString()} tokens` })),
         ai.length ? h("ul", { class: "list" }, ai.slice(0, 8).map((a) => h("li", { class: "li static" }, h("span", { class: "grow mono", text: a.student_id }), h("span", { text: `${a.calls} 次` })))) : empty("sparkle", "最近沒有人使用 AI。"))),
-    h("section", { class: "card pad mt" }, h("div", { class: "card-h" }, h("h3", { text: "最近登入" })), logTable(bad)));
+    exp.length ? h("section", { class: "card pad mt" }, h("div", { class: "card-h" }, h("h3", null, icon("clock"), "即將到期或剛到期（14 天內）"),
+      h("button", { class: "btn sm primary", onclick: async () => { if (!(await confirmDialog("延長授權", `把這 ${exp.length} 位的授權都延長 30 天？`, "延長"))) return; for (const u of exp) { const base = u.valid_until && new Date(u.valid_until) > new Date() ? new Date(u.valid_until) : new Date(); base.setDate(base.getDate() + 30); await rpc("admin_update_user", { p_id: u.id, p: { valid_until: base.toISOString(), active: true } }); } toast("已延長 30 天", "ok", 2000); location.reload(); } }, "全部延長 30 天")),
+      h("ul", { class: "list" }, exp.map((u) => h("li", { class: "li static" }, h("span", { class: "mono", text: u.student_id }), h("span", { class: "grow", text: `${u.name}　${u.cohort || ""}` }), h("span", { class: new Date(u.valid_until) < new Date() ? "bad" : "warn", text: (new Date(u.valid_until) < new Date() ? "已到期 " : "到期 ") + day(u.valid_until) }))))) : null,
+    h("section", { class: "card pad mt" }, h("div", { class: "card-h" }, h("h3", { text: "最近登入" }), h("button", { class: "btn sm", onclick: exportBackup }, icon("save"), "匯出完整備份 (JSON)")), logTable(bad)));
+}
+
+async function exportBackup() {
+  try {
+    const d = await rpc("admin_export");
+    const blob = new Blob([JSON.stringify(d)], { type: "application/json" });
+    const a = h("a", { href: URL.createObjectURL(blob), download: `cpe-備份-${new Date().toISOString().slice(0, 10)}.json` }); document.body.append(a); a.click(); a.remove();
+    toast("已下載（含學員名單、設定、進度與稽核紀錄；不含 API 金鑰與密碼）。請妥善保管。", "ok", 6000);
+  } catch (e) { toast(e.message, "bad"); }
+}
+
+// ---------------- 學習分析 ----------------
+async function insights(body) {
+  const d = await rpc("admin_insights");
+  const kpi = (v, l) => h("div", { class: "card kpi" }, h("div", { class: "v", text: String(v) }), h("div", { class: "l", text: l }));
+  const maxW = Math.max(1, ...d.weekly.map((w) => w.active)), maxU = Math.max(1, ...d.units.map((u) => u.n));
+  const bar = (v, m, label) => h("div", { class: "barrow" }, h("span", { class: "bl", text: label }), h("span", { class: "bar" }, h("i", { style: { width: Math.round((100 * v) / m) + "%" } })), h("b", { text: String(v) }));
+  body.append(h("div", { class: "kpis mt" }, kpi(d.solved_avg, "平均已解題數"), kpi(d.inactive.length, "14 天沒有學習的學員"), kpi(d.stuck.length, "有人卡關的題目"), kpi(d.units.reduce((a, u) => a + u.n, 0), "有同步過進度的學員")),
+    h("div", { class: "grid2 mt" },
+      h("section", { class: "card pad" }, h("div", { class: "card-h" }, h("h3", { text: "每週有學習的學員數" })), d.weekly.map((w) => bar(w.active, maxW, w.week_ago === 0 ? "本週" : w.week_ago + " 週前"))),
+      h("section", { class: "card pad" }, h("div", { class: "card-h" }, h("h3", { text: "學員目前所在單元" })), d.units.length ? d.units.map((u) => bar(u.n, maxU, "單元 " + u.unit)) : empty("chart", "還沒有進度資料"))),
+    h("section", { class: "card pad mt" }, h("div", { class: "card-h" }, h("h3", null, icon("alert"), "全班卡關的題目"), h("span", { class: "muted small", text: "嘗試 4 次以上仍未通過；人數越多越該在課堂講解" })),
+      d.stuck.length ? h("div", { class: "tablewrap" }, h("table", { class: "tbl" }, h("thead", null, h("tr", null, ["題號", "卡關人數", "總嘗試次數"].map((x) => h("th", { text: x })))), h("tbody", null, d.stuck.map((r) => h("tr", null, h("td", { class: "mono", text: r.id }), h("td", { text: r.students }), h("td", { text: r.attempts })))))) : empty("check", "目前沒有明顯卡關的題目（或學員還沒同步進度）")),
+    h("section", { class: "card pad mt" }, h("div", { class: "card-h" }, h("h3", null, icon("clock"), "14 天沒有學習的學員")),
+      d.inactive.length ? h("div", { class: "tablewrap short" }, h("table", { class: "tbl" }, h("thead", null, h("tr", null, ["學號", "姓名", "班級", "最後學習", "最後登入"].map((x) => h("th", { text: x })))),
+        h("tbody", null, d.inactive.map((r) => h("tr", null, h("td", { class: "mono", text: r.student_id }), h("td", { text: r.name }), h("td", { text: r.cohort }), h("td", { text: r.last_active ? ago(r.last_active) : "從未" }), h("td", { text: r.last_login ? fmtT(r.last_login).slice(0, 16) : "從未" })))))) : empty("check", "大家都有在學習")));
 }
 
 function logTable(rows) {
@@ -64,9 +93,9 @@ async function users(body) {
   const bar = h("div", { class: "bulkbar", hidden: true });
   const q = h("input", { type: "search", placeholder: "搜尋學號／姓名", "aria-label": "搜尋", oninput: debounce((e) => { f.q = e.target.value.trim().toLowerCase(); paint(); }, 150) });
   const cohortSel = h("select", { "aria-label": "班級", onchange: (e) => { f.cohort = e.target.value; paint(); } });
-  const statusSel = h("select", { "aria-label": "狀態", onchange: (e) => { f.status = e.target.value; paint(); } }, [["", "全部狀態"], ["ok", "使用中"], ["inactive", "待開通"], ["expired", "已到期"], ["not_started", "尚未開始"]].map(([k, t]) => h("option", { value: k, text: t })));
+  const statusSel = h("select", { "aria-label": "狀態", onchange: (e) => { f.status = e.target.value; paint(); } }, [["", "全部狀態"], ["ok", "使用中"], ["inactive", "待開通"], ["expired", "已到期"], ["not_started", "尚未開始"], ["archived", "已封存"]].map(([k, t]) => h("option", { value: k, text: t })));
   const refresh = async () => { all = await rpc("admin_list_users"); [...sel].forEach((i) => { if (!all.find((u) => u.id === i)) sel.delete(i); }); paint(); };
-  const shown = () => all.filter((u) => u.role === "student" && (!f.cohort || u.cohort === f.cohort) && (!f.status || u.status === f.status) && (!f.q || (u.student_id + " " + u.name).toLowerCase().includes(f.q)));
+  const shown = () => all.filter((u) => u.role === "student" && (f.status === "archived" ? u.archived : !u.archived) && (!f.cohort || u.cohort === f.cohort) && (!f.status || f.status === "archived" || u.status === f.status) && (!f.q || (u.student_id + " " + u.name).toLowerCase().includes(f.q)));
   const admins = () => all.filter((u) => u.role === "admin");
 
   const bulk = async (patch, label) => {
@@ -98,7 +127,7 @@ async function users(body) {
     bar.append(h("b", { text: `已選 ${sel.size} 位` }), h("button", { class: "btn sm", onclick: () => bulk({ active: true }, "啟用帳號") }, "啟用"), h("button", { class: "btn sm", onclick: () => bulk({ active: false }, "停用帳號") }, "停用"),
       h("button", { class: "btn sm", onclick: windowDialog }, icon("clock"), "授權期間"), h("button", { class: "btn sm", onclick: extendDialog }, "延長"),
       h("button", { class: "btn sm", onclick: () => bulk({ ai_allowed: true }, "開放 AI") }, icon("sparkle"), "開放 AI"), h("button", { class: "btn sm", onclick: () => bulk({ ai_allowed: false }, "關閉 AI") }, "關閉 AI"),
-      h("button", { class: "btn sm", onclick: ipDialog }, "IP 限制"), h("button", { class: "btn sm", onclick: cohortDialog }, "班級"), h("button", { class: "btn sm ghost", onclick: () => { sel.clear(); paint(); } }, "取消選取"));
+      h("button", { class: "btn sm", onclick: ipDialog }, "IP 限制"), h("button", { class: "btn sm", onclick: cohortDialog }, "班級"), h("button", { class: "btn sm", onclick: async () => { const arch = f.status !== "archived"; if (!(await confirmDialog(arch ? "封存" : "還原", arch ? `封存 ${sel.size} 位？帳號會被停用、從清單隱藏，但資料與進度保留，隨時可還原。` : `還原 ${sel.size} 位（還原後仍是停用狀態，需再啟用）？`, arch ? "封存" : "還原"))) return; try { await rpc("admin_set_archived", { p_ids: [...sel], p: arch }); sel.clear(); await refresh(); } catch (e) { toast(e.message, "bad"); } } }, f.status === "archived" ? "還原" : "封存"), h("button", { class: "btn sm ghost", onclick: () => { sel.clear(); paint(); } }, "取消選取"));
   }
   function paint() {
     const rows = shown();
@@ -138,7 +167,7 @@ async function users(body) {
             ...row2("學習進度", s.solved != null ? `已解 ${s.solved} 題、嘗試 ${s.attempted} 題、單元 ${s.unit}、活躍 ${s.active_days} 天、考試 ${s.exams} 次` : "尚無資料"), ...row2("最後學習", s.last_active ? ago(s.last_active) : "—"), ...row2("24 小時 AI", u.ai_calls_24h + " 次")),
           h("div", { class: "row wrap" },
             h("button", { class: "btn", onclick: async () => { if (!(await confirmDialog("重設密碼", `產生 ${u.student_id} 的新密碼？對方下次登入需要再改。`, "重設"))) return; try { const r = await fn({ action: "reset_password", id: u.id }); modal({ title: "新密碼", body: h("div", null, h("p", { text: "請交給學員（只會顯示這一次）：" }), h("p", { class: "bigpw mono", text: r.password })), actions: [{ label: "複製", onClick: () => { navigator.clipboard?.writeText(r.password); toast("已複製", "ok", 1200); return false; }, keep: true }, { label: "完成", kind: "primary" }] }); } catch (e) { toast(e.message, "bad"); } } }, icon("lock"), "重設密碼"),
-            h("button", { class: "btn danger", onclick: async () => { if (!(await confirmDialog("刪除帳號", `永久刪除 ${u.student_id} 與他的雲端進度？無法復原。`, "刪除", "danger"))) return; try { await fn({ action: "delete_user", id: u.id }); toast("已刪除", "ok", 2000); close(); await refresh(); } catch (e) { toast(e.message, "bad"); } } }, "刪除帳號"))),
+            h("button", { class: "btn danger", onclick: async () => { if (!(await confirmDialog("刪除帳號", `永久刪除 ${u.student_id} 與他的雲端進度？無法復原。（只想暫時隱藏請用「封存」）`, "刪除", "danger"))) return; if (prompt(`再確認一次：請輸入學號 ${u.student_id}`) !== u.student_id) { toast("學號不符，已取消", "bad"); return; } try { await fn({ action: "delete_user", id: u.id }); toast("已刪除", "ok", 2000); close(); await refresh(); } catch (e) { toast(e.message, "bad"); } } }, "刪除帳號"))),
         h("div", { class: "modal-f" }, h("button", { class: "btn", onclick: close }, "取消"), h("button", { class: "btn primary", onclick: async () => {
           try { await rpc("admin_update_user", { p_id: u.id, p: { name: name.value.trim(), cohort: cohort.value.trim(), note: note.value, active, ai_allowed: ai, valid_from: startOf(vf.value), valid_until: endOf(vu.value), ip_mode: ipm.value, allowed_ips: lines(ips.value) } }); toast("已儲存", "ok", 1500); close(); await refresh(); } catch (e) { toast(e.message, "bad"); } } }, "儲存")));
     });
@@ -224,13 +253,37 @@ async function mountSelf(body) { clear(body); await ai(body); }
 async function release(body) {
   const S = await rpc("admin_get_settings"); const a = S.app || {};
   const ver = h("input", { type: "text", value: a.latest_version || "", "aria-label": "最新版本" }), min = h("input", { type: "text", value: a.min_version || "", "aria-label": "最低版本" });
+  const welcome = h("textarea", { rows: 3, "aria-label": "歡迎訊息" }, a.welcome || "");
   const ann = h("textarea", { rows: 3, "aria-label": "公告" }, a.announcement || ""), note = h("textarea", { rows: 3, "aria-label": "更新說明" }, a.update_note || "");
   body.append(h("section", { class: "card pad mt", style: { "max-width": "760px" } }, h("div", { class: "card-h" }, h("h3", null, icon("bulb"), "版本與公告")),
     h("p", { class: "muted small", text: "每位學員的程式每次開啟（以及之後每 30 分鐘）都會連網檢查：有新版本會提示更新；低於「最低版本」就無法使用，必須先更新。公告會在登入頁與使用中顯示一次。" }),
     h("div", { class: "col" }, h("div", { class: "row wrap" }, h("label", { class: "field" }, "最新版本", ver), h("label", { class: "field" }, "最低可使用版本（強制更新）", min)),
-      h("label", { class: "field" }, "公告（登入頁與使用中顯示；留空＝不顯示）", ann), h("label", { class: "field" }, "更新說明（強制更新畫面顯示）", note),
-      h("div", null, h("button", { class: "btn primary", onclick: async () => { try { await rpc("admin_set_setting", { p_key: "app", p_value: { latest_version: ver.value.trim(), min_version: min.value.trim(), announcement: ann.value.trim(), update_note: note.value.trim() } }); toast("已儲存", "ok", 1800); } catch (e) { toast(e.message, "bad"); } } }, "儲存")),
-      h("p", { class: "xs muted", text: "提醒：把最低版本設得比大家目前的版本高，所有人都會被擋在更新畫面。發布新版後再調高。" }))));
+      h("label", { class: "field" }, "公告（登入頁與使用中顯示；留空＝不顯示）", ann), h("label", { class: "field" }, "更新說明（強制更新畫面顯示）", note), h("label", { class: "field" }, "歡迎訊息（每位學員第一次進入時顯示一次；留空＝不顯示）", welcome),
+      h("div", null, h("button", { class: "btn primary", onclick: async () => { try { await rpc("admin_set_setting", { p_key: "app", p_value: { latest_version: ver.value.trim(), min_version: min.value.trim(), announcement: ann.value.trim(), update_note: note.value.trim(), welcome: welcome.value.trim() } }); toast("已儲存", "ok", 1800); } catch (e) { toast(e.message, "bad"); } } }, "儲存")),
+      h("p", { class: "xs muted", text: "提醒：把最低版本設得比大家目前的版本高，所有人都會被擋在更新畫面。發布新版後再調高。" }))),
+    noticesCard(S.notices && S.notices.items ? S.notices.items : []));
+}
+
+// 分班、排程的公告（每則可指定班級與顯示期間）
+function noticesCard(items) {
+  items = items.map((x) => ({ ...x }));
+  const box = h("div", { class: "col" });
+  const paint = () => {
+    clear(box);
+    items.forEach((it, i) => {
+      const txt = h("textarea", { rows: 2, "aria-label": "公告內容", oninput: (e) => { it.text = e.target.value; } }, it.text || "");
+      const co = h("input", { type: "text", value: it.cohort || "", placeholder: "班級（空白＝全部）", "aria-label": "班級", oninput: (e) => { it.cohort = e.target.value.trim(); } });
+      const fr = h("input", { type: "date", value: dateVal(it.from), "aria-label": "開始顯示", onchange: (e) => { it.from = startOf(e.target.value) || ""; } });
+      const un = h("input", { type: "date", value: dateVal(it.until), "aria-label": "結束顯示", onchange: (e) => { it.until = endOf(e.target.value) || ""; } });
+      box.append(h("div", { class: "notice-item" }, txt, h("div", { class: "row wrap" }, co, h("label", { class: "xs muted" }, "從 ", fr), h("label", { class: "xs muted" }, "到 ", un), h("span", { class: "grow" }), h("button", { class: "btn sm danger", onclick: () => { items.splice(i, 1); paint(); } }, "刪除"))));
+    });
+    if (!items.length) box.append(h("p", { class: "muted small", text: "目前沒有分班／排程公告。" }));
+  };
+  paint();
+  return h("section", { class: "card pad mt", style: { "max-width": "760px" } }, h("div", { class: "card-h" }, h("h3", null, icon("bulb"), "分班與排程公告")),
+    h("p", { class: "muted small", text: "每則公告可以只給某個班級，並設定顯示期間；學員登入後在左下角選單看得到，第一次出現時也會彈出提示。" }), box,
+    h("div", { class: "row mt" }, h("button", { class: "btn", onclick: () => { items.push({ id: String(Date.now()), text: "", cohort: "", from: "", until: "" }); paint(); } }, "新增公告"),
+      h("button", { class: "btn primary", onclick: async () => { try { await rpc("admin_set_notices", { p: { items: items.filter((x) => (x.text || "").trim()) } }); toast("已儲存公告", "ok", 1800); } catch (e) { toast(e.message, "bad"); } } }, "儲存公告")));
 }
 
 // ---------------- 稽核 ----------------

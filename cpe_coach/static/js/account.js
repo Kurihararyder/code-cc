@@ -32,8 +32,9 @@ function openMenu(anchor) {
     h("dl", { class: "dl um-dl" },
       row("授權期間", u.valid_until || u.valid_from ? `${u.valid_from ? fmtT(u.valid_from).split(" ")[0] : "不限"} ～ ${u.valid_until ? fmtT(u.valid_until).split(" ")[0] : "不限"}` : "不限期"),
       row("AI", CLOUD.ai && CLOUD.ai.available ? h("span", { class: "ok", text: "已授權" }) : h("span", { class: "muted", text: (CLOUD.ai || {}).why || "未授權" })),
-      row("雲端同步", CLOUD.offline ? h("span", { class: "warn", text: `離線中（寬限剩 ${a.grace_left_h ?? "?"} 小時）` }) : CLOUD.last_error ? h("span", { class: "warn", text: CLOUD.last_error }) : CLOUD.last_sync ? h("span", { class: "ok", text: "已同步 " + new Date(CLOUD.last_sync.at * 1000).toLocaleTimeString("zh-TW", { hour12: false }) }) : h("span", { class: "muted", text: "尚未同步" }))),
+      row("雲端同步", CLOUD.offline ? h("span", { class: "warn", text: `離線中（寬限剩 ${a.grace_left_h ?? "?"} 小時）` }) : CLOUD.last_error ? h("span", { class: "warn", text: CLOUD.last_error }) : CLOUD.last_sync ? h("span", { class: CLOUD.last_sync.conflicts ? "warn" : "ok", text: "已同步 " + new Date(CLOUD.last_sync.at * 1000).toLocaleTimeString("zh-TW", { hour12: false }) + (CLOUD.last_sync.conflicts ? `（${CLOUD.last_sync.conflicts} 個檔案兩邊都改過，較舊的另存在 .cpe/conflicts）` : "") }) : h("span", { class: "muted", text: "尚未同步" }))),
     CLOUD.app && CLOUD.app.announcement ? h("div", { class: "gate-note um-note" }, icon("bulb"), h("span", { text: CLOUD.app.announcement })) : null,
+    (CLOUD.notices || []).map((n) => h("div", { class: "gate-note um-note" }, icon("bulb"), h("span", { text: n.text }))),
     CLOUD.is_admin ? h("button", { role: "menuitem", class: "um-item", onclick: () => { menu.remove(); go("/admin"); } }, icon("shield"), "管理後台") : null,
     h("button", { role: "menuitem", class: "um-item", onclick: async (e) => { const b = e.currentTarget; b.disabled = true; try { const r = await post("/api/cloud/sync"); toast(`已同步（拉回 ${r.sync.pulled_events} 筆、上傳 ${r.sync.pushed_events} 筆紀錄）`, "ok", 3000); await loadCloud(); menu.remove(); } catch (err) { toast(err.message, "bad"); b.disabled = false; } } }, icon("refresh"), "立即同步進度"),
     CLOUD.update && CLOUD.update.behind > 0 ? h("button", { role: "menuitem", class: "um-item", onclick: () => { menu.remove(); updateDialog(); } }, icon("external"), `有新版本（${CLOUD.update.behind} 項更新）`) : null,
@@ -57,6 +58,13 @@ export function passwordDialog() {
       try { await post("/api/cloud/password", { new: a.value }); toast("密碼已變更", "ok", 2500); } catch (e) { msg.textContent = e.message; return false; } } }] });
 }
 
+// 離線時顯示寬限倒數；剩不到 12 小時變紅色提醒
+export function offlinePill() {
+  if (!CLOUD.enabled || !CLOUD.offline) return null;
+  const left = (CLOUD.access || {}).grace_left_h;
+  return h("span", { class: "pill " + (left != null && left < 12 ? "bad" : "warn"), title: "連不上學程伺服器，目前使用上次驗證通過的結果；超過寬限就必須連網重新驗證" }, icon("alert"), h("span", { class: "hide-m", text: left != null ? `離線，剩 ${left} 小時` : "離線" }));
+}
+
 export function updatePill() {
   const up = CLOUD.update || {};
   if (!CLOUD.enabled && !(up.behind > 0)) return null;
@@ -75,10 +83,16 @@ export function updateDialog() {
 
 // 公告：每一則只彈一次
 export function showAnnouncement() {
-  const a = CLOUD.app && CLOUD.app.announcement;
-  if (!a) return;
-  const key = "ann." + a.length + ":" + a.slice(0, 24);
-  if (pref.get(key, false)) return;
-  pref.set(key, true);
-  toast("📢 " + a, "", 12000);
+  const all = [CLOUD.app && CLOUD.app.announcement, ...(CLOUD.notices || []).map((n) => n.text)].filter(Boolean);
+  for (const a of all) {
+    const key = "ann." + a.length + ":" + a.slice(0, 24);
+    if (pref.get(key, false)) continue;
+    pref.set(key, true);
+    toast("📢 " + a, "", 12000);
+  }
+  const w = CLOUD.app && CLOUD.app.welcome;
+  if (w && !pref.get("welcome." + (w.length + ":" + w.slice(0, 24)), false)) {
+    pref.set("welcome." + (w.length + ":" + w.slice(0, 24)), true);
+    modal({ title: "歡迎使用 CPE 練功系統", body: h("p", { text: w, style: { "white-space": "pre-wrap" } }), actions: [{ label: "開始", kind: "primary" }] });
+  }
 }
