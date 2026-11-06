@@ -1,0 +1,953 @@
+{
+ "id": "py-p0",
+ "track": "py",
+ "title": "Python 基礎總整理與模擬測驗（階段 0）",
+ "groups": [
+  {
+   "title": "單元 1–2 模擬測驗：輸入輸出、運算子、條件",
+   "unit": 2,
+   "questions": [
+    {
+     "stem": "執行後輸出什麼？",
+     "code": "print(7 / 2)",
+     "lang": "py",
+     "options": [
+      "`3.0`",
+      "`3`",
+      "`3.5`",
+      "`4`"
+     ],
+     "answer": 2,
+     "why": "`/` 是浮點除法，7/2 = 3.5；整數除法要用 `//`。"
+    },
+    {
+     "stem": "執行後輸出什麼？",
+     "code": "print(-7 // 2)",
+     "lang": "py",
+     "options": [
+      "`-3.5`",
+      "`-4.0`",
+      "`-3`",
+      "`-4`"
+     ],
+     "answer": 3,
+     "why": "`//` 向下取整（往負無限大），−3.5 → −4。C／C++ 的整數除法才是往 0 截斷得 −3。"
+    },
+    {
+     "stem": "執行後輸出什麼？",
+     "code": "print(-7 % 3)",
+     "lang": "py",
+     "options": [
+      "`-2`",
+      "`1`",
+      "`-1`",
+      "`2`"
+     ],
+     "answer": 3,
+     "why": "Python 的 `%` 結果與除數同號：−7 = (−3)×3 + 2，所以 −7 % 3 = 2。"
+    },
+    {
+     "stem": "執行後輸出什麼？",
+     "code": "print(divmod(17, 5))",
+     "lang": "py",
+     "options": [
+      "`3`",
+      "`(3, 2)`",
+      "`3.4`",
+      "`[3, 2]`"
+     ],
+     "answer": 1,
+     "why": "`divmod(a, b)` 回傳 (商, 餘數) 的 tuple。"
+    },
+    {
+     "stem": "執行後輸出什麼？",
+     "code": "print(round(2.5))",
+     "lang": "py",
+     "options": [
+      "`3`",
+      "`2.0`",
+      "`2`",
+      "`2.5`"
+     ],
+     "answer": 2,
+     "why": "`round` 對恰好 .5 採『四捨六入五成雙』，2.5 取最近的偶數 2。"
+    },
+    {
+     "stem": "執行後輸出什麼？",
+     "code": "print(0.1 + 0.2 == 0.3)",
+     "lang": "py",
+     "options": [
+      "`False`",
+      "`True`",
+      "`0.3`",
+      "`None`"
+     ],
+     "answer": 0,
+     "why": "0.1 與 0.2 無法精確表示成二進位浮點數，加起來是 0.30000000000000004。比較浮點數請用誤差範圍。"
+    },
+    {
+     "stem": "執行後輸出什麼？",
+     "code": "print(\"5\" * 3)",
+     "lang": "py",
+     "options": [
+      "`555`",
+      "`5 5 5`",
+      "發生 TypeError",
+      "`15`"
+     ],
+     "answer": 0,
+     "why": "字串乘整數是重複：`\"5\" * 3` = `\"555\"`。"
+    },
+    {
+     "stem": "執行後輸出什麼？",
+     "code": "print(1, 2, sep=\"-\")",
+     "lang": "py",
+     "options": [
+      "`1-2-`",
+      "`1-2`",
+      "`1 2`",
+      "`12`"
+     ],
+     "answer": 1,
+     "why": "`sep` 控制多個引數之間的分隔字串，預設是空白。"
+    },
+    {
+     "stem": "`a, b = map(int, \"3 4\".split())` 之後印 `a + b`，輸出？",
+     "code": "a, b = map(int, \"3 4\".split())\nprint(a + b)",
+     "lang": "py",
+     "options": [
+      "`34`",
+      "`3 4`",
+      "`7`",
+      "發生錯誤"
+     ],
+     "answer": 2,
+     "why": "`split()` 得到 `['3','4']`，`map(int, …)` 轉成整數 3、4，相加 7。若忘了 `int`，`\"3\"+\"4\"` 會得到 `\"34\"`。"
+    },
+    {
+     "stem": "執行後輸出什麼？",
+     "code": "print(repr(0 or \"a\"))",
+     "lang": "py",
+     "options": [
+      "`0`",
+      "`'0 or a'`",
+      "`'a'`",
+      "`True`"
+     ],
+     "answer": 2,
+     "why": "`or` 回傳第一個為真的運算元（0 為假，所以回傳 `\"a\"`）。用 `repr` 印出可以看到引號。"
+    },
+    {
+     "stem": "執行後輸出什麼？",
+     "code": "print(1 < 2 < 3)",
+     "lang": "py",
+     "options": [
+      "`False`",
+      "`True`",
+      "發生 SyntaxError",
+      "`1`"
+     ],
+     "answer": 1,
+     "why": "Python 允許連寫比較，`1 < 2 < 3` 等於 `1 < 2 and 2 < 3`。"
+    },
+    {
+     "stem": "`2 ** 100` 會怎樣？",
+     "code": "print(2 ** 100)",
+     "lang": "py",
+     "options": [
+      "發生 OverflowError",
+      "正確得到 `1267650600228229401496703205376`，Python 整數不會溢位",
+      "轉成浮點數 `1.2676506002282294e+30`",
+      "溢位回繞成 0"
+     ],
+     "answer": 1,
+     "why": "Python 的 int 是任意精度，只受記憶體限制；這在競程中少了很多溢位問題，但大數運算比較慢。"
+    }
+   ]
+  },
+  {
+   "title": "單元 3 模擬測驗：迴圈",
+   "unit": 3,
+   "questions": [
+    {
+     "stem": "執行後輸出什麼？",
+     "code": "print(list(range(5, 0, -2)))",
+     "lang": "py",
+     "options": [
+      "`[5, 3, 1, -1]`",
+      "`[5, 3, 1]`",
+      "`[]`",
+      "`[5, 4, 3, 2, 1]`"
+     ],
+     "answer": 1,
+     "why": "`range(5, 0, -2)` 從 5 往下每次減 2，直到比 0 大為止（半開區間，不含 0）：5、3、1。"
+    },
+    {
+     "stem": "`for i in range(3): pass` 之後 `print(i)` 輸出？",
+     "code": "for i in range(3):\n    pass\nprint(i)",
+     "lang": "py",
+     "options": [
+      "`0`",
+      "發生 NameError",
+      "`3`",
+      "`2`"
+     ],
+     "answer": 3,
+     "why": "迴圈變數在迴圈結束後仍然存在，保留最後一次的值 2。"
+    },
+    {
+     "stem": "執行後輸出什麼？",
+     "code": "for i in (1, 2):\n    print(i, end=\" \")\nelse:\n    print(\"done\")",
+     "lang": "py",
+     "options": [
+      "`done`",
+      "`1 2 3 done`",
+      "`1 2`",
+      "`1 2 done`（沒被 break，所以 else 執行）"
+     ],
+     "answer": 3,
+     "why": "迴圈的 `else` 只在**沒有** break 時執行；這個迴圈跑完了，所以印出 done。"
+    },
+    {
+     "stem": "執行後輸出什麼？",
+     "code": "for i in (1, 2, 3):\n    if i == 2:\n        break\n    print(i)\nelse:\n    print(\"done\")",
+     "lang": "py",
+     "options": [
+      "`1 2`",
+      "`1`（遇到 2 時 break，else 不執行）",
+      "`1 done`",
+      "`done`"
+     ],
+     "answer": 1,
+     "why": "break 離開迴圈後，迴圈的 else 區塊會被跳過。"
+    },
+    {
+     "stem": "`sum(range(1, 101))` 是多少？",
+     "code": "print(sum(range(1, 101)))",
+     "lang": "py",
+     "options": [
+      "`4950`",
+      "`5000`",
+      "`5151`",
+      "`5050`"
+     ],
+     "answer": 3,
+     "why": "1 到 100 的和 = 100×101/2 = 5050；`range(1, 101)` 含 100 不含 101。"
+    },
+    {
+     "stem": "`len(range(2, 10, 3))` 是多少？",
+     "code": "print(len(range(2, 10, 3)))",
+     "lang": "py",
+     "options": [
+      "`4`",
+      "`8`",
+      "`2`",
+      "`3`"
+     ],
+     "answer": 3,
+     "why": "元素是 2、5、8（下一個 11 超過 10），共 3 個。"
+    },
+    {
+     "stem": "執行後輸出什麼？",
+     "code": "print(list(zip([1, 2, 3], \"ab\")))",
+     "lang": "py",
+     "options": [
+      "`[(1, 'a'), (2, 'b')]`",
+      "`[(1, 'a'), (2, 'b'), (3, 'c')]`",
+      "`[(1, 2), ('a', 'b')]`",
+      "發生 ValueError"
+     ],
+     "answer": 0,
+     "why": "`zip` 以最短的序列為準，多出來的 3 被丟棄。"
+    },
+    {
+     "stem": "執行後輸出什麼？",
+     "code": "for i, c in enumerate(\"xy\", 1):\n    print(f\"{i}:{c}\", end=\" \")",
+     "lang": "py",
+     "options": [
+      "`0:x 1:y`",
+      "`1:x 2:y`",
+      "`x:1 y:2`",
+      "`1:y 2:x`"
+     ],
+     "answer": 1,
+     "why": "`enumerate(seq, 1)` 讓索引從 1 開始。"
+    },
+    {
+     "stem": "執行後輸出什麼？",
+     "code": "for i in (1, 2, 3):\n    if i % 2 == 0:\n        continue\n    print(i, end=\" \")",
+     "lang": "py",
+     "options": [
+      "`1 3`（跳過偶數）",
+      "`2`",
+      "`1`",
+      "`1 2 3`"
+     ],
+     "answer": 0,
+     "why": "`continue` 跳過本輪剩餘的部分，直接進入下一輪。"
+    },
+    {
+     "stem": "n = 10⁵ 的雙層迴圈（各跑 n 次）在 Python 中為什麼通常會逾時？",
+     "code": "",
+     "lang": "",
+     "options": [
+      "Python 不支援巢狀迴圈",
+      "雙層迴圈在 Python 會死當",
+      "因為 `range` 無法超過 10⁴",
+      "需要約 10¹⁰ 次運算，遠超過 Python 一秒約 10⁷–10⁸ 次簡單運算的能力"
+     ],
+     "answer": 3,
+     "why": "先估算複雜度：O(n²) 在 n = 10⁵ 時是 10¹⁰；要改成 O(n log n) 或 O(n) 的做法（排序、雜湊、前綴和等）。"
+    },
+    {
+     "stem": "執行後輸出什麼？",
+     "code": "print(*[x + 1 for x in range(1, 4)])",
+     "lang": "py",
+     "options": [
+      "`2 3 4`",
+      "`1 2 3`",
+      "`2 3`",
+      "`3 4 5`"
+     ],
+     "answer": 0,
+     "why": "`range(1, 4)` 是 1、2、3，每個加 1。"
+    },
+    {
+     "stem": "寫 `while True:` 迴圈時要讓它能結束，最常用的方式是？",
+     "code": "",
+     "lang": "",
+     "options": [
+      "用 `continue` 取代 `break`",
+      "Python 會自動偵測並停止無窮迴圈",
+      "在條件成立時 `break`，或改變迴圈條件所依賴的變數",
+      "把 `True` 改成 `1` 就會停止"
+     ],
+     "answer": 2,
+     "why": "迴圈不會自己停；沒有 break 或條件永遠為真就是無窮迴圈，在競程會 TLE。"
+    }
+   ]
+  },
+  {
+   "title": "單元 4 模擬測驗：字串與 list",
+   "unit": 4,
+   "questions": [
+    {
+     "stem": "執行後輸出什麼？",
+     "code": "s = \"hello\"\nprint(s[::-1])",
+     "lang": "py",
+     "options": [
+      "`olleh`",
+      "`hello`",
+      "`ello`",
+      "`h`"
+     ],
+     "answer": 0,
+     "why": "`s[::-1]` 步長 −1，從尾到頭，就是反轉。"
+    },
+    {
+     "stem": "執行後輸出什麼？",
+     "code": "print(\"hello\"[1:4])",
+     "lang": "py",
+     "options": [
+      "`hell`",
+      "`ello`",
+      "`ell`",
+      "`el`"
+     ],
+     "answer": 2,
+     "why": "切片 `s[1:4]` 取索引 1、2、3，不含 4。"
+    },
+    {
+     "stem": "執行後輸出什麼？",
+     "code": "print(\"a,b,,c\".split(\",\"))",
+     "lang": "py",
+     "options": [
+      "`['a,b,,c']`",
+      "`['a', 'b,c']`",
+      "`['a', 'b', 'c']`",
+      "`['a', 'b', '', 'c']`"
+     ],
+     "answer": 3,
+     "why": "`split(\",\")` 保留空字串；而不帶參數的 `split()` 才會吃掉連續空白。"
+    },
+    {
+     "stem": "執行後輸出什麼？",
+     "code": "print(\" a  b \".split())",
+     "lang": "py",
+     "options": [
+      "`[' a', 'b ']`",
+      "`['a b']`",
+      "`['a', 'b']`",
+      "`['', 'a', 'b', '']`"
+     ],
+     "answer": 2,
+     "why": "不帶參數的 `split()` 以任意長度的空白為分隔，並忽略頭尾空白。"
+    },
+    {
+     "stem": "執行 `s[0] = \"x\"`（s 是字串）會？",
+     "code": "s = \"abc\"\ntry:\n    s[0] = \"x\"\nexcept TypeError:\n    print(\"TypeError\")",
+     "lang": "py",
+     "options": [
+      "靜默忽略",
+      "`IndexError`",
+      "把第一個字元改成 x",
+      "`TypeError`：字串不可變"
+     ],
+     "answer": 3,
+     "why": "字串是 immutable，要修改就得建立新字串，例如 `s = \"x\" + s[1:]`。"
+    },
+    {
+     "stem": "執行後輸出什麼？",
+     "code": "a = [1, 2]\nb = a\nb.append(3)\nprint(a)",
+     "lang": "py",
+     "options": [
+      "`[1, 2]`",
+      "`None`",
+      "`[3]`",
+      "`[1, 2, 3]`"
+     ],
+     "answer": 3,
+     "why": "`b = a` 讓 b 與 a 指向**同一個** list，用 b 修改，a 也看得到。"
+    },
+    {
+     "stem": "執行後輸出什麼？",
+     "code": "a = [1, 2]\nb = a[:]\nb.append(3)\nprint(a)",
+     "lang": "py",
+     "options": [
+      "`[1, 2]`",
+      "`[3]`",
+      "`[]`",
+      "`[1, 2, 3]`"
+     ],
+     "answer": 0,
+     "why": "`a[:]` 建立了淺拷貝，之後修改 b 不影響 a。"
+    },
+    {
+     "stem": "執行後輸出什麼？",
+     "code": "g = [[0] * 2] * 2\ng[0][0] = 1\nprint(g)",
+     "lang": "py",
+     "options": [
+      "`[[1, 0], [1, 0]]`（兩列是同一個 list）",
+      "`[[1, 1], [0, 0]]`",
+      "`[[1, 0], [0, 0]]`",
+      "`[[0, 0], [1, 0]]`"
+     ],
+     "answer": 0,
+     "why": "`[[0]*2]*2` 是把同一個內層 list 重複兩次，改一列等於改兩列。建立二維陣列要用 `[[0]*2 for _ in range(2)]`。"
+    },
+    {
+     "stem": "執行後輸出什麼？",
+     "code": "a = [3, 1, 2]\nprint(a.sort())",
+     "lang": "py",
+     "options": [
+      "`True`",
+      "`[1, 2, 3]`",
+      "`[3, 2, 1]`",
+      "`None`"
+     ],
+     "answer": 3,
+     "why": "`list.sort()` 就地排序並回傳 None。想要排序後的新 list 用 `sorted(a)`。"
+    },
+    {
+     "stem": "執行後輸出什麼？",
+     "code": "print(max([\"10\", \"9\"]))",
+     "lang": "py",
+     "options": [
+      "`10`",
+      "`9`",
+      "發生 TypeError",
+      "`19`"
+     ],
+     "answer": 1,
+     "why": "字串比較是字典序：`\"9\" > \"10\"`（因為 `\"9\" > \"1\"`），所以最大值是 `\"9\"`。要比大小要先轉整數。"
+    },
+    {
+     "stem": "`\"abc\".find(\"z\")` 與 `\"abc\".index(\"z\")` 分別會？",
+     "code": "print(\"abc\".find(\"z\"))\ntry:\n    \"abc\".index(\"z\")\nexcept ValueError:\n    print(\"ValueError\")",
+     "lang": "py",
+     "options": [
+      "`find` 丟錯誤；`index` 回傳 -1",
+      "兩者都回傳 -1",
+      "兩者都丟出 ValueError",
+      "`find` 回傳 `-1`；`index` 丟出 `ValueError`"
+     ],
+     "answer": 3,
+     "why": "`find` 找不到回 −1，`index` 找不到丟例外。用 `find` 時要記得檢查 −1（−1 也是合法的索引）。"
+    },
+    {
+     "stem": "`\"a-b\".join([\"x\", \"y\", \"z\"])` 的結果？",
+     "code": "print(\"a-b\".join([\"x\", \"y\", \"z\"]))",
+     "lang": "py",
+     "options": [
+      "`xa-bya-bz`",
+      "`a-bxyz`",
+      "`xyza-b`",
+      "`x-y-z`"
+     ],
+     "answer": 0,
+     "why": "`join` 以呼叫它的字串為分隔，把序列的元素接起來。"
+    },
+    {
+     "stem": "`[1, 2, 3][5]` 會？",
+     "code": "try:\n    [1, 2, 3][5]\nexcept IndexError:\n    print(\"IndexError\")",
+     "lang": "py",
+     "options": [
+      "回傳 0",
+      "回傳最後一個元素",
+      "回傳 `None`",
+      "丟出 `IndexError`"
+     ],
+     "answer": 3,
+     "why": "超出範圍的索引會丟 IndexError，不會回傳預設值；dict 才有 `get` 的預設值機制。"
+    },
+    {
+     "stem": "執行後輸出什麼？",
+     "code": "print([1, 2] + [3, 4])",
+     "lang": "py",
+     "options": [
+      "`[1, 2, 3, 4]`",
+      "`[1, 2, 3, 4, [3, 4]]`",
+      "`[1, 2, [3, 4]]`",
+      "`[[1, 2], [3, 4]]`"
+     ],
+     "answer": 0,
+     "why": "`+` 串接兩個 list 得到新 list；`append` 才會把整個 list 當成一個元素加進去。"
+    }
+   ]
+  },
+  {
+   "title": "單元 5 模擬測驗：set、dict、函式",
+   "unit": 5,
+   "questions": [
+    {
+     "stem": "`len(set([1, 1, 2]))` 是多少？",
+     "code": "print(len(set([1, 1, 2])))",
+     "lang": "py",
+     "options": [
+      "`1`",
+      "`2`",
+      "`3`",
+      "`0`"
+     ],
+     "answer": 1,
+     "why": "set 會自動去重，`{1, 2}` 有兩個元素。"
+    },
+    {
+     "stem": "執行後輸出什麼？",
+     "code": "print({1, 2} & {2, 3})",
+     "lang": "py",
+     "options": [
+      "`set()`",
+      "`{1, 2, 3}`",
+      "`{2}`",
+      "`{1, 3}`"
+     ],
+     "answer": 2,
+     "why": "`&` 是交集，只留下兩邊都有的元素。"
+    },
+    {
+     "stem": "`d = {}` 之後 `d.get(\"k\", 0)` 的結果？",
+     "code": "d = {}\nprint(d.get(\"k\", 0))",
+     "lang": "py",
+     "options": [
+      "`KeyError`",
+      "`0`",
+      "`\"k\"`",
+      "`None`"
+     ],
+     "answer": 1,
+     "why": "`get` 在鍵不存在時回傳預設值（沒給預設值就是 None），不會丟 KeyError；而 `d[\"k\"]` 會丟 KeyError。"
+    },
+    {
+     "stem": "執行後輸出什麼？",
+     "code": "d = {}\nfor c in \"aba\":\n    d[c] = d.get(c, 0) + 1\nprint(d)",
+     "lang": "py",
+     "options": [
+      "`{'b': 1, 'a': 2}` 且順序是隨機的",
+      "`{'a': 2, 'b': 1}`",
+      "`{'a': 3}`",
+      "`{'a': 1, 'b': 1}`"
+     ],
+     "answer": 1,
+     "why": "用 `d.get(k, 0) + 1` 計數。dict 保持**插入順序**（Python 3.7 起保證），所以先插入的 a 在前。"
+    },
+    {
+     "stem": "執行後輸出什麼？",
+     "code": "def f(x, L=[]):\n    L.append(x)\n    return L\nf(1)\nprint(f(2))",
+     "lang": "py",
+     "options": [
+      "`[2, 1]`",
+      "`[2]`",
+      "`[1]`",
+      "`[1, 2]`"
+     ],
+     "answer": 3,
+     "why": "預設參數 `L=[]` 只在定義函式時建立一次，之後每次呼叫共用它，所以 `f(1)` 加入的 1 還在。"
+    },
+    {
+     "stem": "執行後輸出什麼？",
+     "code": "x = 1\ndef f():\n    x = 2\nf()\nprint(x)",
+     "lang": "py",
+     "options": [
+      "`None`",
+      "`2`",
+      "發生 UnboundLocalError",
+      "`1`"
+     ],
+     "answer": 3,
+     "why": "函式內對 `x` 賦值，會建立**區域**變數 x，不影響全域的 x；要修改全域變數需宣告 `global x`。"
+    },
+    {
+     "stem": "執行後輸出什麼？",
+     "code": "print(sorted([\"bb\", \"a\", \"ccc\"], key=len))",
+     "lang": "py",
+     "options": [
+      "`['ccc', 'bb', 'a']`",
+      "`['a', 'bb', 'ccc']`",
+      "`['a', 'ccc', 'bb']`",
+      "`['bb', 'a', 'ccc']`"
+     ],
+     "answer": 1,
+     "why": "`key=len` 依長度排序。"
+    },
+    {
+     "stem": "依『值遞減、值相同時鍵遞增』排序後輸出什麼？",
+     "code": "d = {\"a\": 1, \"b\": 2, \"c\": 1}\nprint(sorted(d.items(), key=lambda kv: (-kv[1], kv[0])))",
+     "lang": "py",
+     "options": [
+      "`[('a', 1), ('c', 1), ('b', 2)]`",
+      "`[('b', 2), ('a', 1), ('c', 1)]`",
+      "`[('c', 1), ('a', 1), ('b', 2)]`",
+      "`[('b', 2), ('c', 1), ('a', 1)]`"
+     ],
+     "answer": 1,
+     "why": "鍵用 `(-值, 鍵)`：值大的排前面（負值小），值相同則依鍵字母序。這是競程常用的多鍵排序寫法。"
+    },
+    {
+     "stem": "`def cnt(*args): return len(args)`，呼叫 `cnt(1, 2, 3)` 回傳？",
+     "code": "def cnt(*args):\n    return len(args)\nprint(cnt(1, 2, 3))",
+     "lang": "py",
+     "options": [
+      "`3`",
+      "`1`",
+      "`0`",
+      "`[1, 2, 3]`"
+     ],
+     "answer": 0,
+     "why": "`*args` 把所有位置引數收成一個 tuple。"
+    },
+    {
+     "stem": "沒有 `return` 的函式被呼叫時回傳？",
+     "code": "def f():\n    x = 5\nprint(f())",
+     "lang": "py",
+     "options": [
+      "`None`",
+      "空字串",
+      "最後一個運算式的值",
+      "`0`"
+     ],
+     "answer": 0,
+     "why": "Python 函式沒有 return 時回傳 None（這和 Tcl 回傳最後一個指令的結果不同）。"
+    },
+    {
+     "stem": "執行後輸出什麼？",
+     "code": "a, b = 1, 2\na, b = b, a\nprint(a, b)",
+     "lang": "py",
+     "options": [
+      "`2 2`",
+      "`1 1`",
+      "`2 1`",
+      "`1 2`"
+     ],
+     "answer": 2,
+     "why": "tuple 解包 `a, b = b, a` 會先算出右邊 `(b, a)` 再同時指派，不需要暫存變數。"
+    },
+    {
+     "stem": "執行後輸出什麼？",
+     "code": "print({x: x * x for x in range(1, 4)})",
+     "lang": "py",
+     "options": [
+      "`{1: 1, 2: 4, 3: 9}`",
+      "`{1, 4, 9}`",
+      "`[1, 4, 9]`",
+      "`{1: 2, 2: 3, 3: 4}`"
+     ],
+     "answer": 0,
+     "why": "dict 推導式 `{k: v for …}` 同時產生鍵與值。"
+    },
+    {
+     "stem": "下列哪個物件**不能**當 dict 的鍵？",
+     "code": "",
+     "lang": "",
+     "options": [
+      "`(1, 2)`（tuple）",
+      "`[1, 2]`（list）",
+      "`\"ab\"`（字串）",
+      "`3`（整數）"
+     ],
+     "answer": 1,
+     "why": "dict 的鍵必須可雜湊（不可變）；list 是可變的所以不行，要用 tuple 代替。"
+    }
+   ]
+  },
+  {
+   "title": "單元 6–7 模擬測驗：進位制、數學、二維 list",
+   "unit": 7,
+   "questions": [
+    {
+     "stem": "`bin(10)` 的結果？",
+     "code": "print(bin(10))",
+     "lang": "py",
+     "options": [
+      "`'1010'`",
+      "`10`",
+      "`'0b1010'`",
+      "`'0xa'`"
+     ],
+     "answer": 2,
+     "why": "`bin` 回傳帶 `0b` 前綴的字串；要去掉前綴用 `bin(10)[2:]` 或 `format(10, \"b\")`。"
+    },
+    {
+     "stem": "`int(\"ff\", 16)` 的結果？",
+     "code": "print(int(\"ff\", 16))",
+     "lang": "py",
+     "options": [
+      "`256`",
+      "`255`",
+      "`ff`",
+      "`15`"
+     ],
+     "answer": 1,
+     "why": "第二個引數指定進位制；ff = 15×16 + 15 = 255。"
+    },
+    {
+     "stem": "`format(5, \"08b\")` 的結果？",
+     "code": "print(format(5, \"08b\"))",
+     "lang": "py",
+     "options": [
+      "`00000101`",
+      "`0b101`",
+      "`101`",
+      "`00000111`"
+     ],
+     "answer": 0,
+     "why": "`08b` 表示二進位、寬度 8、左邊補 0。"
+    },
+    {
+     "stem": "`math.gcd(12, 18)` 與 `math.lcm(12, 18)` 分別是？",
+     "code": "import math\nprint(math.gcd(12, 18), math.lcm(12, 18))",
+     "lang": "py",
+     "options": [
+      "`3 72`",
+      "`6 36`（最大公因數 6、最小公倍數 36）",
+      "`6 216`",
+      "`36 6`"
+     ],
+     "answer": 1,
+     "why": "最大公因數 6；最小公倍數 = 12×18÷6 = 36。"
+    },
+    {
+     "stem": "`pow(2, 10, 1000)` 的結果？",
+     "code": "print(pow(2, 10, 1000))",
+     "lang": "py",
+     "options": [
+      "`1024`",
+      "`24`",
+      "`1000`",
+      "`10`"
+     ],
+     "answer": 1,
+     "why": "三個引數的 `pow` 是模次方：2¹⁰ = 1024，1024 mod 1000 = 24，而且運算過程不會產生大數。"
+    },
+    {
+     "stem": "`math.isqrt(17)` 的結果？",
+     "code": "import math\nprint(math.isqrt(17))",
+     "lang": "py",
+     "options": [
+      "`5`",
+      "`4.123`",
+      "`4`",
+      "`3`"
+     ],
+     "answer": 2,
+     "why": "`isqrt` 是整數平方根（向下取整）；4² = 16 ≤ 17 < 25。用它比 `int(17 ** 0.5)` 安全（大數時浮點會有誤差）。"
+    },
+    {
+     "stem": "執行後輸出什麼？",
+     "code": "g = [[0] * 3 for _ in range(2)]\ng[0][0] = 1\nprint(g)",
+     "lang": "py",
+     "options": [
+      "`[[0, 0, 0], [1, 0, 0]]`",
+      "`[[1, 0, 0], [1, 0, 0]]`",
+      "`[[1, 1, 1], [0, 0, 0]]`",
+      "`[[1, 0, 0], [0, 0, 0]]`"
+     ],
+     "answer": 3,
+     "why": "用推導式建立二維陣列時，每一列是獨立的 list，只改第一列。"
+    },
+    {
+     "stem": "執行後輸出什麼？",
+     "code": "m = [[1, 2], [3, 4]]\nprint(list(zip(*m)))",
+     "lang": "py",
+     "options": [
+      "`[[1, 3], [2, 4]]`",
+      "`[(1, 3), (2, 4)]`",
+      "`[(1, 2, 3, 4)]`",
+      "`[(1, 2), (3, 4)]`"
+     ],
+     "answer": 1,
+     "why": "`zip(*m)` 把每一列拆開再按欄組合，達成轉置；結果的元素是 tuple。"
+    },
+    {
+     "stem": "格子 `(r, c) = (0, 0)`，往四個方向走且不能出界（3×3），合法鄰居共有幾個？",
+     "code": "R = C = 3\nr = c = 0\nn = 0\nfor dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):\n    nr, nc = r + dr, c + dc\n    if 0 <= nr < R and 0 <= nc < C:\n        n += 1\nprint(n)",
+     "lang": "py",
+     "options": [
+      "`3`",
+      "`1`",
+      "`4`",
+      "`2`"
+     ],
+     "answer": 3,
+     "why": "角落格子只有下方與右方在範圍內。檢查寫成 `0 <= nr < R and 0 <= nc < C`。"
+    },
+    {
+     "stem": "`(10 ** 9 + 7)` 常用來當模數，`(-1) % (10 ** 9 + 7)` 在 Python 的結果是？",
+     "code": "print((-1) % (10 ** 9 + 7))",
+     "lang": "py",
+     "options": [
+      "`1000000006`",
+      "`1000000007`",
+      "`-1`",
+      "`0`"
+     ],
+     "answer": 0,
+     "why": "Python 的 `%` 結果非負（與除數同號），−1 mod m = m − 1。在 C／C++ 會得到 −1，要手動加 m。"
+    }
+   ]
+  },
+  {
+   "title": "綜合模擬測驗（階段 0 驗收風格）",
+   "unit": 8,
+   "questions": [
+    {
+     "stem": "下列程式輸出什麼？",
+     "code": "print([x for x in range(1, 7) if x % 2 == 1 and x > 2])",
+     "lang": "py",
+     "options": [
+      "`[3, 5, 7]`",
+      "`[3, 5]`",
+      "`[2, 4]`",
+      "`[1, 3, 5]`"
+     ],
+     "answer": 1,
+     "why": "列出 1–6 中大於 2 的奇數：3、5。"
+    },
+    {
+     "stem": "統計字串 `\"banana\"` 各字母出現次數，依字母排序輸出，結果是？",
+     "code": "s = \"banana\"\nd = {}\nfor c in s:\n    d[c] = d.get(c, 0) + 1\nprint(\" \".join(f\"{k}{d[k]}\" for k in sorted(d)))",
+     "lang": "py",
+     "options": [
+      "`a2 b1 n3`",
+      "`b1 a3 n2`",
+      "`a3 b1 n2`",
+      "`a3 n2 b1`"
+     ],
+     "answer": 2,
+     "why": "a 出現 3 次、b 1 次、n 2 次，依字母序排列。"
+    },
+    {
+     "stem": "費氏數列 f(0)=0, f(1)=1，用迴圈算 f(10)，結果是？",
+     "code": "a, b = 0, 1\nfor _ in range(10):\n    a, b = b, a + b\nprint(a)",
+     "lang": "py",
+     "options": [
+      "`55`",
+      "`34`",
+      "`144`",
+      "`89`"
+     ],
+     "answer": 0,
+     "why": "0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55——第 10 項是 55。"
+    },
+    {
+     "stem": "判斷 97 是不是質數的程式（試除到平方根），輸出？",
+     "code": "n = 97\nprint(n > 1 and all(n % i for i in range(2, int(n ** 0.5) + 1)))",
+     "lang": "py",
+     "options": [
+      "`97`",
+      "`None`",
+      "`True`",
+      "`False`"
+     ],
+     "answer": 2,
+     "why": "97 沒有 2–9 的因數（試除只需到 ⌊√97⌋ = 9），所以是質數。"
+    },
+    {
+     "stem": "把 `\"12\"` 與 `\"7\"` 相加成整數 19，正確的寫法與輸出是？",
+     "code": "print(int(\"12\") + int(\"7\"))",
+     "lang": "py",
+     "options": [
+      "`\"12\" + \"7\"` → `19`",
+      "`int(\"12\" + \"7\")` → `19`",
+      "`\"12\" + 7` → `19`",
+      "`int(\"12\") + int(\"7\")` → `19`"
+     ],
+     "answer": 3,
+     "why": "字串相加是串接（`\"127\"`），數字相加要先 `int()`；`\"12\" + 7` 會 TypeError。"
+    },
+    {
+     "stem": "執行後輸出什麼？（注意縮排）",
+     "code": "for i in range(3):\n    print(i, end=\" \")",
+     "lang": "py",
+     "options": [
+      "`0 1 2`",
+      "`1 2 3`",
+      "`2`",
+      "`0 1 2 3`"
+     ],
+     "answer": 0,
+     "why": "`print` 在迴圈內縮排，每一輪都印；`end=\" \"` 讓輸出在同一行。"
+    },
+    {
+     "stem": "`s = \"CPE\"` 逐字輸出 ASCII 碼（`ord`），結果是？",
+     "code": "print(*[ord(c) for c in \"CPE\"])",
+     "lang": "py",
+     "options": [
+      "`43 50 45`",
+      "`C P E`",
+      "`99 112 101`",
+      "`67 80 69`"
+     ],
+     "answer": 3,
+     "why": "`ord(\"C\")` = 67（大寫字母 A 是 65）、P = 80、E = 69。"
+    },
+    {
+     "stem": "在 CPE 這類逐筆輸入的題目中，讀入到檔案結尾（EOF）才結束的標準寫法是？",
+     "code": "",
+     "lang": "",
+     "options": [
+      "`input()` 讀到 EOF 會回傳空字串",
+      "`for line in sys.stdin:` 或 `while True: try: input() except EOFError: break`",
+      "`while input():` 一直讀到出現空行",
+      "先讀 n 再用 `range(n)`，永遠都是這樣"
+     ],
+     "answer": 1,
+     "why": "沒有給筆數的題目要處理 EOF；`input()` 遇到 EOF 會丟 `EOFError`，所以要用 try/except 或直接迭代 `sys.stdin`。"
+    },
+    {
+     "stem": "以下哪個習慣最能降低『程式看似對卻 WA』的風險？",
+     "code": "",
+     "lang": "",
+     "options": [
+      "只用題目範例測一次",
+      "只測很大的資料",
+      "先送出再看結果",
+      "自己出邊界與最小／最大測資（空輸入、單筆、重複值、最大規模），再與暴力解對拍"
+     ],
+     "answer": 3,
+     "why": "範例通常很弱；邊界與對拍才能抓到 off-by-one、整數除法與別名這類錯誤。"
+    }
+   ]
+  }
+ ]
+}
