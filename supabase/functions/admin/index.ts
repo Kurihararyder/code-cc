@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
       const { data, error } = await sb.auth.admin.createUser({ email: `${sid}@${DOMAIN}`, password: pw, email_confirm: true, app_metadata: { provisioned: true } });
       if (error || !data.user) { out.push({ student_id: sid, ok: false, error: /already|registered|exists/i.test(error?.message || "") ? "學號已存在" : (error?.message || "建立失敗") }); continue; }
       const { error: e2 } = await sb.from("profiles").insert({
-        id: data.user.id, student_id: sid, name: String(r.name || ""), cohort: String(r.cohort || body.cohort || ""), role: "student",
+        id: data.user.id, student_id: sid, name: String(r.name || "").trim().slice(0, 60), cohort: String(r.cohort || body.cohort || "").trim().slice(0, 40), role: "student",
         active: body.active === true, ai_allowed: body.ai_allowed === true, must_change_pw: true,
         valid_from: body.valid_from || null, valid_until: body.valid_until || null,
       });

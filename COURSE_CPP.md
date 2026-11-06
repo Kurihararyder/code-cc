@@ -6,7 +6,7 @@
 
 ## 狀態（誠實版）
 
-- 題庫：本軌道用到現有題庫的 **173** 題（C++ 由 g++ 判題）；另有 **53** 題標為 *待新增*（進階演算法與面試題），還沒有題目與測資。
+- 題庫：本軌道用到現有題庫的 **182** 題（C++ 由 g++ 判題）；另有 **53** 題標為 *待新增*（進階演算法與面試題），還沒有題目與測資。
 - build 作業與作品驗收（type=project）是**人工對照驗收標準**，不能自動判；這是刻意的：效能、設計與測試品質沒辦法只靠輸入輸出判斷。
 - 介面還沒有『切換軌道』：目前這是課綱與驗證過的資料，下一步是新增題目、並讓 `cpe course` 與網頁介面能選軌道、各自保存進度。
 
@@ -103,7 +103,7 @@
 - 隱式轉換陷阱：int 乘 int 先溢位再轉 long long；`1LL * a * b`；有號與無號比較
 - const、constexpr、auto；浮點數不要用 == 比較
 
-**題庫題目（用 C++）**：`d004`、`d096`、`d097`
+**題庫題目（用 C++）**：`d004`、`d096`、`d097`、`d027`、`d037`
 
 **實作作業**：
 - 寫一個程式印出各型別的 sizeof 與極值（numeric_limits），再用 -fsanitize=undefined 跑一個整數溢位範例，看它怎麼報告
@@ -135,7 +135,7 @@
 
 | 週 | 閱讀 | 學習重點 | 題庫題目 | 作業／檢核 |
 |---|---|---|---|---|
-| 2 | learncpp 課 4.3–4.6、4.8、4.12<br>learncpp 課 10.1–10.6<br>learncpp 課 6.2–6.3、6.7<br>CPH 1.3 處理數字（書上印的 pp.6–7） | int／long long／unsigned／char／bool／double 的範圍；`<cstdint>` 的 int32_t、int64_t；`sizeof`<br>有號整數溢位是未定義行為（UB），不是『繞回去』；無號才是模運算<br>整數除法與取餘對負數向零取整：`-7 / 2 == -3`、`-7 % 3 == -1`（Python 不同）<br>隱式轉換陷阱：int 乘 int 先溢位再轉 long long；`1LL * a * b`；有號與無號比較<br>const、constexpr、auto；浮點數不要用 == 比較 | `d004`、`d096`、`d097` | 寫一個程式印出各型別的 sizeof 與極值（numeric_limits），再用 -fsanitize=undefined 跑一個整數溢位範例，看它怎麼報告<br>**單元檢核** |
+| 2 | learncpp 課 4.3–4.6、4.8、4.12<br>learncpp 課 10.1–10.6<br>learncpp 課 6.2–6.3、6.7<br>CPH 1.3 處理數字（書上印的 pp.6–7） | int／long long／unsigned／char／bool／double 的範圍；`<cstdint>` 的 int32_t、int64_t；`sizeof`<br>有號整數溢位是未定義行為（UB），不是『繞回去』；無號才是模運算<br>整數除法與取餘對負數向零取整：`-7 / 2 == -3`、`-7 % 3 == -1`（Python 不同）<br>隱式轉換陷阱：int 乘 int 先溢位再轉 long long；`1LL * a * b`；有號與無號比較<br>const、constexpr、auto；浮點數不要用 == 比較 | `d004`、`d096`、`d097`、`d027`、`d037` | 寫一個程式印出各型別的 sizeof 與極值（numeric_limits），再用 -fsanitize=undefined 跑一個整數溢位範例，看它怎麼報告<br>**單元檢核** |
 
 **檢核**：20 分鐘內用 C++ 通過 `d098`（全部）
 
@@ -187,7 +187,7 @@
 - off-by-one：半開區間 [l, r) 的好處；迴圈變數型別（`size_t` 倒數迴圈會無窮）
 - 把需求拆成『狀態＋轉移』再寫迴圈；先手算小例子
 
-**題庫題目（用 C++）**：`d005`、`d006`、`d007`、`d008`、`d009`、`d010`、`d012`、`d099`、`d100`、`d101`、`d107`
+**題庫題目（用 C++）**：`d005`、`d006`、`d007`、`d008`、`d009`、`d010`、`d012`、`d040`、`d099`、`d100`、`d101`、`d107`、`d122`、`d123`
 
 **常見陷阱**：
 - `for (size_t i = n - 1; i >= 0; --i)` 永遠成立
@@ -213,8 +213,8 @@
 
 | 週 | 閱讀 | 學習重點 | 題庫題目 | 作業／檢核 |
 |---|---|---|---|---|
-| 4 | learncpp 課 4.10、8.1–8.6<br>learncpp 課 8.8–8.11 | if／else if／switch（要寫 break）；三元運算子；邏輯運算的短路求值<br>for／range-for／while；`break`／`continue`；巢狀迴圈與複雜度（兩層就是 n²） | `d005`、`d006`、`d007`、`d008`、`d009`、`d010` | — |
-| 5 | learncpp 課 6.6、6.8<br>CPH 2.1 計算規則（書上印的 pp.17–19） | off-by-one：半開區間 [l, r) 的好處；迴圈變數型別（`size_t` 倒數迴圈會無窮）<br>把需求拆成『狀態＋轉移』再寫迴圈；先手算小例子 | `d012`、`d099`、`d100`、`d101`、`d107` | **單元檢核** |
+| 4 | learncpp 課 4.10、8.1–8.6<br>learncpp 課 8.8–8.11 | if／else if／switch（要寫 break）；三元運算子；邏輯運算的短路求值<br>for／range-for／while；`break`／`continue`；巢狀迴圈與複雜度（兩層就是 n²） | `d005`、`d006`、`d007`、`d008`、`d009`、`d010`、`d012` | — |
+| 5 | learncpp 課 6.6、6.8<br>CPH 2.1 計算規則（書上印的 pp.17–19） | off-by-one：半開區間 [l, r) 的好處；迴圈變數型別（`size_t` 倒數迴圈會無窮）<br>把需求拆成『狀態＋轉移』再寫迴圈；先手算小例子 | `d040`、`d099`、`d100`、`d101`、`d107`、`d122`、`d123` | **單元檢核** |
 
 **檢核**：40 分鐘內用 C++ 通過 `d011`、`d024`（全部）
 
@@ -268,7 +268,7 @@
 - 越界存取是 UB：可能剛好沒事、可能當掉、可能默默改到別的變數；用 `.at()` 或 `-D_GLIBCXX_DEBUG` 抓
 - 大陣列放全域或 vector，不要放區域（stack 只有幾 MB）
 
-**題庫題目（用 C++）**：`d013`、`d014`、`d015`、`d016`、`d017`、`d026`、`d108`、`d109`、`d110`、`d115`、`d043`
+**題庫題目（用 C++）**：`d013`、`d014`、`d015`、`d016`、`d017`、`d026`、`d108`、`d109`、`d110`、`d115`、`d043`、`d036`、`d113`、`d114`
 
 **實作作業**：
 - 寫一個故意越界的程式，用 -fsanitize=address 看報告；再改用 vector.at() 看例外；說明三種行為的差別
@@ -299,8 +299,8 @@
 
 | 週 | 閱讀 | 學習重點 | 題庫題目 | 作業／檢核 |
 |---|---|---|---|---|
-| 7 | learncpp 課 16.1–16.8<br>learncpp 課 16.10–16.12<br>learncpp 課 17.1–17.2、17.7–17.9、17.12 | C 陣列（大小固定、不檢查越界、傳進函式會退化成指標）；`std::array`；`vector` 的 push_back／resize／reserve<br>`vector<vector<int>>` 與一維壓平；`string` 的 substr／find／拼接與效能（`+=` 才是攤銷 O(1)） | `d013`、`d014`、`d015`、`d016`、`d017`、`d026` | — |
-| 8 | learncpp 課 5.7<br>CPH 4.1 動態陣列（書上印的 pp.35–36） | 越界存取是 UB：可能剛好沒事、可能當掉、可能默默改到別的變數；用 `.at()` 或 `-D_GLIBCXX_DEBUG` 抓<br>大陣列放全域或 vector，不要放區域（stack 只有幾 MB） | `d108`、`d109`、`d110`、`d115`、`d043` | 寫一個故意越界的程式，用 -fsanitize=address 看報告；再改用 vector.at() 看例外；說明三種行為的差別<br>**單元檢核** |
+| 7 | learncpp 課 16.1–16.8<br>learncpp 課 16.10–16.12<br>learncpp 課 17.1–17.2、17.7–17.9、17.12 | C 陣列（大小固定、不檢查越界、傳進函式會退化成指標）；`std::array`；`vector` 的 push_back／resize／reserve<br>`vector<vector<int>>` 與一維壓平；`string` 的 substr／find／拼接與效能（`+=` 才是攤銷 O(1)） | `d013`、`d014`、`d015`、`d016`、`d017`、`d026`、`d108` | — |
+| 8 | learncpp 課 5.7<br>CPH 4.1 動態陣列（書上印的 pp.35–36） | 越界存取是 UB：可能剛好沒事、可能當掉、可能默默改到別的變數；用 `.at()` 或 `-D_GLIBCXX_DEBUG` 抓<br>大陣列放全域或 vector，不要放區域（stack 只有幾 MB） | `d109`、`d110`、`d115`、`d043`、`d036`、`d113`、`d114` | 寫一個故意越界的程式，用 -fsanitize=address 看報告；再改用 vector.at() 看例外；說明三種行為的差別<br>**單元檢核** |
 
 **檢核**：30 分鐘內用 C++ 通過 `d103`（全部）
 
@@ -313,6 +313,7 @@
 - 參考是別名、不可為空、不可重新綁定；指標可為空（`nullptr`）、可重新指向
 - 常見 UB：越界、懸空指標、未初始化變數、有號溢位、重複釋放；sanitizer：ASan、UBSan
 - 為什麼現代 C++ 少用裸 new／delete（下一階段用 RAII 取代）
+- 二維陣列與邊界：網格模擬題是最常見的越界（UB）來源，本單元的題目都用它來練『索引一定要先檢查』
 
 **題庫題目（用 C++）**：`d041`、`d042`、`d119`、`d120`、`d121`
 
@@ -341,7 +342,7 @@
 
 | 週 | 閱讀 | 學習重點 | 題庫題目 | 作業／檢核 |
 |---|---|---|---|---|
-| 9 | learncpp 課 12.7–12.12<br>learncpp 課 19.1–19.2<br>learncpp 課 1.6、3.10 | stack（自動變數）、heap（new／malloc）、靜態區；位址與 `&`、`*`；指標算術與陣列的關係<br>參考是別名、不可為空、不可重新綁定；指標可為空（`nullptr`）、可重新指向<br>常見 UB：越界、懸空指標、未初始化變數、有號溢位、重複釋放；sanitizer：ASan、UBSan<br>為什麼現代 C++ 少用裸 new／delete（下一階段用 RAII 取代） | `d041`、`d042`、`d119`、`d120`、`d121` | 寫 4 個各含一種 UB 的程式（越界、use-after-free、未初始化、有號溢位），各用對應 sanitizer 抓出，並記錄報告怎麼看<br>**單元檢核** |
+| 9 | learncpp 課 12.7–12.12<br>learncpp 課 19.1–19.2<br>learncpp 課 1.6、3.10 | stack（自動變數）、heap（new／malloc）、靜態區；位址與 `&`、`*`；指標算術與陣列的關係<br>參考是別名、不可為空、不可重新綁定；指標可為空（`nullptr`）、可重新指向<br>常見 UB：越界、懸空指標、未初始化變數、有號溢位、重複釋放；sanitizer：ASan、UBSan<br>為什麼現代 C++ 少用裸 new／delete（下一階段用 RAII 取代）<br>二維陣列與邊界：網格模擬題是最常見的越界（UB）來源，本單元的題目都用它來練『索引一定要先檢查』 | `d041`、`d042`、`d119`、`d120`、`d121` | 寫 4 個各含一種 UB 的程式（越界、use-after-free、未初始化、有號溢位），各用對應 sanitizer 抓出，並記錄報告怎麼看<br>**單元檢核** |
 
 **檢核**：30 分鐘內用 C++ 通過 `d122`（全部）
 
@@ -429,6 +430,7 @@
 - 複製建構、複製賦值、解構：預設行為與自己寫的時機；Rule of 3；有移動語意後是 Rule of 5；能不寫就不寫是 Rule of 0
 - 淺複製與深複製；雙重釋放的成因
 - 例外安全：建構失敗會發生什麼；`noexcept`
+- 練習方式：本單元的 stack 類題目（d124、d135）請先自己寫一個 RAII 的 Stack 類別（內含 vector 或自管陣列），再用它解題
 
 **題庫題目（用 C++）**：`d124`、`d135`
 
@@ -459,8 +461,8 @@
 
 | 週 | 閱讀 | 學習重點 | 題庫題目 | 作業／檢核 |
 |---|---|---|---|---|
-| 12 | learncpp 課 14.14–14.15、15.4<br>learncpp 課 19.3、21.12–21.13 | 建構與解構的順序；區域物件離開作用域就銷毀——這就是 RAII：資源綁在物件生命週期上（記憶體、檔案、鎖）<br>複製建構、複製賦值、解構：預設行為與自己寫的時機；Rule of 3；有移動語意後是 Rule of 5；能不寫就不寫是 Rule of 0 | `d124` | — |
-| 13 | Core Guidelines R.1、C.20、C.21<br>A Tour of C++：Essential Operations 一章 | 淺複製與深複製；雙重釋放的成因<br>例外安全：建構失敗會發生什麼；`noexcept` | `d135` | 實作 `class IntBuffer`（自己管理一塊 new[] 記憶體）：完整 Rule of 5，用 ASan 與 valgrind 驗證無洩漏、無重複釋放；再改成 `std::vector<int>` 版本（Rule of 0）比較程式碼量<br>**單元檢核** |
+| 12 | learncpp 課 14.14–14.15、15.4<br>learncpp 課 19.3、21.12–21.13 | 建構與解構的順序；區域物件離開作用域就銷毀——這就是 RAII：資源綁在物件生命週期上（記憶體、檔案、鎖）<br>複製建構、複製賦值、解構：預設行為與自己寫的時機；Rule of 3；有移動語意後是 Rule of 5；能不寫就不寫是 Rule of 0<br>淺複製與深複製；雙重釋放的成因 | `d124` | — |
+| 13 | Core Guidelines R.1、C.20、C.21<br>A Tour of C++：Essential Operations 一章 | 例外安全：建構失敗會發生什麼；`noexcept`<br>練習方式：本單元的 stack 類題目（d124、d135）請先自己寫一個 RAII 的 Stack 類別（內含 vector 或自管陣列），再用它解題 | `d135` | 實作 `class IntBuffer`（自己管理一塊 new[] 記憶體）：完整 Rule of 5，用 ASan 與 valgrind 驗證無洩漏、無重複釋放；再改成 `std::vector<int>` 版本（Rule of 0）比較程式碼量<br>**單元檢核** |
 
 **作品驗收**（5 天內，逐條對照）：
 - [ ] IntBuffer 通過 ASan、UBSan、valgrind 無任何報告
@@ -472,7 +474,7 @@
 **目標**：能依需求選容器，並說出每個操作的複雜度。
 
 **學什麼**
-- 序列容器：vector（連續、攤銷 O(1) 尾端新增）、deque、list、array；關聯容器：set／map（紅黑樹 O(log n)）、unordered_set／map（雜湊，平均 O(1)、最差 O(n)）
+- 序列容器：vector（連續、攤銷 O(1) 尾端新增）、deque、list、array；關聯容器：set／map（常見實作是紅黑樹，O(log n)）、unordered_set／map（雜湊，平均 O(1)、最差 O(n)）
 - multiset／multimap；`priority_queue`（預設最大堆）；`stack`／`queue` 是配接器
 - 迭代器失效規則：vector 擴容後舊迭代器全失效；在迴圈中 erase 的正確寫法
 - 自訂雜湊與比較函式；unordered_map 被惡意資料打爆（競賽中用自訂 hash）
@@ -509,7 +511,7 @@
 
 | 週 | 閱讀 | 學習重點 | 題庫題目 | 作業／檢核 |
 |---|---|---|---|---|
-| 14 | CPH 第 4 章 資料結構（4.1–4.5）（書上印的 pp.35–45）<br>learncpp 課 16.10–16.12 | 序列容器：vector（連續、攤銷 O(1) 尾端新增）、deque、list、array；關聯容器：set／map（紅黑樹 O(log n)）、unordered_set／map（雜湊，平均 O(1)、最差 O(n)）<br>multiset／multimap；`priority_queue`（預設最大堆）；`stack`／`queue` 是配接器<br>迭代器失效規則：vector 擴容後舊迭代器全失效；在迴圈中 erase 的正確寫法 | `d018`、`d019`、`d020`、`d028`、`d103`、`d104` | 待新增 c101 |
+| 14 | CPH 第 4 章 資料結構（4.1–4.5）（書上印的 pp.35–45）<br>learncpp 課 16.10–16.12 | 序列容器：vector（連續、攤銷 O(1) 尾端新增）、deque、list、array；關聯容器：set／map（常見實作是紅黑樹，O(log n)）、unordered_set／map（雜湊，平均 O(1)、最差 O(n)）<br>multiset／multimap；`priority_queue`（預設最大堆）；`stack`／`queue` 是配接器<br>迭代器失效規則：vector 擴容後舊迭代器全失效；在迴圈中 erase 的正確寫法 | `d018`、`d019`、`d020`、`d028`、`d103`、`d104` | 待新增 c101 |
 | 15 | A Tour of C++：Containers 一章 | 自訂雜湊與比較函式；unordered_map 被惡意資料打爆（競賽中用自訂 hash）<br>選擇準則：預設用 vector；要排序且動態用 set／map；要最小／最大用 priority_queue | `d105`、`d029`、`d102`、`d112`、`d039` | 對 vector／list／set／unordered_set 各測 10^6 次插入、查詢、刪除，畫出耗時表，解釋為什麼 list 常常輸給 vector<br>**單元檢核** |
 
 **檢核**：45 分鐘內用 C++ 通過 `d127`（全部）
@@ -700,7 +702,7 @@
 
 **學什麼**
 - 左值與右值；右值參考 `T&&`；`std::move` 只是轉型（不搬任何東西）；被移動後物件處於『有效但未指定』狀態
-- 移動建構／移動賦值與 noexcept（vector 擴容時只有 noexcept 的移動才會被採用）
+- 移動建構／移動賦值與 noexcept：vector 擴容時用 `std::move_if_noexcept`——移動建構子不是 noexcept 而且型別可以複製時，會改用複製（為了保持強例外保證）
 - 回傳值最佳化（RVO）與強制省略複製（C++17）：多數時候不要 `return std::move(x)`
 - 轉發參考與 `std::forward`；`emplace_back` 與 `push_back` 的差別
 
@@ -736,7 +738,7 @@
 
 | 週 | 閱讀 | 學習重點 | 題庫題目 | 作業／檢核 |
 |---|---|---|---|---|
-| 21 | learncpp 課 12.2<br>learncpp 課 22.2–22.4<br>learncpp 課 16.5、27.10<br>Effective Modern C++ 條款 23–30<br>Core Guidelines F.15–F.20 | 左值與右值；右值參考 `T&&`；`std::move` 只是轉型（不搬任何東西）；被移動後物件處於『有效但未指定』狀態<br>移動建構／移動賦值與 noexcept（vector 擴容時只有 noexcept 的移動才會被採用）<br>回傳值最佳化（RVO）與強制省略複製（C++17）：多數時候不要 `return std::move(x)`<br>轉發參考與 `std::forward`；`emplace_back` 與 `push_back` 的差別 | — | 待新增 c105<br>對 IntBuffer 加上移動操作，量測 vector<IntBuffer> 擴容時複製與移動各發生幾次，解釋 noexcept 的影響<br>**單元檢核** |
+| 21 | learncpp 課 12.2<br>learncpp 課 22.2–22.4<br>learncpp 課 16.5、27.10<br>Effective Modern C++ 條款 23–30<br>Core Guidelines F.15–F.20 | 左值與右值；右值參考 `T&&`；`std::move` 只是轉型（不搬任何東西）；被移動後物件處於『有效但未指定』狀態<br>移動建構／移動賦值與 noexcept：vector 擴容時用 `std::move_if_noexcept`——移動建構子不是 noexcept 而且型別可以複製時，會改用複製（為了保持強例外保證）<br>回傳值最佳化（RVO）與強制省略複製（C++17）：多數時候不要 `return std::move(x)`<br>轉發參考與 `std::forward`；`emplace_back` 與 `push_back` 的差別 | — | 待新增 c105<br>對 IntBuffer 加上移動操作，量測 vector<IntBuffer> 擴容時複製與移動各發生幾次，解釋 noexcept 的影響<br>**單元檢核** |
 
 **檢核**：30 分鐘內用 C++ 通過 `d136`（全部）
 
@@ -1063,7 +1065,7 @@
 - MST：Kruskal（排序＋並查集）、Prim；唯一性；瓶頸路徑
 - 選擇準則：看邊權、點數、是否要全點對
 
-**題庫題目（用 C++）**：`d063`、`d065`、`d154`、`d156`、`d157`、`d158`、`d088`
+**題庫題目（用 C++）**：`d063`、`d064`、`d065`、`d154`、`d156`、`d157`、`d158`、`d088`
 
 **待新增題目**：
 - `c202` 0-1 BFS 與雙端佇列：邊權只有 0 或 1 的最短路，要求 O(V+E)，對拍 Dijkstra
@@ -1096,8 +1098,8 @@
 
 | 週 | 閱讀 | 學習重點 | 題庫題目 | 作業／檢核 |
 |---|---|---|---|---|
-| 34 | CPH 第 13 章 最短路徑（書上印的 pp.123–132）<br>CPH 15.1 Kruskal（書上印的 pp.142–144）<br>CPH 15.3 Prim（書上印的 pp.147–148） | Dijkstra（priority_queue，負權不能用）、Bellman-Ford（負權與偵測負環）、Floyd-Warshall（n≤400 全點對）、0-1 BFS<br>最短路徑計數與還原路徑；分層圖（多一維狀態） | `d063`、`d065`、`d154`、`d156` | 待新增 c202 |
-| 35 | CP-Algorithms：Dijkstra on sparse graphs<br>CP-Algorithms：0-1 BFS<br>CP-Algorithms：Minimum Spanning Tree - Kruskal with Disjoint Set Union | MST：Kruskal（排序＋並查集）、Prim；唯一性；瓶頸路徑<br>選擇準則：看邊權、點數、是否要全點對 | `d157`、`d158`、`d088` | **單元檢核** |
+| 34 | CPH 第 13 章 最短路徑（書上印的 pp.123–132）<br>CPH 15.1 Kruskal（書上印的 pp.142–144）<br>CPH 15.3 Prim（書上印的 pp.147–148） | Dijkstra（priority_queue，負權不能用）、Bellman-Ford（負權與偵測負環）、Floyd-Warshall（n≤400 全點對）、0-1 BFS<br>最短路徑計數與還原路徑；分層圖（多一維狀態） | `d063`、`d064`、`d065`、`d154` | 待新增 c202 |
+| 35 | CP-Algorithms：Dijkstra on sparse graphs<br>CP-Algorithms：0-1 BFS<br>CP-Algorithms：Minimum Spanning Tree - Kruskal with Disjoint Set Union | MST：Kruskal（排序＋並查集）、Prim；唯一性；瓶頸路徑<br>選擇準則：看邊權、點數、是否要全點對 | `d156`、`d157`、`d158`、`d088` | **單元檢核** |
 
 **檢核**：60 分鐘內用 C++ 通過 `e403`（全部）
 

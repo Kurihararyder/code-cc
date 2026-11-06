@@ -51,3 +51,21 @@ end $$;
 
 revoke all on function public.report_problem(text, text), public.admin_reports(boolean), public.admin_resolve_report(bigint, boolean), public.admin_anomalies(), public.admin_auto_archive(int) from public, anon;
 grant execute on function public.report_problem(text, text), public.admin_reports(boolean), public.admin_resolve_report(bigint, boolean), public.admin_anomalies(), public.admin_auto_archive(int) to authenticated;
+
+-- 0005：資料長度限制；admin_export 不再匯出學員的完整學習資料（隱私）
+alter table public.profiles
+  add constraint profiles_len_chk check (char_length(name) <= 100 and char_length(cohort) <= 60 and char_length(note) <= 2000 and char_length(student_id) <= 24),
+  add constraint profiles_ips_chk check (coalesce(array_length(allowed_ips, 1), 0) <= 200);
+alter table public.reports add constraint reports_len_chk check (char_length(body) <= 2000 and char_length(problem_id) <= 40);
+create or replace function public.admin_export() returns jsonb language plpgsql security definer set search_path = public, pg_catalog as $$
+begin
+  perform _need_admin();
+  insert into audit_log(user_id, student_id, action) values (auth.uid(), (select student_id from profiles where id = auth.uid()), 'admin_export');
+  return jsonb_build_object('exported_at', now(), 'format', 2,
+    'profiles', (select coalesce(jsonb_agg(to_jsonb(p)), '[]') from profiles p),
+    'settings', (select coalesce(jsonb_object_agg(key, value), '{}') from app_settings),
+    'progress', (select coalesce(jsonb_agg(jsonb_build_object('user_id', user_id, 'summary', summary, 'updated_at', updated_at)), '[]') from progress),
+    'audit', (select coalesce(jsonb_agg(to_jsonb(a)), '[]') from (select * from audit_log order by at desc limit 2000) a));
+end $$;
+revoke all on function public.admin_export() from public, anon;
+grant execute on function public.admin_export() to authenticated;

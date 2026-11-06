@@ -301,3 +301,26 @@ class PasswordRuleTest(unittest.TestCase):
             for bad in ("short1", "12345678", "aaaaaaaa", "Password", "xx114001xx", "init1234"):
                 self.assertTrue(c.weak_password(bad), bad)
             self.assertEqual(c.weak_password("blue-Pencil-42"), "")
+
+
+class SyncRejectsUntrustedPathsTest(unittest.TestCase):
+    def test_cloud_cannot_write_outside_the_practice_folders(self):
+        """雲端（或共用資料夾）的資料不可信任：不能藉由同步覆蓋 .cpe/cloud.json 等檔案。"""
+        from cpe_coach import sync as sync_mod
+        with tempfile.TemporaryDirectory() as d:
+            ws = Workspace.create(Path(d) / "w", "2026-11-01")
+            shared = Path(d) / "shared"
+            rdir = shared / sync_mod.DIRNAME / "files"
+            for rel, text in {".cpe/cloud.json": "EVIL", "solutions/d001.py": "print(1)", "evil.sh": "rm -rf", "solutions/../../x": "EVIL2", "tests/d001/a.in": "1"}.items():
+                p = rdir / rel
+                try:
+                    p.parent.mkdir(parents=True, exist_ok=True)
+                    p.write_text(text, encoding="utf-8")
+                except OSError:
+                    pass
+            (ws.meta / "cloud.json").write_text("MINE", encoding="utf-8")
+            sync_mod.sync_folder(ws, shared)
+            self.assertEqual((ws.meta / "cloud.json").read_text(encoding="utf-8"), "MINE")
+            self.assertFalse((ws.root / "evil.sh").exists())
+            self.assertTrue((ws.root / "solutions" / "d001.py").exists())          # 正常的練習檔仍會同步
+            self.assertFalse((Path(d) / "x").exists())

@@ -16,7 +16,8 @@ const lines = (t) => t.split(/[\n,;]+/).map((x) => x.trim()).filter(Boolean);
 const ago = (ts) => { if (!ts) return "—"; const m = Math.round((Date.now() / 1000 - ts) / 60); return m < 1 ? "剛剛" : m < 60 ? m + " 分鐘前" : m < 1440 ? Math.round(m / 60) + " 小時前" : Math.round(m / 1440) + " 天前"; };
 
 function csvDownload(name, rows) {
-  const esc = (v) => { v = v == null ? "" : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+  // 試算表公式注入：學員可控的欄位（姓名、備註、回報內容）若以 = + - @ 開頭，Excel 會當成公式執行；前面補一個單引號
+  const esc = (v) => { v = v == null ? "" : String(v); if (/^[=+\-@\t\r]/.test(v) && !/^-?\d+(\.\d+)?$/.test(v)) v = "'" + v; return /[",\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
   const blob = new Blob(["﻿" + rows.map((r) => r.map(esc).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" });
   const a = h("a", { href: URL.createObjectURL(blob), download: name }); document.body.append(a); a.click(); a.remove();
 }
@@ -61,7 +62,7 @@ async function exportBackup() {
     const d = await rpc("admin_export");
     const blob = new Blob([JSON.stringify(d)], { type: "application/json" });
     const a = h("a", { href: URL.createObjectURL(blob), download: `cpe-備份-${new Date().toISOString().slice(0, 10)}.json` }); document.body.append(a); a.click(); a.remove();
-    toast("已下載（含學員名單、設定、進度與稽核紀錄；不含 API 金鑰與密碼）。請妥善保管。", "ok", 6000);
+    toast("已下載（學員名單、設定、進度摘要與稽核紀錄；不含 API 金鑰、密碼與學員的程式碼）。名單含個資，請妥善保管。", "ok", 7000);
   } catch (e) { toast(e.message, "bad"); }
 }
 

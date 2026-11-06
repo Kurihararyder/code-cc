@@ -1,4 +1,4 @@
-"""把學程資料庫匯出成 JSON（名單、設定、進度、稽核紀錄；不含金鑰與密碼）。可排程（cron／工作排程器）每天跑。
+"""把學程資料庫匯出成 JSON（名單、設定、進度摘要、稽核紀錄；不含金鑰、密碼與學員的程式碼）。可排程（cron／工作排程器）每天跑。
 用法：CPE_ADMIN_SID=admin CPE_ADMIN_PASSWORD=... python dev/backup_supabase.py [輸出資料夾]
 密碼請放在環境變數或排程器的機密設定，不要寫進檔案。"""
 import datetime as dt

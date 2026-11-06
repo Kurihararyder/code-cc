@@ -34,6 +34,7 @@ Deno.serve(async (req) => {
   if (!sec?.value) return json({ error: "管理員還沒有設定 API 金鑰", reason: "no_key" }, 503);
   const body = await req.json().catch(() => null);
   if (!body || !Array.isArray(body.messages)) return json({ error: "格式不對" }, 400);
+  if (body.messages.length > 40 || JSON.stringify(body.messages).length > 60000) return json({ error: "內容太長（最多 40 則訊息、6 萬字元）", reason: "too_long" }, 413);   // 擋住用超長輸入燒額度
   const msgs = cfg.mode === "socratic"                // 蘇格拉底模式：只引導，不直接給完整答案
     ? [{ role: "system", content: "你是程式競賽助教。不要直接給完整程式碼或最終答案；用提問、提示與反例引導學生自己找出問題，每次只推進一小步。" }, ...body.messages]
     : body.messages;

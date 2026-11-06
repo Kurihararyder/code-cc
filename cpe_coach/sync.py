@@ -191,6 +191,8 @@ def sync_folder(ws: Workspace, folder: Path) -> Dict[str, Any]:
         local = _local_files(ws)
         rdir = remote / "files"
         remote_files = {f.relative_to(rdir).as_posix(): f for f in sorted(rdir.rglob("*")) if f.is_file()} if rdir.is_dir() else {}
+        # 共用資料夾／雲端的內容不可信任：只接受 solutions／tests／statements 底下的檔案，其餘（例如 .cpe/cloud.json、啟動腳本）一律忽略
+        remote_files = {rel: f for rel, f in remote_files.items() if rel.split("/", 1)[0] in FILE_DIRS and ".." not in rel.split("/") and "/" in rel}
         for rel in sorted(set(local) | set(remote_files)):
             lf, rf = local.get(rel), remote_files.get(rel)
             if lf and not rf:
