@@ -73,7 +73,7 @@ def course_map(ws: Workspace, track: str, start: dt.date) -> Dict[str, Any]:
         stages.append({"stage": i, **_stage_info(c, i), "weeks": [min(x["weeks"][0] for x in units), max(x["weeks"][1] for x in units)],
                        "units": units, "done": sum(1 for x in units if x["status"] == "done")})
     return {"track": track, "name": NAMES[track], "stages": stages, "current": ts["unit"], "week": wk,
-            "total_weeks": c["total_weeks"], "done": len(done), "total": len(c["units"])}
+            "total_weeks": c["total_weeks"], "done": len(done), "total": len(c["units"]), "advice": advice(ws, track, start)}
 
 
 def unit_detail(ws: Workspace, bank: Dict[str, dict], track: str, n: int) -> Dict[str, Any]:
@@ -150,3 +150,32 @@ def assignment_progress(ws: Workspace, assignments: List[Dict[str, Any]]) -> Lis
         probs_left = [q for q in a.get("problems", []) if q not in done_ids]
         out.append({**a, "units_left": units_left, "problems_left": probs_left, "done": not units_left and not probs_left})
     return out
+
+
+def advice(ws: Workspace, track: str, start: dt.date) -> List[Dict[str, Any]]:
+    """依實際做題結果給學習路徑建議：可直接完成的單元、卡關要回頭複習的單元、落後課表。"""
+    _check(track)
+    c = course_mod.load(track)
+    ts = _tstate(ws, track)
+    ev = ws.events()
+    avail = hdl_mod.load()
+    ac = {e["problem"] for e in ev if e["kind"] == "test" and e.get("verdict") == "AC" and e.get("lang") in ("verilog", "tcl")}
+    fails: Dict[str, int] = {}
+    for e in ev:
+        if e["kind"] == "test" and e.get("lang") == track and e.get("verdict") != "AC" and e["problem"] not in ac:
+            fails[e["problem"]] = fails.get(e["problem"], 0) + 1
+    owner = {p["id"]: u for u in c["units"] for p in u.get("planned", [])}
+    out: List[Dict[str, Any]] = []
+    for u in c["units"]:
+        ids = [p["id"] for p in u.get("planned", []) if p["id"] in avail]
+        if ids and u["n"] not in ts["done"] and all(i in ac for i in ids):
+            out.append({"kind": "can_finish", "unit": u["n"], "text": f"單元 {u['n']}《{u['title']}》的練習題都通過了，可以標記完成。"})
+    for pid, n in sorted(fails.items(), key=lambda x: -x[1]):
+        if n >= 3 and pid in owner:
+            u = owner[pid]
+            out.append({"kind": "review", "unit": u["n"], "text": f"{pid} 已失敗 {n} 次。回頭重讀單元 {u['n']}《{u['title']}》的閱讀與重點，再試一次。"})
+    wk = course_mod.expected_week(start, dt.date.fromtimestamp(ws.now()))
+    exp = course_mod.expected_unit(c, wk)
+    if exp["n"] > ts["unit"] + 1:
+        out.append({"kind": "behind", "unit": exp["n"], "text": f"依課表現在該在單元 {exp['n']}，你在單元 {ts['unit']}；已有把握的單元可以用『跳到這個單元』或標記完成追上。"})
+    return out[:6]

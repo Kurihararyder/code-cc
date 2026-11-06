@@ -146,6 +146,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--no-open", action="store_true", help="不要自動開瀏覽器")
     s = sub.add_parser("update", help="更新程式到 GitHub 上最新的版本（git clone 或安裝精靈裝的都可以）；不會動到你的學習進度")
     s.add_argument("--check", action="store_true", help="只檢查有沒有新版本，不更新")
+    s.add_argument("--rollback", action="store_true", help="退回到上一次更新之前的版本")
     s = sub.add_parser("panel", help="開啟控制台：開啟／關閉學習服務、更新、備份、修復、解除安裝（沒裝過就開安裝精靈）")
     s.add_argument("--text", action="store_true", help="用文字模式（不開圖形視窗）")
     sub.add_parser("doctor", help="環境檢測與安裝診斷（Python、git、網路、編譯器、服務狀態…）")

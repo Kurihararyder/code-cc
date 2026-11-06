@@ -22,6 +22,8 @@ export async function mountTrack(view, params) {
   page.append(h("div", { class: "page-head" }, h("div", null, h("h1", { text: C.name }),
     h("p", { text: `${C.total_weeks} 週・${C.total} 個單元・${C.stages.length} 個階段。這條軌道的練習題還在規劃中，單元讀完、做完專題後手動標記完成。` })),
     h("div", { class: "row wrap" }, trackTabs(track), h("div", { style: { width: "180px" } }, progress(C.done, C.total)), h("span", { class: "small muted", text: `${C.done}/${C.total} 單元完成` }))));
+  if (C.advice && C.advice.length) page.append(h("section", { class: "card pad mt", "aria-label": "學習路徑建議" }, h("h3", { text: "學習路徑建議" }),
+    h("ul", { class: "small" }, C.advice.map((a) => h("li", null, h("button", { class: "linkish", onclick: () => openTrackUnit(track, a.unit) }, a.text))))));
   C.stages.forEach((s) => {
     page.append(h("section", { class: "stage", style: { "--sc": stageColor(s.stage) }, "aria-label": `階段 ${s.stage}` },
       h("div", { class: "stage-h" }, h("span", { class: "bar" }), h("h2", { text: s.name }), h("span", { class: "pill", text: `第 ${s.weeks[0]}–${s.weeks[1]} 週` }), h("span", { class: "pill accent", text: s.goal }), h("span", { class: "muted small", text: `${s.done}/${s.units.length} 完成` })),
@@ -49,7 +51,20 @@ async function openTrackUnit(track, n) {
     D.weekly.length ? h("div", { class: "mt" }, h("h4", { text: "每週安排" }), h("ul", { class: "small" }, D.weekly.map((w) => h("li", null, h("b", { text: `第 ${w.week} 週` }), "　", inline([...(w.readings || []), ...(w.learn || [])].join("；"))))) ) : null,
     sec("常見陷阱", D.pitfalls), sec("自我檢查（不看資料回答）", D.check),
     D.resources.length ? h("div", { class: "mt" }, h("h4", { text: "教材" }), h("ul", { class: "small" }, D.resources.map((r) => h("li", null, r.url ? h("a", { href: r.url, target: "_blank", rel: "noopener noreferrer" }, r.name, " ", icon("external")) : r.name)))) : null,
+    tutorBox(track, D.n),
     h("div", { class: "row wrap mt-lg" },
       D.status !== "done" ? h("button", { class: "btn primary", onclick: async () => { try { await post("/api/track/done", { track, n: D.n }); close(); go("/course/" + track); location.reload(); } catch (e) { toast(e.message, "bad"); } } }, icon("check"), "標記完成") : null,
       D.status === "upcoming" ? h("button", { class: "btn", onclick: async () => { if (!(await confirmDialog(`跳到單元 ${D.n}？`, "之前的單元會視為已完成。", "跳到這裡"))) return; try { await post("/api/track/goto", { track, n: D.n }); close(); location.reload(); } catch (e) { toast(e.message, "bad"); } } }, "跳到這個單元") : null)));
+}
+
+export function tutorBox(track, n, ctx) {
+  const q = h("textarea", { rows: 3, maxlength: 2000, style: { width: "100%" }, placeholder: "卡住了？用自己的話問 AI 助教（它會引導你，不會直接給完整答案）", "aria-label": "問 AI 助教" });
+  const out = h("div", { class: "small mt", "aria-live": "polite", style: { whiteSpace: "pre-wrap" } });
+  const btn = h("button", { class: "btn", onclick: async () => {
+    if (!q.value.trim()) { toast("先輸入問題", "bad"); return; }
+    btn.disabled = true; out.textContent = "思考中…";
+    try { const r = await post("/api/tutor", { track, n, question: q.value, ...(ctx ? ctx() : {}) }); out.textContent = r.answer; } catch (e) { out.textContent = ""; toast(e.message, "bad"); }
+    btn.disabled = false;
+  } }, "問 AI 助教");
+  return h("div", { class: "mt" }, h("h4", { text: "AI 助教" }), q, h("div", { class: "row mt" }, btn), out);
 }

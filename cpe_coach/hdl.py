@@ -113,3 +113,82 @@ def judge_and_record(ws: Workspace, pid: str, code: str) -> Dict[str, Any]:
     (d / f"{pid}.{ext}").write_text(code, encoding="utf-8")
     ws.log("test", problem=pid, verdict=r["verdict"], lang=get(pid)["track"])
     return r
+
+
+def parse_vcd(text: str, scope: str = "tb", max_points: int = 64) -> Dict[str, Any]:
+    """只取指定 scope 的訊號；回傳 {signals:[{name,width}], times:[ps], values:{name:[每個時間點的值]}}（最多 max_points 個有變化的時間點）。"""
+    ids: Dict[str, str] = {}
+    widths: Dict[str, int] = {}
+    stack: List[str] = []
+    lines = text.splitlines()
+    i = 0
+    while i < len(lines):
+        t = lines[i].split()
+        if t[:1] == ["$scope"]:
+            stack.append(t[2])
+        elif t[:1] == ["$upscope"]:
+            stack.pop()
+        elif t[:1] == ["$var"] and stack == [scope] and t[1] in ("wire", "reg"):
+            width, code, name = int(t[2]), t[3], t[4]
+            if code not in ids:
+                ids[code] = name
+                widths[name] = width
+        elif t[:1] == ["$enddefinitions"]:
+            i += 1
+            break
+        i += 1
+    names = list(dict.fromkeys(ids.values()))
+    cur = {n: "x" for n in names}
+    times: List[int] = []
+    values: Dict[str, List[str]] = {n: [] for n in names}
+    now: Optional[int] = None
+    dirty = False
+
+    def flush() -> None:
+        if now is not None and dirty:
+            times.append(now)
+            for n in names:
+                values[n].append(cur[n])
+
+    for ln in lines[i:]:
+        ln = ln.strip()
+        if not ln or ln.startswith("$"):
+            continue
+        if ln[0] == "#":
+            flush()
+            if len(times) >= max_points:
+                now = None
+                break
+            now, dirty = int(ln[1:]), False
+        elif ln[0] in "bB":
+            val, code = ln[1:].split()
+            if code in ids:
+                w = widths[ids[code]]
+                cur[ids[code]] = (val if len(val) >= w else (val[0] if val[0] in "xz" else "0") * (w - len(val)) + val)
+                dirty = True
+        elif ln[0] in "01xzXZ" and ln[1:] in ids:
+            cur[ids[ln[1:]]] = ln[0].lower()
+            dirty = True
+    if now is not None:
+        flush()
+    return {"signals": [{"name": n, "width": widths[n]} for n in names], "times": times, "values": values}
+
+
+def wave(pid: str, code: str) -> Dict[str, Any]:
+    p = get(pid)
+    if p["track"] != "verilog":
+        raise ValueError("只有 Verilog 題有波形")
+    if not tools()["verilog"]:
+        raise ValueError("找不到 iverilog／vvp")
+    tb = p["testbench"].replace("module tb;", 'module tb;\n  initial begin $dumpfile("w.vcd"); $dumpvars(0, tb); end', 1)
+    with tempfile.TemporaryDirectory() as d:
+        Path(d, "user.v").write_text(code, encoding="utf-8")
+        Path(d, "tb.v").write_text(tb, encoding="utf-8")
+        rc, out, err, to = _run(["iverilog", "-g2012", "-o", "sim", "tb.v", "user.v"], d)
+        if rc != 0:
+            return {"ok": False, "message": "編譯失敗", "log": (err or out).strip()}
+        rc, out, err, to = _run(["vvp", "-n", "sim"], d)
+        f = Path(d, "w.vcd")
+        if not f.exists():
+            return {"ok": False, "message": "沒有產生波形", "log": out}
+        return {"ok": True, **parse_vcd(f.read_text(encoding="utf-8", errors="replace"))}

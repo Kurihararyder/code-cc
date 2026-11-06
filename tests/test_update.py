@@ -93,6 +93,25 @@ class UpdateTests(unittest.TestCase):
         self.assertNotIn("第一版", r["notes"])                   # 已經有的版本不重複列出
         self.assertEqual(updater.apply(self.clone)["status"], "up_to_date")
 
+    def test_rollback_returns_to_the_version_before_the_update(self):
+        self.assertEqual(updater.rollback(self.clone)["status"], "unavailable")          # 沒更新過，沒有可退回的
+        before = git(self.clone, "rev-parse", "--short", "HEAD")
+        self.publish("2.1.0", "two")
+        self.assertEqual(updater.apply(self.clone)["status"], "updated")
+        r = updater.rollback(self.clone)
+        self.assertEqual((r["status"], r["version"]), ("rolled_back", "2.0.0"))
+        self.assertEqual(updater.read_version(self.clone), "2.0.0")
+        self.assertTrue(git(self.clone, "rev-parse", "HEAD").startswith(before))
+        self.assertEqual(updater.rollback(self.clone)["status"], "unavailable")           # 只能退一次
+
+    def test_rollback_refuses_when_files_were_modified(self):
+        self.publish("2.1.0", "two")
+        updater.apply(self.clone)
+        (self.clone / "cpe_coach" / "__init__.py").write_text('__version__ = "9.9.9"\n', encoding="utf-8")
+        r = updater.rollback(self.clone)
+        self.assertEqual(r["status"], "blocked")
+        self.assertEqual(updater.read_version(self.clone), "9.9.9")
+
     def test_local_modification_blocks_update_and_is_kept(self):
         self.publish("2.1.0", "two")
         (self.clone / "cpe_coach" / "cli.py").write_text("# my edit\n", encoding="utf-8")

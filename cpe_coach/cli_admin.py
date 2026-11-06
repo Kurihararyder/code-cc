@@ -95,6 +95,13 @@ def cmd_update(args) -> int:
     from . import __version__, updater
     root = updater.repo_root()
     print(f"目前版本 {__version__}（{root}）")
+    if getattr(args, "rollback", False):
+        r = updater.rollback(root)
+        if r["status"] != "rolled_back":
+            print("✗ " + r["reason"])
+            return 1
+        print(f"✓ 已退回到 {r['version']}（{r['commit']}）。請重新啟動 cpe web。學習進度不受影響。")
+        return 0
     r = updater.apply(root, check_only=args.check)
     st = r["status"]
     if st == "unavailable":

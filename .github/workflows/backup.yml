@@ -1,0 +1,43 @@
+name: database backup
+
+# 每週備份學程資料庫（名單、設定、進度摘要、稽核紀錄；不含金鑰、密碼與學員程式碼），加密後存成工作流程的成品（保留 30 天）。
+# 需要在 repo 的 Settings → Secrets and variables → Actions 設定三個機密：
+#   CPE_ADMIN_SID、CPE_ADMIN_PASSWORD（管理員帳號）、BACKUP_PASSPHRASE（加密口令；請另外妥善保存，遺失就無法解密）
+# 沒設定時這個流程只會印出提示並正常結束。解密：openssl enc -d -aes-256-cbc -pbkdf2 -in cpe-db.json.enc -out cpe-db.json
+on:
+  schedule:
+    - cron: "17 19 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Export and encrypt
+        env:
+          CPE_ADMIN_SID: ${{ secrets.CPE_ADMIN_SID }}
+          CPE_ADMIN_PASSWORD: ${{ secrets.CPE_ADMIN_PASSWORD }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          if [ -z "$CPE_ADMIN_SID" ] || [ -z "$CPE_ADMIN_PASSWORD" ] || [ -z "$BACKUP_PASSPHRASE" ]; then
+            echo "尚未設定 CPE_ADMIN_SID／CPE_ADMIN_PASSWORD／BACKUP_PASSPHRASE，略過備份。"; exit 0
+          fi
+          mkdir out
+          python dev/backup_supabase.py out
+          f=$(ls out/cpe-db-*.json)
+          openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:BACKUP_PASSPHRASE -in "$f" -out out/cpe-db.json.enc
+          rm "$f"
+          echo "BACKUP_READY=1" >> "$GITHUB_ENV"
+      - uses: actions/upload-artifact@v4
+        if: env.BACKUP_READY == '1'
+        with:
+          name: cpe-db-backup
+          path: out/cpe-db.json.enc
+          retention-days: 30

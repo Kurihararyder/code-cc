@@ -23,6 +23,7 @@ from . import bank as bank_mod
 from . import course as course_mod
 from . import tracks as tracks_mod
 from . import hdl as hdl_mod
+from . import tutor as tutor_mod
 from . import __version__, backup, dashboard, hints, judge, service, srs, updater
 from .llm import detect_client
 from .web_cloud import CloudMixin
@@ -93,6 +94,23 @@ class App(CloudMixin, PracticeMixin, ExamMixin, LearnMixin, SciMixin):
 
     def stats(self) -> Dict[str, Any]:
         return dashboard.stats_view(self.ws())
+
+    def hdl_wave(self, body: Dict[str, Any]) -> Dict[str, Any]:
+        code = body.get("code", "")
+        if not isinstance(code, str) or len(code) > 100_000:
+            raise ValueError("程式碼太長或格式不對")
+        return hdl_mod.wave(body["id"], code)
+
+    def tutor(self, body: Dict[str, Any]) -> Dict[str, Any]:
+        track = body.get("track")
+        if track not in course_mod.TRACKS:
+            raise ValueError("軌道只有 py／cpp／verilog／tcl")
+        from .llm import LLMError
+        try:
+            return tutor_mod.ask(self.llm(self.ws()), track, int(body["n"]), str(body.get("question", "")), body.get("pid") or None,
+                                 str(body.get("code", "")), str(body.get("log", "")))
+        except LLMError as e:
+            raise ValueError(str(e))
 
     def hdl_list(self) -> Dict[str, Any]:
         return {"problems": hdl_mod.listing(self.ws()), "tools": hdl_mod.tools()}
@@ -239,12 +257,12 @@ def make_handler(app: App):
             "/api/lab/quiz/start": app.lab_quiz_start, "/api/lab/quiz/answer": app.lab_quiz_answer, "/api/lab/quiz/practice": app.lab_quiz_practice, "/api/lab/grade": app.lab_grade,
             "/api/lab/faded/check": app.lab_faded_check, "/api/lab/parsons/check": app.lab_parsons_check, "/api/lab/bug/check": app.lab_bug_check, "/api/lab/predict/check": app.lab_predict_check,
             "/api/coach/import": app.coach_import, "/api/exam/focus": app.exam_focus, "/api/course/goto": app.course_goto,
-            "/api/course/next": app.course_next, "/api/track/done": app.track_done, "/api/hdl/run": app.hdl_run, "/api/track/goto": app.track_goto, "/api/settings": app.set_settings, "/api/past/import": app.past_import, "/api/cpe/import": app.cpe_import,
+            "/api/course/next": app.course_next, "/api/track/done": app.track_done, "/api/hdl/run": app.hdl_run, "/api/tutor": app.tutor, "/api/hdl/wave": app.hdl_wave, "/api/track/goto": app.track_goto, "/api/settings": app.set_settings, "/api/past/import": app.past_import, "/api/cpe/import": app.cpe_import,
             "/api/past/statement": app.past_statement, "/api/past/start": app.past_start, "/api/vocab/add": app.vocab_add,
             "/api/vocab/remove": app.vocab_remove, "/api/eng/start": app.eng_start, "/api/eng/verify": app.eng_verify, "/api/key": app.set_key, "/api/ai/test": app.ai_test, "/api/update/check": app.update_check}
     NOLOCK = {"/api/cloud/login": app.cloud_login, "/api/cloud/logout": app.cloud_logout, "/api/cloud/password": app.cloud_password,
               "/api/cloud/recheck": app.cloud_recheck, "/api/cloud/sync": app.cloud_sync, "/api/cloud/report": app.cloud_report, "/api/admin/rpc": app.admin_rpc, "/api/admin/fn": app.admin_fn,
-              "/api/admin/ai_test": app.admin_ai_test, "/api/update/apply": app.update_apply, "/api/restart": app.restart}
+              "/api/admin/ai_test": app.admin_ai_test, "/api/update/apply": app.update_apply, "/api/update/rollback": app.update_rollback, "/api/restart": app.restart}
 
     class H(BaseHTTPRequestHandler):
         server_version = "cpe"

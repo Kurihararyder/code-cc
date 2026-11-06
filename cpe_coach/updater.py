@@ -178,4 +178,34 @@ def apply(root: Path, check_only: bool = False) -> Dict[str, Any]:
     except OSError:
         pass
     rc, new_commit = _git(root, "rev-parse", "--short", "HEAD")
+    _save_rollback(root, old, old_version, new_commit)
     return dict(info, status="updated", old_commit=old, new_commit=new_commit, old_version=old_version, new_version=new_version, notes=notes)
+
+
+def _rollback_file(root: Path) -> Path:
+    return root / ".git" / "cpe-rollback.json"
+
+
+def _save_rollback(root: Path, old: str, old_version: str, new_commit: str) -> None:
+    import json
+    try:
+        _rollback_file(root).write_text(json.dumps({"commit": old, "version": old_version, "from": new_commit}), encoding="utf-8")
+    except OSError:
+        pass
+
+
+def rollback(root: Path) -> Dict[str, Any]:
+    """退回到上一次更新之前的版本（只在 git 安裝時可用）。學習進度在工作區，不受影響。"""
+    import json
+    f = _rollback_file(root)
+    if not f.exists():
+        return {"status": "unavailable", "reason": "沒有可退回的紀錄（只有用 cpe update 更新過才有）。"}
+    rec = json.loads(f.read_text(encoding="utf-8"))
+    info = inspect(root)
+    if info.get("dirty"):
+        return {"status": "blocked", "reason": "程式檔有被修改過：" + "、".join(info["dirty_files"]) + "。先暫存或放棄修改再退回。"}
+    rc, out = reset_to(root, rec["commit"])
+    if rc != 0:
+        return {"status": "blocked", "reason": "退回失敗：" + out[-300:]}
+    f.unlink()
+    return {"status": "rolled_back", "version": rec["version"], "commit": rec["commit"], "from": rec["from"]}

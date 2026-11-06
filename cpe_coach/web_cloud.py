@@ -182,6 +182,12 @@ class CloudMixin:
             self.update_info = {"checked_at": time.time(), "status": "restart", "behind": 0}
         return out
 
+    def update_rollback(self, body: Dict[str, Any]) -> Dict[str, Any]:
+        if self.cloud is not None:
+            self._need_admin()
+        r = updater.rollback(updater.repo_root())
+        return {"status": r["status"], "reason": r.get("reason"), "version": r.get("version")}
+
     def restart(self, body: Dict[str, Any]) -> Dict[str, Any]:
         """更新後用新程式重新啟動自己（同一個埠、同一個工作區）。回應送出後才動作。"""
         argv = [sys.executable, "-u", "-m", "cpe_coach", "web", "--port", str(self.port), "--no-open"]

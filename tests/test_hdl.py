@@ -116,3 +116,49 @@ class Integration(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class Vcd(unittest.TestCase):
+    SAMPLE = """$timescale 1ps $end
+$scope module tb $end
+$var wire 1 ! clk $end
+$var reg 4 " q [3:0] $end
+$var integer 32 # i $end
+$scope module dut $end
+$var wire 1 $ inner $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+#0
+0!
+b101 "
+b0 #
+0$
+#5
+1!
+#10
+b11 "
+#10
+"""
+
+    def test_parse_keeps_only_top_scope_signals_and_pads_bus_values(self):
+        r = hdl.parse_vcd(self.SAMPLE)
+        self.assertEqual([s["name"] for s in r["signals"]], ["clk", "q"])
+        self.assertEqual(r["times"], [0, 5, 10])
+        self.assertEqual(r["values"]["clk"], ["0", "1", "1"])
+        self.assertEqual(r["values"]["q"], ["0101", "0101", "0011"])
+
+    def test_max_points(self):
+        body = "".join(f"#{i}\n{i % 2}!\n" for i in range(200))
+        r = hdl.parse_vcd("$scope module tb $end\n$var wire 1 ! clk $end\n$upscope $end\n$enddefinitions $end\n" + body, max_points=10)
+        self.assertEqual(len(r["times"]), 10)
+
+    @unittest.skipUnless(HAVE_V, "需要 iverilog")
+    def test_wave_of_a_real_problem(self):
+        r = hdl.wave("v007", PROBLEMS["v007"]["ref"])
+        self.assertTrue(r["ok"])
+        names = {s["name"] for s in r["signals"]}
+        self.assertTrue({"req", "idx_d", "idx_r", "valid_d", "valid_r"} <= names)
+        self.assertFalse(hdl.wave("v007", "module top_module(")["ok"])
+        with self.assertRaises(ValueError):
+            hdl.wave("t001", "")

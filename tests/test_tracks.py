@@ -53,3 +53,25 @@ class TrackTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class AdviceTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.ws = Workspace.create(Path(self.tmp.name), "2026-11-01")
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_review_and_finish_and_behind(self):
+        import datetime
+        for _ in range(3):
+            self.ws.log("test", problem="v012", verdict="WA", lang="verilog")
+        kinds = {a["kind"]: a for a in tracks.advice(self.ws, "verilog", datetime.date(2026, 11, 1))}
+        self.assertEqual(kinds["review"]["unit"], 6)
+        self.ws.log("test", problem="v012", verdict="AC", lang="verilog")
+        kinds = {a["kind"] for a in tracks.advice(self.ws, "verilog", datetime.date(2026, 11, 1))}
+        self.assertIn("can_finish", kinds)
+        self.assertNotIn("review", kinds)
+        far = {a["kind"] for a in tracks.advice(self.ws, "tcl", datetime.date(2026, 3, 1))}
+        self.assertIn("behind", far)
