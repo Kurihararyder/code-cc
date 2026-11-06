@@ -69,6 +69,7 @@ def run_verify(v: Dict[str, str]) -> str:
 
 
 _cpp_ok: Optional[bool] = None
+_tcl_ok: Optional[bool] = None
 
 
 def available(lang: str) -> bool:
@@ -83,8 +84,18 @@ def available(lang: str) -> bool:
                     Path(d, "a.cpp").write_text("#include <bits/stdc++.h>\nint main(){}\n", encoding="utf-8")
                     _cpp_ok = subprocess.run(["g++", "-std=c++17", "-o", os.path.join(d, "a"), os.path.join(d, "a.cpp")], capture_output=True).returncode == 0
         return _cpp_ok
-    need = {"tcl": ["tclsh"], "verilog": ["iverilog", "vvp"]}[lang]
-    return all(shutil.which(x) for x in need)
+    if lang == "tcl":                                   # 課程教的是 Tcl 8.6（lmap、try、throw…）；macOS 自帶的 tclsh 是 8.5，題目在那裡會誤判
+        global _tcl_ok
+        if _tcl_ok is None:
+            _tcl_ok = False
+            if shutil.which("tclsh"):
+                r = subprocess.run(["tclsh"], input=b"puts $tcl_version", capture_output=True)
+                try:
+                    _tcl_ok = float(r.stdout.decode().strip()) >= 8.6
+                except ValueError:
+                    _tcl_ok = False
+        return _tcl_ok
+    return all(shutil.which(x) for x in ["iverilog", "vvp"])
 
 
 def check_question(q: Dict[str, Any], where: str, strict_verify: bool = True) -> int:
