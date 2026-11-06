@@ -196,7 +196,7 @@ class Workspace:
         d = self.meta / "backups"
         d.mkdir(exist_ok=True)
         snaps = sorted(d.glob("state-*.json"))
-        if snaps and time.time() - snaps[-1].stat().st_mtime < every:
+        if every > 0 and snaps and time.time() - snaps[-1].stat().st_mtime < every:   # every=0：一律做（Windows 上剛寫入檔案的 mtime 可能比 time.time() 還新，差會是負的）
             return
         if self.state_path.exists():
             (d / ("state-%s.json" % time.strftime("%Y%m%d-%H%M%S", time.localtime(self.now())))).write_bytes(self.state_path.read_bytes())
