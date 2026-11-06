@@ -100,16 +100,16 @@
     },
     {
      "stem": "`puts hi # 註解` 會怎樣？",
-     "code": "catch {puts hi # comment} err\nputs $err",
+     "code": "puts [catch {puts hi # comment} err]",
      "lang": "tcl",
      "options": [
-      "印出 `hi # 註解`",
       "正常印出 `hi`，`#` 後面的內容被忽略",
+      "出錯：`puts` 收到太多引數（wrong # args），因為 `#` 只有在指令開頭才算註解",
       "印出 `hi` 並在 stderr 顯示警告",
-      "出錯：`puts` 收到太多引數（wrong # args），因為 `#` 只有在指令開頭才算註解"
+      "印出 `hi # 註解`"
      ],
-     "answer": 3,
-     "why": "Tcl 的註解是一個『指令』，必須出現在指令開頭。行尾要加註解請先用分號結束指令：`puts hi ;# 註解`。"
+     "answer": 1,
+     "why": "Tcl 的註解是一個『指令』，必須出現在指令開頭。行尾要加註解請先用分號結束指令：`puts hi ;# 註解`。（錯誤訊息的文字依 Tcl 版本而異：8.6 是 `wrong # args`，8.5 是 `bad argument …`；不變的是它一定出錯。）"
     },
     {
      "stem": "執行後輸出什麼？",
