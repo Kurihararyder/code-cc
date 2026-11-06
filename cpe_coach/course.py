@@ -13,11 +13,11 @@ from .store import Workspace
 DATA = Path(__file__).parent / "data" / "course.json"
 
 
-TRACKS = {"py": DATA, "cpp": DATA.with_name("course_cpp.json")}
+TRACKS = {"py": DATA, "cpp": DATA.with_name("course_cpp.json"), "verilog": DATA.with_name("course_verilog.json"), "tcl": DATA.with_name("course_tcl.json")}
 
 
 def load(track: str = "py") -> Dict[str, Any]:
-    """track：py（Python 軌道，預設）或 cpp（C++ 軌道：零基礎到演算法工程師）。介面與進度目前只接 py；cpp 是課綱資料。"""
+    """track：py（Python 軌道，預設）、cpp（C++）、verilog、tcl。介面與進度目前只接 py；其他是課綱資料。"""
     return json.loads(TRACKS[track].read_text(encoding="utf-8"))
 
 

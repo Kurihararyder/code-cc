@@ -11,6 +11,8 @@
 
 - **C++ 軌道（課綱）**：從零基礎到演算法工程師，6 階段 50 單元 82 週：[COURSE_CPP.md](COURSE_CPP.md)。
 
+- **Verilog 與 Tcl 軌道（課綱）**：數位 IC 設計與驗證、EDA 腳本，各自從零基礎到工程師：[COURSE_VERILOG.md](COURSE_VERILOG.md)（75 週）、[COURSE_TCL.md](COURSE_TCL.md)（41 週）。
+
 研究依據：[docs/research-report.md](docs/research-report.md)。只需要 Python 3.9+（階段 4 起需要 g++），沒有第三方套件。
 
 ## 開始

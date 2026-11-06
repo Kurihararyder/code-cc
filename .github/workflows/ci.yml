@@ -41,10 +41,14 @@ jobs:
           python dev/gen_drills_en.py
           python dev/gen_course.py
           python dev/gen_course_cpp.py
-          git diff --exit-code cpe_coach/data COURSE.md COURSE_CPP.md
+          python dev/gen_course_hdl.py
+          git diff --exit-code cpe_coach/data COURSE.md COURSE_CPP.md COURSE_VERILOG.md COURSE_TCL.md
       - name: Web UI scripts parse (ES modules)
         if: matrix.os == 'ubuntu-24.04' && matrix.python == '3.12'
         run: for f in cpe_coach/static/js/*.js; do node --input-type=module --check < "$f" || exit 1; done
+      - name: Install iverilog and Tcl (so the Verilog/Tcl judging-feasibility tests run instead of being skipped)
+        if: matrix.os == 'ubuntu-24.04' && matrix.python == '3.12'
+        run: sudo apt-get update && sudo apt-get install -y iverilog tcl
       - name: Local server attack probes (74 checks against a fake cloud; no network)
         if: matrix.os == 'ubuntu-24.04' && matrix.python == '3.12'
         run: python dev/security_probe.py

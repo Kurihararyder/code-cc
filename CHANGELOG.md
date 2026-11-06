@@ -3,6 +3,16 @@
 最新的在最上面。`cpe update` 更新完會把你這次跨過的版本的內容顯示出來。
 標題格式固定是 `## 版本號（日期）`（程式靠它判斷哪些是你還沒看過的）。
 
+## 2.11.0（Verilog 與 Tcl 軌道課綱）
+
+- 新增兩條獨立軌道，目標都是「工程師等級」：
+  - **Verilog／SystemVerilog**（[COURSE_VERILOG.md](COURSE_VERILOG.md)）：5 個階段、39 個單元、75 週——數位邏輯與第一個電路、RTL 設計（FIFO、算術、CDC、RISC-V 單週期與管線）、驗證（自我檢查環境、SV、cocotb、斷言與形式驗證、覆蓋率與回歸、UVM 概念）、合成／STA／低功耗／DFT／擺置繞線／FPGA、SoC 與三個專題、面試。
+  - **Tcl**（[COURSE_TCL.md](COURSE_TCL.md)）：4 個階段、27 個單元、41 週——Tcl 語言、工程化（package、tcltest、報告解析、並行、TclOO）、EDA 腳本實務（SDC、Yosys／OpenSTA／OpenROAD 的 Tcl、設計產生器、回歸與 CI）、三個專題與面試。
+- 教材指向用實際目錄核對：HDLBits 的章節與題目名稱、Tcl 官方教學的 0–48 課、Tcl 8.6 手冊的指令名稱、Harris & Harris 的 9 章章名；產生器 `dev/gen_course_hdl.py` 發現錯誤就失敗，CI 檢查沒有漂移。書籍只寫章名，不寫章號。
+- 判題可行性有測試：iverilog 編譯＋vvp 執行 testbench 能分辨正確與錯誤的設計；`tclsh` 能執行腳本並讓錯誤以非零碼結束（CI 安裝這兩個工具後才會執行，沒安裝時跳過）。
+- 誠實的限制：這兩條軌道**還沒有內建題庫**（Verilog 用外部的 HDLBits；另有 67 題 Verilog 與 41 題 Tcl 標為「待新增」，判題器尚未實作）；介面還不能切換軌道；商用 EDA（DC、PrimeTime、Innovus、Questa、VCS、Vivado 等）需要授權，無法驗證，課綱改用開源工具並以人工驗收。
+- `course.load("verilog")`、`course.load("tcl")` 可讀取資料。
+
 ## 2.10.4（全系統安全與課程正確性審查）
 
 審查方法與結果見 [docs/SECURITY.md](docs/SECURITY.md)。
