@@ -92,9 +92,9 @@ def check_question(q: Dict[str, Any], where: str, strict_verify: bool = True) ->
     for e in exp:
         if e not in out:
             raise SystemExit(f"{where}：實際輸出沒有 {e!r}：\n{out[-300:]}")
-        if e not in q["right"]:
+        if not v.get("free") and e not in q["right"]:
             raise SystemExit(f"{where}：驗證用的期望值 {e!r} 沒出現在正確選項裡")
-    if len(exp) == 1:
+    if len(exp) == 1 and not v.get("free"):
         for w in q["wrong"]:
             if norm(w) == norm(exp[0]):
                 raise SystemExit(f"{where}：誘答與正確答案相同 {exp[0]!r}")
