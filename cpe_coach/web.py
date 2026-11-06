@@ -24,6 +24,7 @@ from . import course as course_mod
 from . import tracks as tracks_mod
 from . import hdl as hdl_mod
 from . import tutor as tutor_mod
+from . import guides as guides_mod
 from . import __version__, backup, dashboard, hints, judge, service, srs, updater
 from .llm import detect_client
 from .web_cloud import CloudMixin
@@ -111,6 +112,15 @@ class App(CloudMixin, PracticeMixin, ExamMixin, LearnMixin, SciMixin):
                                  str(body.get("code", "")), str(body.get("log", "")))
         except LLMError as e:
             raise ValueError(str(e))
+
+    def guide_index(self) -> Dict[str, Any]:
+        return {"guides": guides_mod.index(self.ws())}
+
+    def guide_set(self, gid: str, group: str) -> Dict[str, Any]:
+        return guides_mod.get_set(self.ws(), gid, group)
+
+    def guide_answer(self, body: Dict[str, Any]) -> Dict[str, Any]:
+        return guides_mod.answer(self.ws(), str(body["id"]), int(body["group"]), int(body["i"]), int(body["choice"]))
 
     def hdl_list(self) -> Dict[str, Any]:
         return {"problems": hdl_mod.listing(self.ws()), "tools": hdl_mod.tools()}
@@ -249,7 +259,7 @@ def make_handler(app: App):
            "/api/lab/lesson": app.lab_lesson, "/api/lab/worked": app.lab_worked, "/api/lab/parsons": app.lab_parsons, "/api/lab/bug": app.lab_bug, "/api/lab/predict": app.lab_predict,
            "/api/lab/compare": app.lab_compare, "/api/lab/glossary": app.lab_glossary, "/api/cpe/progress": lambda q: app.cpe_progress(), "/api/vocab": lambda q: app.vocab_list(),
            "/api/plan": lambda q: app.plan(int(q.get("minutes", "30"))), "/api/calibration": lambda q: app.calibration(), "/api/weakness": lambda q: app.weakness(),
-           "/api/eng": lambda q: app.eng_list(), "/api/tracks": lambda q: app.tracks(), "/api/hdl": lambda q: app.hdl_list(), "/api/hdl/problem": lambda q: app.hdl_problem(q["id"]),
+           "/api/eng": lambda q: app.eng_list(), "/api/tracks": lambda q: app.tracks(), "/api/guides": lambda q: app.guide_index(), "/api/guide": lambda q: app.guide_set(q["id"], q.get("group", "all")), "/api/hdl": lambda q: app.hdl_list(), "/api/hdl/problem": lambda q: app.hdl_problem(q["id"]),
            "/api/track": lambda q: app.track_map(q["track"]), "/api/track/unit": lambda q: app.track_unit(q["track"], int(q["n"])), "/api/cloud/status": app.cloud_status}
     POST = {"/api/new": app.new, "/api/save": app.save, "/api/test": app.test, "/api/trace": app.trace, "/api/fuzz": app.fuzz, "/api/ask": app.ask,
             "/api/hint": app.hint, "/api/giveup": app.giveup, "/api/solution": app.solution, "/api/gate": app.gate_start,
@@ -257,7 +267,7 @@ def make_handler(app: App):
             "/api/lab/quiz/start": app.lab_quiz_start, "/api/lab/quiz/answer": app.lab_quiz_answer, "/api/lab/quiz/practice": app.lab_quiz_practice, "/api/lab/grade": app.lab_grade,
             "/api/lab/faded/check": app.lab_faded_check, "/api/lab/parsons/check": app.lab_parsons_check, "/api/lab/bug/check": app.lab_bug_check, "/api/lab/predict/check": app.lab_predict_check,
             "/api/coach/import": app.coach_import, "/api/exam/focus": app.exam_focus, "/api/course/goto": app.course_goto,
-            "/api/course/next": app.course_next, "/api/track/done": app.track_done, "/api/hdl/run": app.hdl_run, "/api/tutor": app.tutor, "/api/hdl/wave": app.hdl_wave, "/api/track/goto": app.track_goto, "/api/settings": app.set_settings, "/api/past/import": app.past_import, "/api/cpe/import": app.cpe_import,
+            "/api/course/next": app.course_next, "/api/track/done": app.track_done, "/api/hdl/run": app.hdl_run, "/api/tutor": app.tutor, "/api/guide/answer": app.guide_answer, "/api/hdl/wave": app.hdl_wave, "/api/track/goto": app.track_goto, "/api/settings": app.set_settings, "/api/past/import": app.past_import, "/api/cpe/import": app.cpe_import,
             "/api/past/statement": app.past_statement, "/api/past/start": app.past_start, "/api/vocab/add": app.vocab_add,
             "/api/vocab/remove": app.vocab_remove, "/api/eng/start": app.eng_start, "/api/eng/verify": app.eng_verify, "/api/key": app.set_key, "/api/ai/test": app.ai_test, "/api/update/check": app.update_check}
     NOLOCK = {"/api/cloud/login": app.cloud_login, "/api/cloud/logout": app.cloud_logout, "/api/cloud/password": app.cloud_password,

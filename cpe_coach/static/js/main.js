@@ -7,6 +7,7 @@ import { mountHome } from "./home.js";
 import { mountWorkspace } from "./workspace.js";
 import { mountCourse } from "./course.js";
 import { mountHdl } from "./hdl.js";
+import { mountGuide } from "./guide.js";
 import { mountStats } from "./stats.js";
 import { mountSettings } from "./settings.js";
 import { mountExam } from "./exam.js";
@@ -17,7 +18,7 @@ import { loadCloud, showAnnouncement } from "./account.js";
 import { mountAdmin } from "./admin.js";
 
 applyTheme(); applyA11y();
-route("home", mountHome); route("practice", mountWorkspace); route("course", mountCourse); route("hdl", mountHdl); route("exam", mountExam); route("stats", mountStats); route("settings", mountSettings); route("study", mountStudy); route("admin", mountAdmin);
+route("home", mountHome); route("practice", mountWorkspace); route("course", mountCourse); route("hdl", mountHdl); route("guide", mountGuide); route("exam", mountExam); route("stats", mountStats); route("settings", mountSettings); route("study", mountStudy); route("admin", mountAdmin);
 
 document.addEventListener("keydown", (e) => {
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openPalette(); return; }

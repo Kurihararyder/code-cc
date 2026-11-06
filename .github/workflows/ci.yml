@@ -54,6 +54,11 @@ jobs:
         run: |
           python dev/gen_hdl.py
           git diff --exit-code cpe_coach/data/hdl_problems.json
+      - name: Study guides are reproducible (answers of the predict-the-output questions are re-run with tclsh/python/iverilog/g++)
+        if: matrix.os == 'ubuntu-24.04' && matrix.python == '3.12'
+        run: |
+          python dev/gen_guides.py
+          git diff --exit-code docs/guides cpe_coach/data/guides
       - name: Local server attack probes (74 checks against a fake cloud; no network)
         if: matrix.os == 'ubuntu-24.04' && matrix.python == '3.12'
         run: python dev/security_probe.py
