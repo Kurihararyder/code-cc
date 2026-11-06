@@ -21,6 +21,7 @@ from urllib.parse import parse_qs, urlparse
 from . import ask as ask_mod
 from . import bank as bank_mod
 from . import course as course_mod
+from . import tracks as tracks_mod
 from . import __version__, backup, dashboard, hints, judge, service, srs, updater
 from .llm import detect_client
 from .web_cloud import CloudMixin
@@ -91,6 +92,22 @@ class App(CloudMixin, PracticeMixin, ExamMixin, LearnMixin, SciMixin):
 
     def stats(self) -> Dict[str, Any]:
         return dashboard.stats_view(self.ws())
+
+    def tracks(self) -> Dict[str, Any]:
+        return {"tracks": tracks_mod.overview(self.ws())}
+
+    def track_map(self, track: str) -> Dict[str, Any]:
+        return tracks_mod.course_map(self.ws(), track, self.start_date(self.ws()))
+
+    def track_unit(self, track: str, n: int) -> Dict[str, Any]:
+        ws = self.ws()
+        return tracks_mod.unit_detail(ws, bank_mod.load_bank(ws), track, n)
+
+    def track_done(self, body: Dict[str, Any]) -> Dict[str, Any]:
+        return tracks_mod.mark_done(self.ws(), body["track"], int(body["n"]))
+
+    def track_goto(self, body: Dict[str, Any]) -> Dict[str, Any]:
+        return tracks_mod.goto(self.ws(), body["track"], int(body["n"]))
 
     def problem(self, pid: str) -> Dict[str, Any]:
         ws = self.ws()
@@ -198,14 +215,15 @@ def make_handler(app: App):
            "/api/lab/lesson": app.lab_lesson, "/api/lab/worked": app.lab_worked, "/api/lab/parsons": app.lab_parsons, "/api/lab/bug": app.lab_bug, "/api/lab/predict": app.lab_predict,
            "/api/lab/compare": app.lab_compare, "/api/lab/glossary": app.lab_glossary, "/api/cpe/progress": lambda q: app.cpe_progress(), "/api/vocab": lambda q: app.vocab_list(),
            "/api/plan": lambda q: app.plan(int(q.get("minutes", "30"))), "/api/calibration": lambda q: app.calibration(), "/api/weakness": lambda q: app.weakness(),
-           "/api/eng": lambda q: app.eng_list(), "/api/cloud/status": app.cloud_status}
+           "/api/eng": lambda q: app.eng_list(), "/api/tracks": lambda q: app.tracks(),
+           "/api/track": lambda q: app.track_map(q["track"]), "/api/track/unit": lambda q: app.track_unit(q["track"], int(q["n"])), "/api/cloud/status": app.cloud_status}
     POST = {"/api/new": app.new, "/api/save": app.save, "/api/test": app.test, "/api/trace": app.trace, "/api/fuzz": app.fuzz, "/api/ask": app.ask,
             "/api/hint": app.hint, "/api/giveup": app.giveup, "/api/solution": app.solution, "/api/gate": app.gate_start,
             "/api/mock": app.mock_start, "/api/exam/finish": app.exam_finish, "/api/goal/set": app.goal_set, "/api/exp": app.exp_set, "/api/notes/add": app.notes_add, "/api/explain": app.explain,
             "/api/lab/quiz/start": app.lab_quiz_start, "/api/lab/quiz/answer": app.lab_quiz_answer, "/api/lab/quiz/practice": app.lab_quiz_practice, "/api/lab/grade": app.lab_grade,
             "/api/lab/faded/check": app.lab_faded_check, "/api/lab/parsons/check": app.lab_parsons_check, "/api/lab/bug/check": app.lab_bug_check, "/api/lab/predict/check": app.lab_predict_check,
             "/api/coach/import": app.coach_import, "/api/exam/focus": app.exam_focus, "/api/course/goto": app.course_goto,
-            "/api/course/next": app.course_next, "/api/settings": app.set_settings, "/api/past/import": app.past_import, "/api/cpe/import": app.cpe_import,
+            "/api/course/next": app.course_next, "/api/track/done": app.track_done, "/api/track/goto": app.track_goto, "/api/settings": app.set_settings, "/api/past/import": app.past_import, "/api/cpe/import": app.cpe_import,
             "/api/past/statement": app.past_statement, "/api/past/start": app.past_start, "/api/vocab/add": app.vocab_add,
             "/api/vocab/remove": app.vocab_remove, "/api/eng/start": app.eng_start, "/api/eng/verify": app.eng_verify, "/api/key": app.set_key, "/api/ai/test": app.ai_test, "/api/update/check": app.update_check}
     NOLOCK = {"/api/cloud/login": app.cloud_login, "/api/cloud/logout": app.cloud_logout, "/api/cloud/password": app.cloud_password,

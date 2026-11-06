@@ -6,8 +6,10 @@ import { progress, skeleton, empty, notify, startGate } from "./widgets.js";
 import { inline } from "./md.js";
 import { engPanel } from "./engtasks.js";
 import { weakRows, weakSuggest } from "./stats.js";
+import { mountTrack, trackTabs } from "./tracks.js";
 
 export async function mountCourse(view, params) {
+  if (["cpp", "verilog", "tcl"].includes(params[0])) return mountTrack(view, params);
   view.append(h("div", { class: "page" }, h("div", { class: "card pad" }, skeleton(6))));
   let C;
   try { C = await get("/api/course"); } catch (e) { clear(view); view.append(h("div", { class: "page" }, empty("alert", e.message))); return; }
@@ -21,7 +23,7 @@ export async function mountCourse(view, params) {
     page.append(await engPanel()); view.append(page); return;
   }
   page.append(h("div", { class: "page-head" }, h("div", null, h("h1", { text: "課程地圖" }), h("p", { text: `${C.total_weeks} 週・${C.total} 個單元・6 個階段。依課表你現在在第 ${C.week} 週。` })),
-    h("div", { class: "row wrap" }, tabs, h("div", { style: { width: "180px" } }, progress(C.done, C.total)), h("span", { class: "small muted", text: `${C.done}/${C.total} 單元完成` }))));
+    h("div", { class: "row wrap" }, trackTabs("py"), tabs, h("div", { style: { width: "180px" } }, progress(C.done, C.total)), h("span", { class: "small muted", text: `${C.done}/${C.total} 單元完成` }))));
   C.stages.forEach((s) => {
     const sc = stageColor(s.stage);
     page.append(h("section", { class: "stage", style: { "--sc": sc }, "aria-label": `階段 ${s.stage}` },

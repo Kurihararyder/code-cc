@@ -7,6 +7,7 @@ from pathlib import Path
 
 from . import bank as bank_mod
 from . import course as course_mod
+from . import tracks as tracks_mod
 from . import fuzz as fuzz_mod, hints, mock, roadmap, service, srs
 from .service import add_test, fail_path, solution_file, trunc
 from .judge import AC, stress
@@ -394,4 +395,31 @@ def cmd_review(ws: Workspace, args) -> int:
 def cmd_external(ws: Workspace, args) -> int:
     ws.log("external_ai", problem=args.id)
     print("已記錄你用了外部 AI（誠實記錄比不用更重要）。這題建議之後無提示重寫。")
+    return 0
+
+
+def cmd_track(ws: Workspace, args) -> int:
+    if args.action == "list" or not args.track:
+        for o in tracks_mod.overview(ws):
+            print(f"{o['track']:<8} {o['name']}　{o['done']}/{o['units']} 單元・{o['weeks']} 週・目前單元 {o['current']}")
+        return 0
+    ts = tracks_mod._tstate(ws, args.track)
+    if args.action == "show":
+        d = tracks_mod.unit_detail(ws, bank_mod.load_bank(ws), args.track, args.n or ts["unit"])
+        print(f"[{args.track}] 單元 {d['n']}《{d['title']}》　階段 {d['stage']}　第 {d['weeks'][0]}–{d['weeks'][1]} 週\n目標：{d['goal']}")
+        for x in d["learn"]:
+            print("  ・" + x)
+        for r in d["readings"]:
+            print(f"  讀：{r['label'] if 'label' in r else r.get('where')}　重點：{'；'.join(r.get('focus', []))}")
+        for p in d["planned"]:
+            print(f"  待新增題：{p['id']} {p['title']}")
+        return 0
+    if args.n is None:
+        raise ValueError("請給單元編號：cpe track done|goto <軌道> <單元>")
+    if args.action == "goto":
+        r = tracks_mod.goto(ws, args.track, args.n)
+        print(f"[{args.track}] 已跳到單元 {r['unit']}《{r['title']}》")
+    else:
+        r = tracks_mod.mark_done(ws, args.track, args.n)
+        print(f"[{args.track}] 單元 {args.n} 完成。" + (f"下一個：單元 {r['next']}" if r["next"] else "軌道完成！"))
     return 0

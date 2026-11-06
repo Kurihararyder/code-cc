@@ -10,7 +10,7 @@ from . import __version__
 from . import bank as bank_mod
 from . import hints
 from .store import Workspace, WorkspaceError
-from .cli_learn import cmd_addtest, cmd_course, cmd_external, cmd_fuzz, cmd_gate, cmd_giveup, cmd_hint, cmd_import, cmd_init, cmd_lang, cmd_new, cmd_next, cmd_review, cmd_roadmap, cmd_solution, cmd_stage, cmd_statement, cmd_stress, cmd_test, cmd_today
+from .cli_learn import cmd_addtest, cmd_course, cmd_external, cmd_fuzz, cmd_gate, cmd_giveup, cmd_hint, cmd_import, cmd_init, cmd_lang, cmd_new, cmd_next, cmd_review, cmd_roadmap, cmd_solution, cmd_stage, cmd_statement, cmd_stress, cmd_test, cmd_today, cmd_track
 from . import cli_sci
 from .cli_exam import cmd_ai_eval, cmd_calibrate, cmd_eng, cmd_mock, cmd_past, cmd_plan, cmd_stats, cmd_vocab, cmd_weak
 from .cli_admin import cmd_add, cmd_bank, cmd_export, cmd_gpt_prompt, cmd_panel, cmd_restore, cmd_update, cmd_web
@@ -29,6 +29,10 @@ def build_parser() -> argparse.ArgumentParser:
     s = sub.add_parser("course", help="課程：目前單元、全部單元、跳關")
     s.add_argument("action", nargs="?", default="show", choices=["show", "list", "next", "goto"])
     s.add_argument("n", nargs="?", type=int, help="單元編號（show／goto）")
+    s = sub.add_parser("track", help="課程軌道：py／cpp／verilog／tcl（各自記進度）")
+    s.add_argument("action", nargs="?", default="list", choices=["list", "show", "done", "goto"])
+    s.add_argument("track", nargs="?", help="py／cpp／verilog／tcl")
+    s.add_argument("n", nargs="?", type=int, help="單元編號（done／goto；show 可省略＝目前單元）")
     sub.add_parser("gate", help="開始目前單元的檢核")
     sub.add_parser("roadmap", help="顯示學習路線與各階段目標日期")
     s = sub.add_parser("stage", help="設定目前階段 0–5")
@@ -166,7 +170,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             return cmd_panel(args)
         ws = Workspace.find()
         handler = {
-            "course": cmd_course, "gate": cmd_gate, "statement": cmd_statement, "import": cmd_import,
+            "course": cmd_course, "track": cmd_track, "gate": cmd_gate, "statement": cmd_statement, "import": cmd_import,
             "roadmap": cmd_roadmap, "stage": cmd_stage, "today": cmd_today, "next": cmd_next, "new": cmd_new,
             "addtest": cmd_addtest, "test": cmd_test, "stress": cmd_stress, "hint": cmd_hint,
             "giveup": cmd_giveup, "solution": cmd_solution, "review": cmd_review, "mock": cmd_mock,
