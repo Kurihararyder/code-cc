@@ -46,11 +46,16 @@ def listing(ws: Optional[Workspace] = None) -> List[Dict[str, Any]]:
 
 
 def _run(cmd: List[str], cwd: str, stdin: str = "", timeout: int = TIMEOUT):
+    """一律用 UTF-8 位元組進出（Windows 的文字模式會用系統碼頁，中文會變樣）。"""
     try:
-        r = subprocess.run(cmd, cwd=cwd, input=stdin, capture_output=True, text=True, timeout=timeout, errors="replace")
-        return r.returncode, r.stdout[:OUT_CAP], r.stderr[:OUT_CAP], False
+        r = subprocess.run(cmd, cwd=cwd, input=stdin.encode("utf-8"), capture_output=True, timeout=timeout)
+        return r.returncode, r.stdout.decode("utf-8", "replace")[:OUT_CAP], r.stderr.decode("utf-8", "replace")[:OUT_CAP], False
     except subprocess.TimeoutExpired as e:
-        return -1, (e.stdout or "")[:OUT_CAP] if isinstance(e.stdout, str) else "", "", True
+        return -1, (e.stdout or b"").decode("utf-8", "replace")[:OUT_CAP], "", True
+
+
+# tclsh 的標準輸入輸出預設用系統碼頁（Windows 不是 UTF-8）；放在同一行最前面，不改變程式的行號
+TCL_PRELUDE = "fconfigure stdin -encoding utf-8; fconfigure stdout -encoding utf-8; fconfigure stderr -encoding utf-8; "
 
 
 def judge_verilog(p: Dict[str, Any], code: str) -> Dict[str, Any]:
@@ -84,7 +89,7 @@ def judge_tcl(p: Dict[str, Any], code: str) -> Dict[str, Any]:
     fails: List[str] = []
     with tempfile.TemporaryDirectory() as d:
         for i, t in enumerate(p["tests"], 1):
-            Path(d, "sol.tcl").write_text(code + "\n" + (p.get("harness") or ""), encoding="utf-8")
+            Path(d, "sol.tcl").write_text(TCL_PRELUDE + code + "\n" + (p.get("harness") or ""), encoding="utf-8")
             rc, out, err, to = _run(["tclsh", "sol.tcl"], d, t["in"])
             if to:
                 return {"verdict": "TLE", "message": f"第 {i} 筆超過 {TIMEOUT} 秒", "log": ""}

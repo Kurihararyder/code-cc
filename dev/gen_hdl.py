@@ -19,11 +19,11 @@ OUT = ROOT / "cpe_coach" / "data" / "hdl_problems.json"
 
 def run_tcl(code: str, stdin: str) -> str:
     with tempfile.TemporaryDirectory() as d:
-        Path(d, "s.tcl").write_text(code, encoding="utf-8")
-        r = subprocess.run(["tclsh", "s.tcl"], cwd=d, input=stdin, capture_output=True, text=True, timeout=30)
+        Path(d, "s.tcl").write_text(hdl.TCL_PRELUDE + code, encoding="utf-8")
+        r = subprocess.run(["tclsh", "s.tcl"], cwd=d, input=stdin.encode("utf-8"), capture_output=True, timeout=30)
         if r.returncode != 0:
-            raise SystemExit("參考解執行錯誤：" + r.stderr)
-        return r.stdout
+            raise SystemExit("參考解執行錯誤：" + r.stderr.decode("utf-8", "replace"))
+        return r.stdout.decode("utf-8")
 
 
 def main() -> int:
