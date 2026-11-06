@@ -21,9 +21,9 @@ class TrackTests(unittest.TestCase):
         self.assertEqual([o["track"] for o in tracks.overview(self.ws)], ["py", "cpp", "verilog", "tcl"])
 
     def test_progress_is_per_track(self):
-        tracks.mark_done(self.ws, "tcl", 1)
+        tracks.mark_done(self.ws, "tcl", 8)                      # 單元 8 沒有已開放的練習題
         ov = {o["track"]: o for o in tracks.overview(self.ws)}
-        self.assertEqual((ov["tcl"]["done"], ov["tcl"]["current"]), (1, 2))
+        self.assertEqual((ov["tcl"]["done"], ov["tcl"]["current"]), (1, 9))
         self.assertEqual((ov["verilog"]["done"], ov["py"]["done"]), (0, 0))
         self.assertEqual(self.ws.state()["course"]["done"], [])
 

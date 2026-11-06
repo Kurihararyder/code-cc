@@ -8,6 +8,7 @@ from pathlib import Path
 from . import bank as bank_mod
 from . import course as course_mod
 from . import tracks as tracks_mod
+from . import hdl as hdl_mod
 from . import fuzz as fuzz_mod, hints, mock, roadmap, service, srs
 from .service import add_test, fail_path, solution_file, trunc
 from .judge import AC, stress
@@ -412,7 +413,7 @@ def cmd_track(ws: Workspace, args) -> int:
         for r in d["readings"]:
             print(f"  讀：{r['label'] if 'label' in r else r.get('where')}　重點：{'；'.join(r.get('focus', []))}")
         for p in d["planned"]:
-            print(f"  待新增題：{p['id']} {p['title']}")
+            print(f"  {'✓ 已通過' if p['done'] else ('可練：cpe hdl new ' + p['id'] if p['available'] else '規劃中')}　{p['id']} {p['title']}")
         return 0
     if args.n is None:
         raise ValueError("請給單元編號：cpe track done|goto <軌道> <單元>")
@@ -423,3 +424,35 @@ def cmd_track(ws: Workspace, args) -> int:
         r = tracks_mod.mark_done(ws, args.track, args.n)
         print(f"[{args.track}] 單元 {args.n} 完成。" + (f"下一個：單元 {r['next']}" if r["next"] else "軌道完成！"))
     return 0
+
+
+def cmd_hdl(ws: Workspace, args) -> int:
+    if args.action == "list":
+        for r in hdl_mod.listing(ws):
+            print(f"{'✓' if r['done'] else ' '} {r['id']}　{r['track']:<8} 單元{r['unit']:>2}　{r['title']}")
+        t = hdl_mod.tools()
+        print(f"\n工具：iverilog {'有' if t['verilog'] else '沒有'}、tclsh {'有' if t['tcl'] else '沒有'}")
+        return 0
+    if not args.id:
+        raise ValueError("請給題號，例如 cpe hdl show v006")
+    p = hdl_mod.get(args.id)
+    ext = "v" if p["track"] == "verilog" else "tcl"
+    path = ws.root / "hdl" / f"{args.id}.{ext}"
+    if args.action == "show":
+        print(f"{args.id}　{p['title']}（{p['track']}・單元 {p['unit']}）\n\n{p['statement']}")
+        return 0
+    if args.action == "new":
+        path.parent.mkdir(exist_ok=True)
+        if path.exists():
+            raise ValueError(f"{path} 已存在")
+        path.write_text(p["template"], encoding="utf-8")
+        print(f"已建立 {path}\n編輯後執行：cpe hdl test {args.id}")
+        return 0
+    f = Path(args.file) if args.file else path
+    if not f.exists():
+        raise ValueError(f"找不到 {f}。先 cpe hdl new {args.id}")
+    r = hdl_mod.judge_and_record(ws, args.id, f.read_text(encoding="utf-8"))
+    print(f"{args.id}：{r['verdict']}　{r['message']}")
+    if r["log"] and r["verdict"] != "AC":
+        print(r["log"])
+    return 0 if r["verdict"] == "AC" else 1

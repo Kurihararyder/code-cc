@@ -43,7 +43,7 @@ async function openTrackUnit(track, n) {
     sec("要學的", D.learn),
     D.drills.length ? h("div", { class: "mt" }, h("h4", { text: "必做練習" }), h("ul", { class: "list" }, D.drills.map((p) => h("li", null, h("button", { class: "li", onclick: () => { close(); go("/practice/" + p.id); } },
       h("span", { class: "status" + (p.done ? " done" : "") }, p.done ? icon("check") : null), h("span", { class: "mono", text: p.id }), h("span", { class: "grow", text: p.title })))))) : null,
-    D.planned.length ? h("div", { class: "mt" }, h("h4", { text: "規劃中的題目（尚未開放）" }), h("ul", { class: "small" }, D.planned.map((p) => h("li", null, h("span", { class: "mono", text: p.id }), " " + p.title + "：", inline(p.topic))))) : null,
+    D.planned.length ? h("div", { class: "mt" }, h("h4", { text: "題目" }), h("ul", { class: "small" }, D.planned.map((p) => h("li", null, p.available ? h("button", { class: "linkish", onclick: () => { close(); go("/hdl/" + p.id); } }, (p.done ? "✓ " : "") + p.id + " " + p.title + "（可練）") : h("span", { class: "mono", text: p.id }), p.available ? "：" : " " + p.title + "（規劃中）：", inline(p.topic))))) : null,
     sec("專題", D.build),
     D.readings.length ? h("div", { class: "mt" }, h("h4", { text: "要讀的章節與重點" }), h("ul", { class: "small" }, D.readings.map((r) => h("li", null, inline(r.label || r.where), r.focus?.length ? h("div", { class: "muted xs", text: "重點：" + r.focus.join("；") }) : null)))) : null,
     D.weekly.length ? h("div", { class: "mt" }, h("h4", { text: "每週安排" }), h("ul", { class: "small" }, D.weekly.map((w) => h("li", null, h("b", { text: `第 ${w.week} 週` }), "　", inline([...(w.readings || []), ...(w.learn || [])].join("；"))))) ) : null,

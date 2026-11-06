@@ -1,0 +1,427 @@
+{
+ "t001": {
+  "harness": "",
+  "ref": "gets stdin name\nputs \"Hello, $name!\"\nputs \"length: [string length $name]\"\n",
+  "statement": "讀一行姓名 `name`，輸出兩行：`Hello, <name>!` 與 `length: <字元數>`。",
+  "template": "# 從標準輸入讀資料，用 puts 輸出\n",
+  "tests": [
+   {
+    "in": "Ada\n",
+    "out": "Hello, Ada!\nlength: 3"
+   },
+   {
+    "in": "Grace Hopper\n",
+    "out": "Hello, Grace Hopper!\nlength: 12\n"
+   },
+   {
+    "in": "林\n",
+    "out": "Hello, 林!\nlength: 1\n"
+   },
+   {
+    "in": "a b  c\n",
+    "out": "Hello, a b  c!\nlength: 6\n"
+   }
+  ],
+  "title": "Hello 與字串長度",
+  "track": "tcl",
+  "unit": 1
+ },
+ "t005": {
+  "harness": "",
+  "ref": "proc fib {n} {\n    set a 0; set b 1\n    for {set i 0} {$i < $n} {incr i} { lassign [list $b [expr {$a + $b}]] a b }\n    return $a\n}\nproc isprime {m} {\n    if {$m < 2} { return 0 }\n    for {set i 2} {$i * $i <= $m} {incr i} { if {$m % $i == 0} { return 0 } }\n    return 1\n}\nlassign [gets stdin] n m\nputs [fib $n]\nputs [isprime $m]\n",
+  "statement": "輸入一行 `n m`。定義 `proc fib {n}`（`fib 0 = 0`、`fib 1 = 1`）與 `proc isprime {m}`（回傳 1 或 0；`m<2` 不是質數），輸出 `fib n` 與 `isprime m` 各一行。",
+  "template": "# 從標準輸入讀資料，用 puts 輸出\n",
+  "tests": [
+   {
+    "in": "10 7\n",
+    "out": "55\n1"
+   },
+   {
+    "in": "0 1\n",
+    "out": "0\n0\n"
+   },
+   {
+    "in": "1 91\n",
+    "out": "1\n0\n"
+   },
+   {
+    "in": "30 97\n",
+    "out": "832040\n1\n"
+   },
+   {
+    "in": "20 2\n",
+    "out": "6765\n1\n"
+   },
+   {
+    "in": "25 0\n",
+    "out": "75025\n0\n"
+   }
+  ],
+  "title": "費氏數與質數判斷（proc）",
+  "track": "tcl",
+  "unit": 3
+ },
+ "t006": {
+  "harness": "\ngets stdin a; gets stdin b\nswap a b\nputs \"$a $b\"\nset p 5; set q 6\nswap p q\nputs \"$p $q\"\nswap b a\nputs \"$a $b\"\n",
+  "ref": "proc swap {x y} {\n    upvar 1 $x lx $y ly\n    set t $lx; set lx $ly; set ly $t\n}\n",
+  "statement": "寫 `proc swap {x y}`，交換**呼叫端**兩個變數的值。判題會用不同變數名稱呼叫（包含 `swap b a`），所以不能假設變數名字。",
+  "template": "# 只需定義 swap；判題會自己呼叫\n",
+  "tests": [
+   {
+    "in": "1\n2\n",
+    "out": "2 1\n6 5\n1 2"
+   },
+   {
+    "in": "hello\nworld\n",
+    "out": "world hello\n6 5\nhello world\n"
+   },
+   {
+    "in": "7\n7\n",
+    "out": "7 7\n6 5\n7 7\n"
+   },
+   {
+    "in": "x y\nz w\n",
+    "out": "z w x y\n6 5\nx y z w\n"
+   }
+  ],
+  "title": "swap：用 upvar 交換呼叫端變數",
+  "track": "tcl",
+  "unit": 3
+ },
+ "t007": {
+  "harness": "\ngets stdin n\nset c 0\nrepeat $n {incr c 2}\nputs $c\nset s \"\"\nrepeat 3 {append s [expr {$n + 1}]}\nputs $s\nproc t {} { set k 0; repeat 4 {incr k}; return $k }\nputs [t]\n",
+  "ref": "proc repeat {n body} {\n    for {set i 0} {$i < $n} {incr i} { uplevel 1 $body }\n}\n",
+  "statement": "寫 `proc repeat {n body}`：把 `body` 在**呼叫端的層級**執行 `n` 次（要能存取呼叫端的區域變數，所以要用 `uplevel`）。`n=0` 不執行。",
+  "template": "# 只需定義 repeat；判題會自己呼叫\n",
+  "tests": [
+   {
+    "in": "3\n",
+    "out": "6\n444\n4"
+   },
+   {
+    "in": "0\n",
+    "out": "0\n111\n4\n"
+   },
+   {
+    "in": "5\n",
+    "out": "10\n666\n4\n"
+   },
+   {
+    "in": "1\n",
+    "out": "2\n222\n4\n"
+   }
+  ],
+  "title": "自訂控制結構 repeat",
+  "track": "tcl",
+  "unit": 3
+ },
+ "t008": {
+  "harness": "",
+  "ref": "set text [read stdin]\nforeach w [regexp -all -inline {[a-z']+} [string tolower $text]] { dict incr cnt $w }\nset rows {}\nif {[info exists cnt]} { dict for {w c} $cnt { lappend rows [list $w $c] } }\nforeach r [lsort -integer -decreasing -index 1 [lsort -index 0 $rows]] { puts \"[lindex $r 0] [lindex $r 1]\" }\n",
+  "statement": "讀入全部文字（標準輸入到結尾）。把字母轉小寫，單字由英文字母與撇號 `'` 組成，其餘字元都是分隔。輸出每個單字與次數 `word count`，依次數遞減、同次數依字典序遞增。",
+  "template": "# 從標準輸入讀資料，用 puts 輸出\n",
+  "tests": [
+   {
+    "in": "the cat the dog\nThe end\n",
+    "out": "the 3\ncat 1\ndog 1\nend 1"
+   },
+   {
+    "in": "It's a test. It's only a test!\n",
+    "out": "a 2\nit's 2\ntest 2\nonly 1\n"
+   },
+   {
+    "in": "b a b a c\n",
+    "out": "a 2\nb 2\nc 1\n"
+   },
+   {
+    "in": "Hello, hello; HELLO... world\n",
+    "out": "hello 3\nworld 1\n"
+   }
+  ],
+  "title": "詞頻統計",
+  "track": "tcl",
+  "unit": 4
+ },
+ "t009": {
+  "harness": "",
+  "ref": "set n [gets stdin]\nfor {set i 0} {$i < $n} {incr i} { lappend A [gets stdin] }\nfor {set i 0} {$i < $n} {incr i} { lappend B [gets stdin] }\nfor {set i 0} {$i < $n} {incr i} {\n    set row {}\n    for {set j 0} {$j < $n} {incr j} {\n        set s 0\n        for {set k 0} {$k < $n} {incr k} { incr s [expr {[lindex $A $i $k] * [lindex $B $k $j]}] }\n        lappend row $s\n    }\n    puts $row\n}\nputs \"--\"\nfor {set j 0} {$j < $n} {incr j} {\n    set row {}\n    for {set i 0} {$i < $n} {incr i} { lappend row [lindex $A $i $j] }\n    puts $row\n}\n",
+  "statement": "第一行 `n`，接著 n 行矩陣 A（每行 n 個整數）、n 行矩陣 B。先輸出 `A×B` 的 n 行（數字以空格分隔），再輸出一行 `--`，再輸出 A 的轉置的 n 行。",
+  "template": "# 從標準輸入讀資料，用 puts 輸出\n",
+  "tests": [
+   {
+    "in": "2\n1 2\n3 4\n5 6\n7 8\n",
+    "out": "19 22\n43 50\n--\n1 3\n2 4"
+   },
+   {
+    "in": "1\n7\n-3\n",
+    "out": "-21\n--\n7\n"
+   },
+   {
+    "in": "3\n1 0 0\n0 1 0\n0 0 1\n1 2 3\n4 5 6\n7 8 9\n",
+    "out": "1 2 3\n4 5 6\n7 8 9\n--\n1 0 0\n0 1 0\n0 0 1\n"
+   },
+   {
+    "in": "3\n1 2 3\n4 5 6\n7 8 9\n-1 0 1\n2 -2 0\n3 3 3\n",
+    "out": "12 5 10\n24 8 22\n36 11 34\n--\n1 4 7\n2 5 8\n3 6 9\n"
+   }
+  ],
+  "title": "矩陣乘法與轉置",
+  "track": "tcl",
+  "unit": 4
+ },
+ "t012": {
+  "harness": "",
+  "ref": "while {[gets stdin line] >= 0} {\n    if {[regexp {^(\\S+ \\S+) \\[(\\w+)\\] (.*)$} $line -> ts lv msg]} {\n        dict incr cnt $lv\n        if {$lv eq \"ERROR\" && ![info exists first]} { set first $ts }\n    }\n}\nif {[info exists cnt]} { foreach lv [lsort [dict keys $cnt]] { puts \"$lv [dict get $cnt $lv]\" } }\nputs \"first_error: [expr {[info exists first] ? $first : {none}}]\"\n",
+  "statement": "每行格式 `YYYY-MM-DD HH:MM:SS [LEVEL] 訊息`。格式不符的行略過。輸出每個等級的行數 `LEVEL count`（等級依字母序），最後一行 `first_error: <第一個 ERROR 的日期 時間>`，沒有 ERROR 就印 `first_error: none`。",
+  "template": "# 從標準輸入讀資料，用 puts 輸出\n",
+  "tests": [
+   {
+    "in": "2024-01-02 10:00:01 [INFO] start\n2024-01-02 10:00:05 [ERROR] boom\n2024-01-02 10:00:09 [ERROR] again\n",
+    "out": "ERROR 2\nINFO 1\nfirst_error: 2024-01-02 10:00:05"
+   },
+   {
+    "in": "2024-01-02 10:00:01 [INFO] a\ngarbage line\n2024-01-02 10:00:02 [WARN] b\n",
+    "out": "INFO 1\nWARN 1\nfirst_error: none\n"
+   },
+   {
+    "in": "",
+    "out": "first_error: none\n"
+   },
+   {
+    "in": "x\n2024-05-05 00:00:00 [DEBUG] z [ERROR] inner\n",
+    "out": "DEBUG 1\nfirst_error: none\n"
+   }
+  ],
+  "title": "日誌解析",
+  "track": "tcl",
+  "unit": 5
+ },
+ "t014": {
+  "harness": "",
+  "ref": "set sum 0.0\nwhile {[gets stdin line] >= 0} {\n    lassign $line name v\n    puts [format \"%-10s %8.2f\" $name $v]\n    set sum [expr {$sum + $v}]\n}\nputs [format \"%-10s %8.2f\" total $sum]\n",
+  "statement": "每行 `name value`（value 為小數）。每行輸出 `format \"%-10s %8.2f\"`；最後再輸出一行同格式的總和，名稱為 `total`。",
+  "template": "# 從標準輸入讀資料，用 puts 輸出\n",
+  "tests": [
+   {
+    "in": "apple 1.5\npear 22.257\n",
+    "out": "apple          1.50\npear          22.26\ntotal         23.76"
+   },
+   {
+    "in": "x 0\n",
+    "out": "x              0.00\ntotal          0.00\n"
+   },
+   {
+    "in": "a 100.005\nb 0.004\nc 12345.678\n",
+    "out": "a            100.00\nb              0.00\nc          12345.68\ntotal      12445.69\n"
+   },
+   {
+    "in": "long_name_ 1\n",
+    "out": "long_name_     1.00\ntotal          1.00\n"
+   }
+  ],
+  "title": "格式化報表",
+  "track": "tcl",
+  "unit": 5
+ },
+ "t021": {
+  "harness": "\nwhile {[gets stdin line] >= 0} { if {[catch {stack {*}$line} r]} { puts \"error\" } else { puts $r } }\n",
+  "ref": "namespace eval stack {\n    variable items {}\n    proc push {v} { variable items; lappend items $v; return }\n    proc pop {} { variable items; if {![llength $items]} { error \"empty\" }; set v [lindex $items end]; set items [lrange $items 0 end-1]; return $v }\n    proc peek {} { variable items; if {![llength $items]} { error \"empty\" }; return [lindex $items end] }\n    proc size {} { variable items; return [llength $items] }\n    namespace export push pop peek size\n    namespace ensemble create\n}\n",
+  "statement": "用 `namespace ensemble` 做出 `stack` 指令，子指令：`push v`（無回傳）、`pop`、`peek`、`size`。空堆疊 `pop`／`peek` 要丟出錯誤（判題會把錯誤印成 `error`）。判題會逐行讀入指令並執行 `stack {*}$line`。",
+  "template": "# 只需定義 stack ensemble；判題會自己呼叫\n",
+  "tests": [
+   {
+    "in": "push 1\npush 2\npeek\nsize\npop\npop\npop\nsize\n",
+    "out": "\n\n2\n2\n2\n1\nerror\n0"
+   },
+   {
+    "in": "size\npop\npeek\n",
+    "out": "0\nerror\nerror\n"
+   },
+   {
+    "in": "push a\npush b c\nsize\nbogus\npop\n",
+    "out": "\nerror\n1\nerror\na\n"
+   }
+  ],
+  "title": "stack ensemble",
+  "track": "tcl",
+  "unit": 9
+ },
+ "t023": {
+  "harness": "",
+  "ref": "set d [gets stdin]\nwhile {[gets stdin line] >= 0} {\n    set out \"\"\n    while {[regexp -indices {\\$\\{(\\w+)\\}} $line m k]} {\n        lassign $m ms me; lassign $k ks ke\n        set key [string range $line $ks $ke]\n        append out [string range $line 0 [expr {$ms - 1}]]\n        if {[dict exists $d $key]} { append out [dict get $d $key] } else { append out \"<?$key?>\" }\n        set line [string range $line [expr {$me + 1}] end]\n    }\n    puts $out$line\n}\n",
+  "statement": "第一行是 dict（Tcl 清單，如 `name World n 3`）。其餘每行是樣板：把 `${key}` 換成 dict 中的值；沒有該 key 就換成 `<?key?>`。其餘字元原樣輸出（包含單獨的 `$`、方括號與反斜線，**不可以讓它們被當成 Tcl 指令執行**）。",
+  "template": "# 從標準輸入讀資料，用 puts 輸出\n",
+  "tests": [
+   {
+    "in": "name World n 3\nHi ${name}, ${n} times\nmissing ${zzz}!\n",
+    "out": "Hi World, 3 times\nmissing <?zzz?>!"
+   },
+   {
+    "in": "a 1\ncost $5 [ls] ${a}${a}\n",
+    "out": "cost $5 [ls] 11\n"
+   },
+   {
+    "in": "x y\n${x} ${x}\\n done\n",
+    "out": "y y\\n done\n"
+   }
+  ],
+  "title": "樣板展開",
+  "track": "tcl",
+  "unit": 10
+ },
+ "t026": {
+  "harness": "",
+  "ref": "set n 0; set arr 0; set sl \"\"; set st \"\"\nwhile {[gets stdin line] >= 0} {\n    if {[regexp {^\\S+ -?[0-9.]+ (-?[0-9.]+)$} $line -> a]} { incr n; set arr $a } \\\n    elseif {[regexp {^slack (MET|VIOLATED) (-?[0-9.]+)$} $line -> st sl]} {}\n}\nputs \"stages: $n\"\nputs \"arrival: $arr\"\nputs \"slack: $sl\"\nputs \"status: $st\"\n",
+  "statement": "輸入是簡化的時序報告：以 `Startpoint:`／`Endpoint:` 開頭的行略過；每個路徑級是一行 `pin incr arrival`（後兩欄為數字，可為負）；最後一行 `slack MET|VIOLATED value`。輸出四行：`stages: N`（路徑級數）、`arrival: X`（最後一級的 arrival，原樣輸出）、`slack: V`、`status: S`。",
+  "template": "# 從標準輸入讀資料，用 puts 輸出\n",
+  "tests": [
+   {
+    "in": "Startpoint: a_reg\nEndpoint: b_reg\nu1/Z 0.12 0.12\nu2/Z 0.30 0.42\nb_reg/D 0.05 0.47\nslack MET 0.53\n",
+    "out": "stages: 3\narrival: 0.47\nslack: 0.53\nstatus: MET"
+   },
+   {
+    "in": "Startpoint: x\nEndpoint: y\nu1/Z -0.10 1.00\nu2/Z 1.20 2.20\nslack VIOLATED -0.35\n",
+    "out": "stages: 2\narrival: 2.20\nslack: -0.35\nstatus: VIOLATED\n"
+   },
+   {
+    "in": "Startpoint: q\nslack MET 9.99\n",
+    "out": "stages: 0\narrival: 0\nslack: 9.99\nstatus: MET\n"
+   }
+  ],
+  "title": "時序報告解析",
+  "track": "tcl",
+  "unit": 12
+ },
+ "t028": {
+  "harness": "",
+  "ref": "proc parse_line {line} {\n    set fields {}; set cur \"\"; set inq 0; set n [string length $line]\n    for {set i 0} {$i < $n} {incr i} {\n        set ch [string index $line $i]\n        if {$inq} {\n            if {$ch eq \"\\\"\"} {\n                if {[string index $line [expr {$i + 1}]] eq \"\\\"\"} { append cur \"\\\"\"; incr i } else { set inq 0 }\n            } else { append cur $ch }\n        } else {\n            if {$ch eq \"\\\"\"} { set inq 1 } elseif {$ch eq \",\"} { lappend fields $cur; set cur \"\" } else { append cur $ch }\n        }\n    }\n    lappend fields $cur\n    return $fields\n}\nwhile {[gets stdin line] >= 0} { puts [join [parse_line $line] \"|\"] }\n",
+  "statement": "讀入 CSV（每行一筆記錄）：欄位以逗號分隔；欄位可用雙引號包住，引號內可含逗號，且 `\"\"` 代表一個雙引號字元。每筆輸出各欄位以 `|` 連接。（不需處理跨行欄位。）",
+  "template": "# 從標準輸入讀資料，用 puts 輸出\n",
+  "tests": [
+   {
+    "in": "a,b,c\n1,\"x,y\",3\n",
+    "out": "a|b|c\n1|x,y|3"
+   },
+   {
+    "in": "\"he said \"\"hi\"\"\",2\n",
+    "out": "he said \"hi\"|2\n"
+   },
+   {
+    "in": ",,\n",
+    "out": "||\n"
+   },
+   {
+    "in": "plain\n\"q\",\"\",z\n",
+    "out": "plain\nq||z\n"
+   }
+  ],
+  "title": "CSV 讀取",
+  "track": "tcl",
+  "unit": 12
+ },
+ "v002": {
+  "ref": "module top_module(input [7:0] a, input [7:0] b, input sub, output [7:0] y, output ovf);\n  wire [7:0] bb = sub ? ~b : b;\n  assign y = a + bb + sub;\n  assign ovf = (a[7] == bb[7]) && (y[7] != a[7]);\nendmodule",
+  "require": [],
+  "statement": "輸入兩個 8 位元有號數 `a`、`b` 與 `sub`。`sub=0` 輸出 `y = a + b`，`sub=1` 輸出 `y = a - b`（8 位元，溢出時環繞）。`ovf` 在**有號**結果溢位時為 1。\n\n提示：加法溢位 = 兩輸入同號、結果變號；減法 `a-b` 等於 `a+(~b)+1`。",
+  "template": "module top_module(\n    input [7:0] a,\n    input [7:0] b,\n    input sub,\n    output [7:0] y,\n    output ovf\n);\n    // 在這裡寫你的設計\n\nendmodule\n",
+  "testbench": "`timescale 1ns/1ps\nmodule tb;\n  reg [7:0] a;\n  reg [7:0] b;\n  reg sub;\n  wire [7:0] y_d;\n  wire ovf_d;\n  wire [7:0] y_r;\n  wire ovf_r;\n  top_module dut(.a(a), .b(b), .sub(sub), .y(y_d), .ovf(ovf_d));\n  ref_top refm(.a(a), .b(b), .sub(sub), .y(y_r), .ovf(ovf_r));\n  integer i, errs;\n  task chk; begin\n    #1;\n    if ({y_d, ovf_d} !== {y_r, ovf_r}) begin\n      errs = errs + 1;\n      if (errs <= 5) $display(\"MISMATCH 輸入 a=%h b=%h sub=%h  期望 y=%h ovf=%h  你的 y=%h ovf=%h\", a, b, sub, y_r, ovf_r, y_d, ovf_d);\n    end\n  end endtask\n  initial begin\n    errs = 0;\n    {a, b, sub} = 0; chk;  {a, b, sub} = ~0; chk;\n    for (i = 0; i < 4000; i = i + 1) begin a = $random; b = $random; sub = $random; chk; end\n    if (errs == 0) $display(\"ALL PASS\"); else $display(\"共 %0d 筆不符\", errs);\n    $finish;\n  end\nendmodule\n\nmodule ref_top(input [7:0] a, input [7:0] b, input sub, output [7:0] y, output ovf);\n  wire [7:0] bb = sub ? ~b : b;\n  assign y = a + bb + sub;\n  assign ovf = (a[7] == bb[7]) && (y[7] != a[7]);\nendmodule",
+  "title": "二補數加減與溢位",
+  "track": "verilog",
+  "unit": 2
+ },
+ "v004": {
+  "ref": "module top_module(input [31:0] in, output [31:0] swap, output reg [31:0] rev);\n  assign swap = {in[7:0], in[15:8], in[23:16], in[31:24]};\n  integer i;\n  always @* for (i = 0; i < 32; i = i + 1) rev[i] = in[31 - i];\nendmodule",
+  "require": [],
+  "statement": "輸入 32 位元 `in`。`swap` 把四個位元組的順序反轉（`{in[7:0], in[15:8], in[23:16], in[31:24]}`），`rev` 把 32 個位元的順序整個反轉（第 0 位與第 31 位互換……）。\n\n練習：向量選取、串接 `{}`。不要手寫 32 個 assign（可用 `generate`/`for` 或一次串接）。",
+  "template": "module top_module(\n    input [31:0] in,\n    output [31:0] swap,\n    output [31:0] rev\n);\n    // 在這裡寫你的設計\n\nendmodule\n",
+  "testbench": "`timescale 1ns/1ps\nmodule tb;\n  reg [31:0] in;\n  wire [31:0] swap_d;\n  wire [31:0] rev_d;\n  wire [31:0] swap_r;\n  wire [31:0] rev_r;\n  top_module dut(.in(in), .swap(swap_d), .rev(rev_d));\n  ref_top refm(.in(in), .swap(swap_r), .rev(rev_r));\n  integer i, errs;\n  task chk; begin\n    #1;\n    if ({swap_d, rev_d} !== {swap_r, rev_r}) begin\n      errs = errs + 1;\n      if (errs <= 5) $display(\"MISMATCH 輸入 in=%h  期望 swap=%h rev=%h  你的 swap=%h rev=%h\", in, swap_r, rev_r, swap_d, rev_d);\n    end\n  end endtask\n  initial begin\n    errs = 0;\n    {in} = 0; chk;  {in} = ~0; chk;\n    for (i = 0; i < 4000; i = i + 1) begin in = $random; chk; end\n    if (errs == 0) $display(\"ALL PASS\"); else $display(\"共 %0d 筆不符\", errs);\n    $finish;\n  end\nendmodule\n\nmodule ref_top(input [31:0] in, output [31:0] swap, output reg [31:0] rev);\n  assign swap = {in[7:0], in[15:8], in[23:16], in[31:24]};\n  integer i;\n  always @* for (i = 0; i < 32; i = i + 1) rev[i] = in[31 - i];\nendmodule",
+  "title": "位元組反轉與位元反轉",
+  "track": "verilog",
+  "unit": 3
+ },
+ "v005": {
+  "ref": "module full_adder(input a, input b, input cin, output sum, output cout);\n  assign sum = a ^ b ^ cin;\n  assign cout = (a & b) | (cin & (a ^ b));\nendmodule\nmodule top_module(input [7:0] a, input [7:0] b, input cin, output [7:0] sum, output cout);\n  wire [8:0] c;\n  assign c[0] = cin;\n  genvar i;\n  generate for (i = 0; i < 8; i = i + 1) begin : g\n    full_adder fa(a[i], b[i], c[i], sum[i], c[i+1]);\n  end endgenerate\n  assign cout = c[8];\nendmodule",
+  "require": [
+   [
+    "\\bfull_adder\\b",
+    "必須定義並實例化 full_adder 模組"
+   ]
+  ],
+  "statement": "先寫一個 1 位元全加器模組 `full_adder(a, b, cin, sum, cout)`，再在 `top_module` 裡把 8 個 `full_adder` 串成漣波進位加法器：`{cout, sum} = a + b + cin`。\n\n你的程式必須定義 `full_adder` 並至少實例化它（判題會檢查名稱出現至少兩次）。",
+  "template": "module top_module(\n    input [7:0] a,\n    input [7:0] b,\n    input cin,\n    output [7:0] sum,\n    output cout\n);\n    // 在這裡寫你的設計\n\nendmodule\n",
+  "testbench": "`timescale 1ns/1ps\nmodule tb;\n  reg [7:0] a;\n  reg [7:0] b;\n  reg cin;\n  wire [7:0] sum_d;\n  wire cout_d;\n  wire [7:0] sum_r;\n  wire cout_r;\n  top_module dut(.a(a), .b(b), .cin(cin), .sum(sum_d), .cout(cout_d));\n  ref_top refm(.a(a), .b(b), .cin(cin), .sum(sum_r), .cout(cout_r));\n  integer i, errs;\n  task chk; begin\n    #1;\n    if ({sum_d, cout_d} !== {sum_r, cout_r}) begin\n      errs = errs + 1;\n      if (errs <= 5) $display(\"MISMATCH 輸入 a=%h b=%h cin=%h  期望 sum=%h cout=%h  你的 sum=%h cout=%h\", a, b, cin, sum_r, cout_r, sum_d, cout_d);\n    end\n  end endtask\n  initial begin\n    errs = 0;\n    {a, b, cin} = 0; chk;  {a, b, cin} = ~0; chk;\n    for (i = 0; i < 4000; i = i + 1) begin a = $random; b = $random; cin = $random; chk; end\n    if (errs == 0) $display(\"ALL PASS\"); else $display(\"共 %0d 筆不符\", errs);\n    $finish;\n  end\nendmodule\n\nmodule ref_full_adder(input a, input b, input cin, output sum, output cout);\n  assign sum = a ^ b ^ cin;\n  assign cout = (a & b) | (cin & (a ^ b));\nendmodule\nmodule ref_top(input [7:0] a, input [7:0] b, input cin, output [7:0] sum, output cout);\n  wire [8:0] c;\n  assign c[0] = cin;\n  genvar i;\n  generate for (i = 0; i < 8; i = i + 1) begin : g\n    ref_full_adder fa(a[i], b[i], c[i], sum[i], c[i+1]);\n  end endgenerate\n  assign cout = c[8];\nendmodule",
+  "title": "階層式 8 位元加法器",
+  "track": "verilog",
+  "unit": 3
+ },
+ "v006": {
+  "ref": "module top_module(input [7:0] a, input [7:0] b, input [2:0] op, output reg [7:0] y, output z, output n, output reg c, output reg v);\n  wire [8:0] add = {1'b0, a} + {1'b0, b};\n  wire [8:0] sub = {1'b0, a} + {1'b0, ~b} + 9'd1;\n  always @* begin\n    c = 0; v = 0;\n    case (op)\n      0: begin y = add[7:0]; c = add[8]; v = (a[7] == b[7]) && (y[7] != a[7]); end\n      1: begin y = sub[7:0]; c = sub[8]; v = (a[7] != b[7]) && (y[7] != a[7]); end\n      2: y = a & b;\n      3: y = a | b;\n      4: y = a ^ b;\n      5: y = a << b[2:0];\n      6: y = a >> b[2:0];\n      default: y = {7'b0, a < b};\n    endcase\n  end\n  assign z = (y == 0);\n  assign n = y[7];\nendmodule",
+  "require": [],
+  "statement": "`op` 選運算（3 位元）：0 加、1 減、2 AND、3 OR、4 XOR、5 `a` 邏輯左移 `b[2:0]`、6 `a` 邏輯右移 `b[2:0]`、7 `a < b`（無號比較，結果為 0 或 1 放在最低位）。\n\n旗標：`z` = 結果為 0；`n` = 結果最高位；`c` = 加法的進位輸出／減法的『借位取反』（即 `a>=b` 為 1）；其他運算 `c=0`；`v` = 加減法的有號溢位，其他運算為 0。",
+  "template": "module top_module(\n    input [7:0] a,\n    input [7:0] b,\n    input [2:0] op,\n    output [7:0] y,\n    output z,\n    output n,\n    output c,\n    output v\n);\n    // 在這裡寫你的設計\n\nendmodule\n",
+  "testbench": "`timescale 1ns/1ps\nmodule tb;\n  reg [7:0] a;\n  reg [7:0] b;\n  reg [2:0] op;\n  wire [7:0] y_d;\n  wire z_d;\n  wire n_d;\n  wire c_d;\n  wire v_d;\n  wire [7:0] y_r;\n  wire z_r;\n  wire n_r;\n  wire c_r;\n  wire v_r;\n  top_module dut(.a(a), .b(b), .op(op), .y(y_d), .z(z_d), .n(n_d), .c(c_d), .v(v_d));\n  ref_top refm(.a(a), .b(b), .op(op), .y(y_r), .z(z_r), .n(n_r), .c(c_r), .v(v_r));\n  integer i, errs;\n  task chk; begin\n    #1;\n    if ({y_d, z_d, n_d, c_d, v_d} !== {y_r, z_r, n_r, c_r, v_r}) begin\n      errs = errs + 1;\n      if (errs <= 5) $display(\"MISMATCH 輸入 a=%h b=%h op=%h  期望 y=%h z=%h n=%h c=%h v=%h  你的 y=%h z=%h n=%h c=%h v=%h\", a, b, op, y_r, z_r, n_r, c_r, v_r, y_d, z_d, n_d, c_d, v_d);\n    end\n  end endtask\n  initial begin\n    errs = 0;\n    {a, b, op} = 0; chk;  {a, b, op} = ~0; chk;\n    for (i = 0; i < 4000; i = i + 1) begin a = $random; b = $random; op = $random; chk; end\n    if (errs == 0) $display(\"ALL PASS\"); else $display(\"共 %0d 筆不符\", errs);\n    $finish;\n  end\nendmodule\n\nmodule ref_top(input [7:0] a, input [7:0] b, input [2:0] op, output reg [7:0] y, output z, output n, output reg c, output reg v);\n  wire [8:0] add = {1'b0, a} + {1'b0, b};\n  wire [8:0] sub = {1'b0, a} + {1'b0, ~b} + 9'd1;\n  always @* begin\n    c = 0; v = 0;\n    case (op)\n      0: begin y = add[7:0]; c = add[8]; v = (a[7] == b[7]) && (y[7] != a[7]); end\n      1: begin y = sub[7:0]; c = sub[8]; v = (a[7] != b[7]) && (y[7] != a[7]); end\n      2: y = a & b;\n      3: y = a | b;\n      4: y = a ^ b;\n      5: y = a << b[2:0];\n      6: y = a >> b[2:0];\n      default: y = {7'b0, a < b};\n    endcase\n  end\n  assign z = (y == 0);\n  assign n = y[7];\nendmodule",
+  "title": "8 位元 ALU",
+  "track": "verilog",
+  "unit": 4
+ },
+ "v007": {
+  "ref": "module top_module(input [7:0] req, output reg [2:0] idx, output valid);\n  integer i;\n  always @* begin\n    idx = 0;\n    for (i = 0; i < 8; i = i + 1) if (req[i]) idx = i[2:0];\n  end\n  assign valid = |req;\nendmodule",
+  "require": [],
+  "statement": "8 位元請求向量 `req`。`valid` 表示至少有一個 1；`idx` 是**最高位**為 1 的位元索引（沒有請求時 `idx=0`）。\n\n練習：`casez` 或 `for` 迴圈；注意避免產生閂鎖。",
+  "template": "module top_module(\n    input [7:0] req,\n    output [2:0] idx,\n    output valid\n);\n    // 在這裡寫你的設計\n\nendmodule\n",
+  "testbench": "`timescale 1ns/1ps\nmodule tb;\n  reg [7:0] req;\n  wire [2:0] idx_d;\n  wire valid_d;\n  wire [2:0] idx_r;\n  wire valid_r;\n  top_module dut(.req(req), .idx(idx_d), .valid(valid_d));\n  ref_top refm(.req(req), .idx(idx_r), .valid(valid_r));\n  integer i, errs;\n  task chk; begin\n    #1;\n    if ({idx_d, valid_d} !== {idx_r, valid_r}) begin\n      errs = errs + 1;\n      if (errs <= 5) $display(\"MISMATCH 輸入 req=%h  期望 idx=%h valid=%h  你的 idx=%h valid=%h\", req, idx_r, valid_r, idx_d, valid_d);\n    end\n  end endtask\n  initial begin\n    errs = 0;\n    for (i = 0; i < 256; i = i + 1) begin {req} = i[7:0]; chk; end\n    if (errs == 0) $display(\"ALL PASS\"); else $display(\"共 %0d 筆不符\", errs);\n    $finish;\n  end\nendmodule\n\nmodule ref_top(input [7:0] req, output reg [2:0] idx, output valid);\n  integer i;\n  always @* begin\n    idx = 0;\n    for (i = 0; i < 8; i = i + 1) if (req[i]) idx = i[2:0];\n  end\n  assign valid = |req;\nendmodule",
+  "title": "優先權編碼器",
+  "track": "verilog",
+  "unit": 4
+ },
+ "v010": {
+  "ref": "module top_module(input clk, input rst, input load, input en, input up, input [3:0] d, output reg [3:0] count, output carry);\n  assign carry = en & ~load & (up ? count == 9 : count == 0);\n  always @(posedge clk) begin\n    if (rst) count <= 0;\n    else if (load) count <= d;\n    else if (en) begin\n      if (up) count <= (count == 9) ? 4'd0 : count + 1;\n      else count <= (count == 0) ? 4'd9 : count - 1;\n    end\n  end\nendmodule",
+  "require": [],
+  "statement": "同步重置 `rst`（高電位有效，重置為 0）。每個時脈正緣：`load=1` 時載入 `d`（只取 0–9，輸入保證 `d<=9`）；否則 `en=1` 時依 `up` 上數（9 之後回 0）或下數（0 之後回 9）；`en=0` 保持。\n\n輸出 `count`（4 位元）與組合輸出 `carry`：`en=1`、`load=0` 且計數值正要從 9（上數）或 0（下數）環繞時為 1。\n\n注意：`rst` 在題目模板中已經宣告。",
+  "template": "module top_module(\n    input clk,\n    input rst,\n    input load,\n    input en,\n    input up,\n    input [3:0] d,\n    output [3:0] count,\n    output carry\n);\n    // 在這裡寫你的設計\n\nendmodule\n",
+  "testbench": "`timescale 1ns/1ps\nmodule tb;\n  reg clk, rst;\n  reg load;\n  reg en;\n  reg up;\n  reg [3:0] d;\n  wire [3:0] count_d;\n  wire carry_d;\n  wire [3:0] count_r;\n  wire carry_r;\n  top_module dut(.clk(clk), .rst(rst), .load(load), .en(en), .up(up), .d(d), .count(count_d), .carry(carry_d));\n  ref_top refm(.clk(clk), .rst(rst), .load(load), .en(en), .up(up), .d(d), .count(count_r), .carry(carry_r));\n  integer i, errs;\n  always #5 clk = ~clk;\n  initial begin\n    clk = 0; rst = 1; errs = 0; load = 0; en = 0; up = 0; d = 0;\n    repeat (3) @(negedge clk);\n    rst = 0;\n    for (i = 0; i < 4000; i = i + 1) begin\n      @(negedge clk);\n      rst = ($random % 60) == 0;\n      load = ($urandom % 6) == 0; en = ($urandom % 4) != 0; up = $random; d = $urandom % 10;\n      #1;\n      if ({count_d, carry_d} !== {count_r, carry_r}) begin\n        errs = errs + 1;\n        if (errs <= 5) $display(\"MISMATCH 週期 %0d 輸入 rst=%b load=%h en=%h up=%h d=%h  期望 count=%h carry=%h  你的 count=%h carry=%h\", i, rst, load, en, up, d, count_r, carry_r, count_d, carry_d);\n      end\n    end\n    if (errs == 0) $display(\"ALL PASS\"); else $display(\"共 %0d 週期不符\", errs);\n    $finish;\n  end\nendmodule\n\nmodule ref_top(input clk, input rst, input load, input en, input up, input [3:0] d, output reg [3:0] count, output carry);\n  assign carry = en & ~load & (up ? count == 9 : count == 0);\n  always @(posedge clk) begin\n    if (rst) count <= 0;\n    else if (load) count <= d;\n    else if (en) begin\n      if (up) count <= (count == 9) ? 4'd0 : count + 1;\n      else count <= (count == 0) ? 4'd9 : count - 1;\n    end\n  end\nendmodule",
+  "title": "上下數計數器（模 10）",
+  "track": "verilog",
+  "unit": 5
+ },
+ "v011": {
+  "ref": "module top_module(input clk, input rst, input en, output reg [7:0] q);\n  always @(posedge clk) begin\n    if (rst) q <= 8'h01;\n    else if (en) q <= {q[6:0], q[7] ^ q[5] ^ q[4] ^ q[3]};\n  end\nendmodule",
+  "require": [],
+  "statement": "多項式 x⁸ + x⁶ + x⁵ + x⁴ + 1 的 Fibonacci LFSR：同步重置 `rst` 時 `q = 8'h01`；`en=1` 的正緣更新 `q <= {q[6:0], q[7]^q[5]^q[4]^q[3]}`，`en=0` 保持。輸出 `q`。",
+  "template": "module top_module(\n    input clk,\n    input rst,\n    input en,\n    output [7:0] q\n);\n    // 在這裡寫你的設計\n\nendmodule\n",
+  "testbench": "`timescale 1ns/1ps\nmodule tb;\n  reg clk, rst;\n  reg en;\n  wire [7:0] q_d;\n  wire [7:0] q_r;\n  top_module dut(.clk(clk), .rst(rst), .en(en), .q(q_d));\n  ref_top refm(.clk(clk), .rst(rst), .en(en), .q(q_r));\n  integer i, errs;\n  always #5 clk = ~clk;\n  initial begin\n    clk = 0; rst = 1; errs = 0; en = 0;\n    repeat (3) @(negedge clk);\n    rst = 0;\n    for (i = 0; i < 4000; i = i + 1) begin\n      @(negedge clk);\n      rst = ($random % 60) == 0;\n      en = $random;\n      #1;\n      if ({q_d} !== {q_r}) begin\n        errs = errs + 1;\n        if (errs <= 5) $display(\"MISMATCH 週期 %0d 輸入 rst=%b en=%h  期望 q=%h  你的 q=%h\", i, rst, en, q_r, q_d);\n      end\n    end\n    if (errs == 0) $display(\"ALL PASS\"); else $display(\"共 %0d 週期不符\", errs);\n    $finish;\n  end\nendmodule\n\nmodule ref_top(input clk, input rst, input en, output reg [7:0] q);\n  always @(posedge clk) begin\n    if (rst) q <= 8'h01;\n    else if (en) q <= {q[6:0], q[7] ^ q[5] ^ q[4] ^ q[3]};\n  end\nendmodule",
+  "title": "8 位元 LFSR",
+  "track": "verilog",
+  "unit": 5
+ },
+ "v012": {
+  "ref": "module top_module(input clk, input rst, input x, output z);\n  localparam S0 = 0, S1 = 1, S11 = 2, S110 = 3;\n  reg [1:0] s, ns;\n  always @* case (s)\n    S0:   ns = x ? S1 : S0;\n    S1:   ns = x ? S11 : S0;\n    S11:  ns = x ? S11 : S110;\n    default: ns = x ? S1 : S0;\n  endcase\n  assign z = (s == S110) & x;\n  always @(posedge clk) s <= rst ? S0 : ns;\nendmodule",
+  "require": [],
+  "statement": "每個時脈取樣串列輸入 `x`。偵測到 `1101`（可重疊，例如 `1101101` 會偵測兩次）時，**在最後一個 1 輸入的那個週期**讓 `z=1`（Mealy：輸出同時取決於目前狀態與輸入）。同步重置 `rst` 回到初始狀態。",
+  "template": "module top_module(\n    input clk,\n    input rst,\n    input x,\n    output z\n);\n    // 在這裡寫你的設計\n\nendmodule\n",
+  "testbench": "`timescale 1ns/1ps\nmodule tb;\n  reg clk, rst;\n  reg x;\n  wire z_d;\n  wire z_r;\n  top_module dut(.clk(clk), .rst(rst), .x(x), .z(z_d));\n  ref_top refm(.clk(clk), .rst(rst), .x(x), .z(z_r));\n  integer i, errs;\n  always #5 clk = ~clk;\n  initial begin\n    clk = 0; rst = 1; errs = 0; x = 0;\n    repeat (3) @(negedge clk);\n    rst = 0;\n    for (i = 0; i < 4000; i = i + 1) begin\n      @(negedge clk);\n      rst = ($random % 60) == 0;\n      x = $random;\n      #1;\n      if ({z_d} !== {z_r}) begin\n        errs = errs + 1;\n        if (errs <= 5) $display(\"MISMATCH 週期 %0d 輸入 rst=%b x=%h  期望 z=%h  你的 z=%h\", i, rst, x, z_r, z_d);\n      end\n    end\n    if (errs == 0) $display(\"ALL PASS\"); else $display(\"共 %0d 週期不符\", errs);\n    $finish;\n  end\nendmodule\n\nmodule ref_top(input clk, input rst, input x, output z);\n  localparam S0 = 0, S1 = 1, S11 = 2, S110 = 3;\n  reg [1:0] s, ns;\n  always @* case (s)\n    S0:   ns = x ? S1 : S0;\n    S1:   ns = x ? S11 : S0;\n    S11:  ns = x ? S11 : S110;\n    default: ns = x ? S1 : S0;\n  endcase\n  assign z = (s == S110) & x;\n  always @(posedge clk) s <= rst ? S0 : ns;\nendmodule",
+  "title": "序列偵測器 1101（Mealy、可重疊）",
+  "track": "verilog",
+  "unit": 6
+ },
+ "v023": {
+  "ref": "module top_module(input clk, input rst, input wr_en, input rd_en, input [7:0] din, output [7:0] dout, output full, output empty);\n  reg [7:0] mem [0:7];\n  reg [3:0] wp, rp;\n  assign empty = (wp == rp);\n  assign full = (wp[2:0] == rp[2:0]) && (wp[3] != rp[3]);\n  assign dout = empty ? 8'd0 : mem[rp[2:0]];\n  always @(posedge clk) begin\n    if (rst) begin wp <= 0; rp <= 0; end\n    else begin\n      if (wr_en && !full) begin mem[wp[2:0]] <= din; wp <= wp + 1; end\n      if (rd_en && !empty) rp <= rp + 1;\n    end\n  end\nendmodule",
+  "require": [],
+  "statement": "8 位元資料、深度 8 的同步 FIFO。同步重置 `rst`。`wr_en` 且未滿時寫入 `din`；`rd_en` 且非空時讀出；同一週期可同時讀寫。**滿時的寫入、空時的讀取一律忽略。**\n\n輸出：`full`、`empty`（皆為目前狀態，組合輸出）、`dout`＝目前最舊的資料（first-word-fall-through，組合輸出）；空的時候 `dout` 必須是 0。\n\n提示：指針多留 1 位元來分辨空與滿。",
+  "template": "module top_module(\n    input clk,\n    input rst,\n    input wr_en,\n    input rd_en,\n    input [7:0] din,\n    output [7:0] dout,\n    output full,\n    output empty\n);\n    // 在這裡寫你的設計\n\nendmodule\n",
+  "testbench": "`timescale 1ns/1ps\nmodule tb;\n  reg clk, rst;\n  reg wr_en;\n  reg rd_en;\n  reg [7:0] din;\n  wire [7:0] dout_d;\n  wire full_d;\n  wire empty_d;\n  wire [7:0] dout_r;\n  wire full_r;\n  wire empty_r;\n  top_module dut(.clk(clk), .rst(rst), .wr_en(wr_en), .rd_en(rd_en), .din(din), .dout(dout_d), .full(full_d), .empty(empty_d));\n  ref_top refm(.clk(clk), .rst(rst), .wr_en(wr_en), .rd_en(rd_en), .din(din), .dout(dout_r), .full(full_r), .empty(empty_r));\n  integer i, errs;\n  always #5 clk = ~clk;\n  initial begin\n    clk = 0; rst = 1; errs = 0; wr_en = 0; rd_en = 0; din = 0;\n    repeat (3) @(negedge clk);\n    rst = 0;\n    for (i = 0; i < 4000; i = i + 1) begin\n      @(negedge clk);\n      rst = ($random % 60) == 0;\n      wr_en = ($urandom % 3) != 0; rd_en = ($urandom % 3) == 0; din = $random;\n      #1;\n      if ({dout_d, full_d, empty_d} !== {dout_r, full_r, empty_r}) begin\n        errs = errs + 1;\n        if (errs <= 5) $display(\"MISMATCH 週期 %0d 輸入 rst=%b wr_en=%h rd_en=%h din=%h  期望 dout=%h full=%h empty=%h  你的 dout=%h full=%h empty=%h\", i, rst, wr_en, rd_en, din, dout_r, full_r, empty_r, dout_d, full_d, empty_d);\n      end\n    end\n    if (errs == 0) $display(\"ALL PASS\"); else $display(\"共 %0d 週期不符\", errs);\n    $finish;\n  end\nendmodule\n\nmodule ref_top(input clk, input rst, input wr_en, input rd_en, input [7:0] din, output [7:0] dout, output full, output empty);\n  reg [7:0] mem [0:7];\n  reg [3:0] wp, rp;\n  assign empty = (wp == rp);\n  assign full = (wp[2:0] == rp[2:0]) && (wp[3] != rp[3]);\n  assign dout = empty ? 8'd0 : mem[rp[2:0]];\n  always @(posedge clk) begin\n    if (rst) begin wp <= 0; rp <= 0; end\n    else begin\n      if (wr_en && !full) begin mem[wp[2:0]] <= din; wp <= wp + 1; end\n      if (rd_en && !empty) rp <= rp + 1;\n    end\n  end\nendmodule",
+  "title": "同步 FIFO（深度 8）",
+  "track": "verilog",
+  "unit": 11
+ },
+ "v024": {
+  "ref": "module top_module(input clk, input rst, input [4:0] ra1, input [4:0] ra2, input [4:0] wa, input [31:0] wd, input we, output [31:0] rd1, output [31:0] rd2);\n  reg [31:0] r [0:31];\n  integer i;\n  initial for (i = 0; i < 32; i = i + 1) r[i] = 0;\n  assign rd1 = (ra1 == 0) ? 32'd0 : r[ra1];\n  assign rd2 = (ra2 == 0) ? 32'd0 : r[ra2];\n  always @(posedge clk) if (we && wa != 0) r[wa] <= wd;\nendmodule",
+  "require": [],
+  "statement": "RISC-V 風格：32 個 32 位元暫存器。兩個**組合**讀埠 `ra1`、`ra2` 輸出 `rd1`、`rd2`；一個**同步**寫埠：`we=1` 時在時脈正緣把 `wd` 寫入 `wa`。**x0 永遠讀到 0，寫入 x0 無效。** 不需要繞道（同週期讀到的是舊值）。`rst` 不需處理（模板中保留此腳位，可忽略）；為了讓判題一致，請不要依賴未初始化的暫存器——判題只會讀取已被寫入過的暫存器或 x0。",
+  "template": "module top_module(\n    input clk,\n    input rst,\n    input [4:0] ra1,\n    input [4:0] ra2,\n    input [4:0] wa,\n    input [31:0] wd,\n    input we,\n    output [31:0] rd1,\n    output [31:0] rd2\n);\n    // 在這裡寫你的設計\n\nendmodule\n",
+  "testbench": "`timescale 1ns/1ps\nmodule tb;\n  reg clk, rst;\n  reg [4:0] ra1;\n  reg [4:0] ra2;\n  reg [4:0] wa;\n  reg [31:0] wd;\n  reg we;\n  wire [31:0] rd1_d;\n  wire [31:0] rd2_d;\n  wire [31:0] rd1_r;\n  wire [31:0] rd2_r;\n  top_module dut(.clk(clk), .rst(rst), .ra1(ra1), .ra2(ra2), .wa(wa), .wd(wd), .we(we), .rd1(rd1_d), .rd2(rd2_d));\n  ref_top refm(.clk(clk), .rst(rst), .ra1(ra1), .ra2(ra2), .wa(wa), .wd(wd), .we(we), .rd1(rd1_r), .rd2(rd2_r));\n  integer i, errs;\n  always #5 clk = ~clk;\n  initial begin\n    clk = 0; rst = 1; errs = 0; ra1 = 0; ra2 = 0; wa = 0; wd = 0; we = 0;\n    repeat (3) @(negedge clk);\n    rst = 0;\n    for (i = 0; i < 4000; i = i + 1) begin\n      @(negedge clk);\n      rst = ($random % 60) == 0;\n      ra1 = $random; ra2 = $random; wa = $random; wd = $random; we = ($urandom % 2);\n      #1;\n      if ({rd1_d, rd2_d} !== {rd1_r, rd2_r}) begin\n        errs = errs + 1;\n        if (errs <= 5) $display(\"MISMATCH 週期 %0d 輸入 rst=%b ra1=%h ra2=%h wa=%h wd=%h we=%h  期望 rd1=%h rd2=%h  你的 rd1=%h rd2=%h\", i, rst, ra1, ra2, wa, wd, we, rd1_r, rd2_r, rd1_d, rd2_d);\n      end\n    end\n    if (errs == 0) $display(\"ALL PASS\"); else $display(\"共 %0d 週期不符\", errs);\n    $finish;\n  end\nendmodule\n\nmodule ref_top(input clk, input rst, input [4:0] ra1, input [4:0] ra2, input [4:0] wa, input [31:0] wd, input we, output [31:0] rd1, output [31:0] rd2);\n  reg [31:0] r [0:31];\n  integer i;\n  initial for (i = 0; i < 32; i = i + 1) r[i] = 0;\n  assign rd1 = (ra1 == 0) ? 32'd0 : r[ra1];\n  assign rd2 = (ra2 == 0) ? 32'd0 : r[ra2];\n  always @(posedge clk) if (we && wa != 0) r[wa] <= wd;\nendmodule",
+  "title": "暫存器堆（2 讀 1 寫）",
+  "track": "verilog",
+  "unit": 11
+ }
+}

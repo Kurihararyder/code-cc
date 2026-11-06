@@ -10,6 +10,7 @@ from typing import Any, Dict, List
 
 from . import bank as bank_mod
 from . import course as course_mod
+from . import hdl as hdl_mod
 from .store import Workspace
 
 NAMES = {"py": "Python（CPE 主線）", "cpp": "C++（到演算法工程師）", "verilog": "Verilog／SystemVerilog（到晶片設計工程師）", "tcl": "Tcl（EDA 腳本）"}
@@ -89,9 +90,12 @@ def unit_detail(ws: Workspace, bank: Dict[str, dict], track: str, n: int) -> Dic
     keys += [r["src"] for r in u.get("readings", []) if r.get("src") not in keys]
     res = [c["resources"][r] for r in keys if r in c["resources"]]
     a, b = course_mod.week_range(u)
+    avail = hdl_mod.load()
+    passed = {e["problem"] for e in ev if e["kind"] == "test" and e.get("verdict") == "AC" and e.get("lang") in ("verilog", "tcl")}
+    planned = [{**p, "available": p["id"] in avail, "done": p["id"] in passed} for p in u.get("planned", [])]
     return {"track": track, "n": u["n"], "title": u["title"], "stage": u["stage"], "weeks": [a, b], "goal": u["goal"], "learn": u["learn"],
             "pitfalls": u.get("pitfalls", []), "check": u.get("check", []), "build": u.get("build", []),
-            "planned": u.get("planned", []), "drills": drills, "gate": u.get("gate"),
+            "planned": planned, "drills": drills, "gate": u.get("gate"),
             "readings": u.get("readings", []), "weekly": u.get("weekly", []),
             "resources": [{"name": r[0], "url": r[1]} if isinstance(r, (list, tuple)) else r for r in res],
             "status": "done" if n in ts["done"] else ("current" if n == ts["unit"] else "upcoming")}
@@ -106,6 +110,9 @@ def mark_done(ws: Workspace, track: str, n: int) -> Dict[str, Any]:
         raise ValueError(f"單元只有 1–{len(c['units'])}")
     ev = ws.events()
     todo = [d for d in u.get("drills", []) if not course_mod.passed_in_lang(ev, d, u.get("lang", track))]
+    avail = hdl_mod.load()
+    todo += [p["id"] for p in u.get("planned", []) if p["id"] in avail and p["id"] not in
+             {e["problem"] for e in ev if e["kind"] == "test" and e.get("verdict") == "AC" and e.get("lang") == track}]
     if todo:
         raise ValueError(f"還有必做練習沒通過：{', '.join(todo)}。")
     ts = _tstate(ws, track)

@@ -24,7 +24,7 @@ from . import bank as bank_mod
 from .store import Workspace
 
 DIRNAME = "cpe-sync"
-FILE_DIRS = ("solutions", "tests", "statements")
+FILE_DIRS = ("solutions", "tests", "statements", "hdl")
 JSON_FILES = ("vocab.json", "custom_problems.json", "past_exams.json")
 
 

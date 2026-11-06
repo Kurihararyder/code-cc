@@ -49,6 +49,11 @@ jobs:
       - name: Install iverilog and Tcl (so the Verilog/Tcl judging-feasibility tests run instead of being skipped)
         if: matrix.os == 'ubuntu-24.04' && matrix.python == '3.12'
         run: sudo apt-get update && sudo apt-get install -y iverilog tcl
+      - name: Verilog/Tcl problem bank is reproducible and self-verified (reference solutions pass, wrong ones are rejected)
+        if: matrix.os == 'ubuntu-24.04' && matrix.python == '3.12'
+        run: |
+          python dev/gen_hdl.py
+          git diff --exit-code cpe_coach/data/hdl_problems.json
       - name: Local server attack probes (74 checks against a fake cloud; no network)
         if: matrix.os == 'ubuntu-24.04' && matrix.python == '3.12'
         run: python dev/security_probe.py
