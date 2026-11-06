@@ -88,7 +88,7 @@ def check_question(q: Dict[str, Any], where: str, strict_verify: bool = True) ->
         return 0
     out = run_verify(v)
     exp = v["expect"] if isinstance(v["expect"], list) else [v["expect"]]
-    norm = lambda t: t.replace("`", "").strip()  # noqa: E731
+    norm = lambda t: t.replace("`", "")  # noqa: E731
     for e in exp:
         if e not in out:
             raise SystemExit(f"{where}：實際輸出沒有 {e!r}：\n{out[-300:]}")
