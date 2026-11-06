@@ -9,6 +9,8 @@
 
 - **學程版（2.9.0）**：學號＋密碼登入、管理員開通與授權期間、IP 允許清單、雲端進度同步、AI 由學程授權（金鑰只在資料庫）、管理後台、自動更新。管理員手冊：[docs/ADMIN.md](docs/ADMIN.md)；後端：[supabase/](supabase/README.md)。
 
+- **C++ 軌道（課綱）**：從零基礎到演算法工程師，6 階段 50 單元 82 週：[COURSE_CPP.md](COURSE_CPP.md)。
+
 研究依據：[docs/research-report.md](docs/research-report.md)。只需要 Python 3.9+（階段 4 起需要 g++），沒有第三方套件。
 
 ## 開始

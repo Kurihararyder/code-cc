@@ -13,8 +13,12 @@ from .store import Workspace
 DATA = Path(__file__).parent / "data" / "course.json"
 
 
-def load() -> Dict[str, Any]:
-    return json.loads(DATA.read_text(encoding="utf-8"))
+TRACKS = {"py": DATA, "cpp": DATA.with_name("course_cpp.json")}
+
+
+def load(track: str = "py") -> Dict[str, Any]:
+    """track：py（Python 軌道，預設）或 cpp（C++ 軌道：零基礎到演算法工程師）。介面與進度目前只接 py；cpp 是課綱資料。"""
+    return json.loads(TRACKS[track].read_text(encoding="utf-8"))
 
 
 def get_unit(course: Dict[str, Any], n: int) -> Optional[Dict[str, Any]]:
