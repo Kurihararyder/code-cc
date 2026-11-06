@@ -123,8 +123,22 @@
 **延伸題庫：**
 - ZeroJudge 的 a 開頭基礎題：挑解題人數最多的前 15 題，每題都用 `cpe add` 登記或自己記錄
 
-**要讀的章節：**
-- Python 官方教學 第 3 章『非正式介紹』、第 7.1 節『格式化輸出』
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **Python 教學 2.1、3.1.1–3.1.2**
+  - 在直譯器互動模式做小實驗；數字運算與字串的基本操作；`/`、`//`、`%`、`**` 的差別
+- **Python 教學 7.1.1**
+  - f-string：把變數放進輸出、控制小數位數與對齊
+- **Python Tutor 視覺化**
+  - 用逐步執行看變數如何改變，找出自己『以為』和『其實』的差距
+- **CSES Introductory Problems 的前幾題**
+  - 熟悉標準輸入輸出的判題方式（選做）
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 1 | Python 教學 2.1、3.1.1–3.1.2<br>Python 教學 7.1.1 | 安裝 Python 3.9 以上（考場是 3.9.6）與一個編輯器（VS Code 或 IDLE）；會在終端機執行 `python 檔名.py`<br>變數、型別（int / float / str / bool）、算術（+ - * / // % **）、型別轉換 int() str() float()<br>print() 與 input()；f-string；`map(int, input().split())` 一次讀多個數 | `d001` 打招呼、`d002` 多組相加 | — |
+| 2 | Python Tutor 視覺化<br>CSES Introductory Problems 的前幾題 | 讀到 EOF：`for line in sys.stdin:`——CPE 幾乎每一題都這樣讀<br>怎麼讀錯誤訊息（traceback）：從最後一行往上看，第一個在你檔案裡的行號就是出事的地方 | `d003` 長方形、`d096` 秒數換算 | **單元檢核** |
 
 **教材：**[Python 官方教學（繁中）](https://docs.python.org/zh-tw/3/tutorial/)、[Python Tutor（逐步視覺化執行）](https://pythontutor.com/)、[ZeroJudge（繁中題庫）](https://zerojudge.tw/)
 
@@ -153,8 +167,19 @@
 - `d007` 閏年
 - `d098` 三角形種類
 
-**要讀的章節：**
-- Python 官方教學 4.1『if 陳述式』
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **Python 教學 4.1**
+  - if／elif／else 的結構與縮排
+- **Python 教學 5.7**
+  - 條件的更多細節：and／or 的短路求值、鏈式比較 `a < b < c`、真假值（空容器為假）
+- **Python Tutor 視覺化**
+  - 逐步看條件走哪條分支
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 3 | Python 教學 4.1<br>Python 教學 5.7<br>Python Tutor 視覺化 | 比較運算（== != < <= > >=）、布林運算 and / or / not 與優先順序<br>if / elif / else 鏈；巢狀 if；三元運算式 `a if cond else b`<br>邊界值測試：規則裡出現的每個數字，都要測它『剛好』、『少一』、『多一』 | `d005` 奇偶、`d006` 三個數的最大值、`d007` 閏年、`d098` 三角形種類 | **單元檢核** |
 
 **教材：**[Python 官方教學（繁中）](https://docs.python.org/zh-tw/3/tutorial/)、[Python Tutor（逐步視覺化執行）](https://pythontutor.com/)
 
@@ -185,8 +210,20 @@
 - `d024` 星星金字塔
 - `d101` Fizz Buzz
 
-**要讀的章節：**
-- Python 官方教學 4.2–4.5『for、range()、break／continue』
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **Python 教學 4.2–4.5**
+  - for／range()／break／continue／迴圈的 else；range 的半開區間
+- **Python 教學 5.6**
+  - 迴圈技巧：enumerate、zip、reversed、sorted
+- **CPH 2.1 計算規則（書上印的 pp.17–19）**
+  - 迴圈次數怎麼換算成時間複雜度（兩層迴圈就是 n²）
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 4 | Python 教學 4.2–4.5<br>Python 教學 5.6 | for + range(start, stop, step)：右界不含；while 與 break / continue<br>累加器模式：先設初值，再在迴圈裡更新 | `d009` 1 加到 n、`d010` 階乘、`d011` 乘法表 | — |
+| 5 | CPH 2.1 計算規則（書上印的 pp.17–19） | 巢狀迴圈與印出圖形；字串乘法 `' ' * n`<br>用 `n % 10` 與 `n // 10` 拆數字 | `d024` 星星金字塔、`d101` Fizz Buzz | **單元檢核** |
 
 **教材：**[Python 官方教學（繁中）](https://docs.python.org/zh-tw/3/tutorial/)、[Python Tutor（逐步視覺化執行）](https://pythontutor.com/)
 
@@ -219,8 +256,22 @@
 - `d018` 排序
 - `d102` 單字反轉
 
-**要讀的章節：**
-- Python 官方教學 3.1.2『字串』、3.1.3『List』、5.1『List 詳解』
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **Python 教學 3.1.2**
+  - 字串的索引、切片、不可變
+- **Python 教學 3.1.3**
+  - list 的索引、切片、可變
+- **Python 教學 5.1**
+  - list 的常用方法與 comprehension 的入門
+- **Python 教學 5.3**
+  - tuple 與序列的解包
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 6 | Python 教學 3.1.2<br>Python 教學 3.1.3 | 字串：索引、切片 `s[a:b:c]`、`s[::-1]`、方法（strip split join lower upper find count replace）<br>字串不可變；ord() / chr()<br>list：建立、索引、append / pop / insert、切片、sort / sorted、min / max / sum / len | `d013` 反轉整數、`d014` 母音計數、`d015` 迴文 | — |
+| 7 | Python 教學 5.1<br>Python 教學 5.3 | list comprehension：`[x*x for x in a if x%2==0]`<br>迭代：`for i, x in enumerate(a)`、`zip(a, b)` | `d017` 數列統計、`d018` 排序、`d102` 單字反轉 | **單元檢核** |
 
 **教材：**[Python 官方教學（繁中）](https://docs.python.org/zh-tw/3/tutorial/)、[Python Tutor（逐步視覺化執行）](https://pythontutor.com/)
 
@@ -250,9 +301,20 @@
 - `d020` 詞頻統計
 - `d029` 異位詞
 
-**要讀的章節：**
-- Python 官方教學 5.4『集合』、5.5『字典』、4.x『定義函式』
-- 標準函式庫 collections.Counter 的說明
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **Python 教學 5.4–5.5**
+  - set 的集合運算與去重；dict 的增查刪與迭代；鍵必須可雜湊
+- **Python 教學 4.8、4.9.1–4.9.2**
+  - 定義函式、回傳值、預設引數、關鍵字引數；預設引數用可變物件的陷阱
+- **Python 教學 9.2**
+  - 作用域與命名空間：區域與全域變數、global／nonlocal
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 8 | Python 教學 5.4–5.5<br>Python 教學 4.8、4.9.1–4.9.2 | set：add、`in`（O(1) 查詢）、集合運算；dict：`d[k]`、`d.get(k, 0)`、items()、`collections.Counter`<br>排序的 key：`sorted(d.items(), key=lambda kv: (-kv[1], kv[0]))` | `d104` 交集與聯集、`d019` 去除重複 | — |
+| 9 | Python 教學 9.2 | 函式：def、參數、return；區域與全域變數<br>第一次接觸複雜度：list 的 `in` 是 O(n)，set 是 O(1) | `d020` 詞頻統計、`d029` 異位詞 | **單元檢核** |
 
 **教材：**[Python 官方教學（繁中）](https://docs.python.org/zh-tw/3/tutorial/)
 
@@ -284,8 +346,20 @@
 - `d027` 十進位轉二進位
 - `d107` 數根
 
-**要讀的章節：**
-- Python 官方教學 4.x『定義函式』
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **Python 教學 3.1.1、4.8**
+  - 整數沒有溢位（任意精度）；divmod；函式拆分重複計算
+- **Python 教學 15.1**
+  - 浮點數的表示誤差：為什麼 0.1 + 0.2 != 0.3
+- **CPH 1.5 數學預備知識（書上印的 pp.10–14）**
+  - 和公式、集合論、邏輯、函數等會在題目裡用到的基本觀念
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 10 | Python 教學 3.1.1、4.8<br>Python 教學 15.1 | 質數試除法到 √n；gcd 輾轉相除法；費氏數列的迭代寫法（遞迴版為什麼慢）<br>進位制：用 `%` 與 `//` 反覆取餘數；`bin()`、`int(s, base)`<br>把重複出現的程式碼抽成函式 | `d021` 質數判斷、`d022` 最大公因數與最小公倍數、`d025` 因數個數 | — |
+| 11 | CPH 1.5 數學預備知識（書上印的 pp.10–14） | 質因數分解：從 2 試除到 √n，邊除邊記次數，最後剩下的大於 1 的數本身是質數<br>數根與『重複做某件事直到條件成立』的 while 寫法 | `d027` 十進位轉二進位、`d107` 數根 | **單元檢核** |
 
 **教材：**[Python 官方教學（繁中）](https://docs.python.org/zh-tw/3/tutorial/)
 
@@ -315,8 +389,18 @@
 - `d108` 對角線和
 - `d110` 旋轉矩陣
 
-**要讀的章節：**
-- Python 官方教學 5.1.3『List Comprehension』（巢狀）
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **Python 教學 5.1.3–5.1.4**
+  - list comprehension 與巢狀的寫法；用它建立二維陣列（小心 `[[0]*m]*n` 的共用參考）
+- **Python Tutor 視覺化**
+  - 看二維 list 的別名（aliasing）如何造成『一改全改』
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 12 | Python 教學 5.1.3–5.1.4 | 二維 list：`[[0]*C for _ in range(R)]`（不要寫成 `[[0]*C]*R`）<br>走訪列與行；轉置；`zip(*a)`<br>模擬題的標準步驟：讀指令 → 修改狀態 → 輸出 | `d026` 矩陣轉置、`d108` 對角線和 | — |
+| 13 | Python Tutor 視覺化 | 八方向鄰居（掃雷）：用 `(di, dj)` 的偏移表，並檢查邊界<br>旋轉／轉置的索引關係：先在紙上畫 2×3 的例子 | `d110` 旋轉矩陣 | **單元檢核** |
 
 **教材：**[Python 官方教學（繁中）](https://docs.python.org/zh-tw/3/tutorial/)、[Python Tutor（逐步視覺化執行）](https://pythontutor.com/)
 
@@ -339,6 +423,18 @@
 
 **延伸題庫：**
 - 補完 ZeroJudge 入門題到累計約 60 題（報告的階段 0 目標是 80–120 題）
+
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **Python 教學 8.1–8.3**
+  - 讀懂 traceback；例外的基本處理
+- **ZeroJudge 基礎題**
+  - 限時完成驗收題組的練習來源
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 14 | Python 教學 8.1–8.3<br>ZeroJudge 基礎題 | 回顧本階段所有被你用過提示的題目（`cpe review`）<br>整理一頁筆記：10 個最常用的寫法（讀 EOF、set 計數、排序 key…）<br>學會 debug：用 print 檢查中間值；縮小問題；寫最小測資 | — | **單元檢核** |
 
 **教材：**[ZeroJudge（繁中題庫）](https://zerojudge.tw/)
 
@@ -373,6 +469,21 @@
 **延伸題庫：**
 - CSES『Introductory Problems』挑解題人數最多的 10 題（練習純標準輸入輸出）
 
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **Python 教學 7.1.1**
+  - 格式化輸出複習
+- **CPE 官網『考生使用手冊』**
+  - 考場的輸入輸出方式與 Python 版本（3.9.6）
+- **CSES Introductory Problems**
+  - 多組輸入與讀到 EOF 的練習
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 15 | Python 教學 7.1.1<br>CPE 官網『考生使用手冊』 | `sys.stdin.read().split()` 一次讀完 vs 逐行讀：何時用哪個<br>結束標記（`0 0`、單個 `0`）；先給組數 t；空行分隔的群組 | `d031` 直到 0 0 為止、`d032` 先給組數 | `uva11172` Relational Operators、`uva10055` Hashmat the Brave Warrior |
+| 16 | CSES Introductory Problems | 輸出格式：Case 標題、組間空行 vs 每組後空行（PE 的最大來源）<br>把輸入格式寫在註解裡再開始寫程式的習慣 | `d033` 空行分隔的資料 | `uva100` The 3n+1 problem<br>**單元檢核** |
+
 **教材：**[CSES Problem Set（分類清楚、純標準輸入輸出）](https://cses.fi/problemset/)、[CPE 官網（歷屆題目與答對率）](https://cpe.mcu.edu.tw/)
 
 **常見陷阱：**
@@ -405,6 +516,21 @@
 **真題（選做；題目到 vjudge／UVA／瘋狂程設閱讀，範例用 `cpe import` 匯入）：**
 - `uva10082` WERTYU、`uva10420` List of Conquests、`uva10226` Hardwood Species、`uva10282` Babelfish、`uva10062` Tell me the frequencies!
 
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **Python 教學 7.1.1–7.1.3**
+  - f-string 與 str.format 的格式規格：寬度、對齊、小數位數
+- **Python 教學 15.1**
+  - 浮點誤差；輸出小數時四捨五入的處理
+- **Python 教學 5.5**
+  - 用 dict 做字元／字串映射
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 17 | Python 教學 7.1.1–7.1.3<br>Python 教學 15.1 | `f'{x:.4f}'`、`:>8`、`:02d`；round 的銀行家捨入陷阱<br>用 dict 或字串做映射（羅馬數字、摩斯碼、鍵盤位移）<br>字串分組掃描（run-length）與『最後一段』的收尾 | `d035` 除法與小數位、`d039` 羅馬數字 | `uva10082` WERTYU、`uva10420` List of Conquests、`uva10226` Hardwood Species |
+| 18 | Python 教學 5.5 | 整數運算優於浮點運算：能用整數比大小就別用除法<br>分級邊界：類別用『四捨五入前』的值判斷，顯示用四捨五入後的值——兩者可能不一致<br>摩斯電碼這類查表題：先把編碼表做成 dict | `d043` 連續字元壓縮、`d112` 摩斯電碼解碼 | `uva10282` Babelfish、`uva10062` Tell me the frequencies!<br>**單元檢核** |
+
 **教材：**[Python 官方教學（繁中）](https://docs.python.org/zh-tw/3/tutorial/)
 
 **常見陷阱：**
@@ -436,6 +562,19 @@
 **真題（選做；題目到 vjudge／UVA／瘋狂程設閱讀，範例用 `cpe import` 匯入）：**
 - `uva10106` Product、`uva713` Adding Reversed Numbers、`uva10220` I Love Big Numbers !、`uva10929` You can say 11、`uva10931` Parity、`uva10018` Reverse and Add、`uva10035` Primary Arithmetic
 
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **Python 教學 3.1.1**
+  - Python 的大整數：直接運算即可，不必自己實作
+- **CPH 1.3 處理數字（書上印的 pp.6–7）**
+  - 整數溢位（Python 沒有，但 C++ 有）、模運算、浮點誤差——為什麼同一題換語言要小心
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 19 | Python 教學 3.1.1 | Python int 沒有上限（但 3.11 起字串轉換有 4300 位的限制，考場 3.9 沒有）<br>任意進位：`int(s, b)` 與手寫轉換<br>字串反轉相加類題目（Reverse and Add） | `d036` 大數加與乘、`d037` 進位制轉換 | `uva10106` Product、`uva713` Adding Reversed Numbers、`uva10220` I Love Big Numbers !、`uva10929` You can say 11 |
+| 20 | CPH 1.3 處理數字（書上印的 pp.6–7） | 二進位位元計數與 `bin()`<br>逐位模擬（直式加法的進位）：不要用大數直接加，因為題目問的是過程<br>用字串左半邊鏡射產生回文數，而不是一個一個試 | `d113` 階乘的位數和 | `uva10931` Parity、`uva10018` Reverse and Add、`uva10035` Primary Arithmetic<br>**單元檢核** |
+
 **教材：**[Python 官方教學（繁中）](https://docs.python.org/zh-tw/3/tutorial/)
 
 **常見陷阱：**
@@ -466,6 +605,21 @@
 
 **真題（選做；題目到 vjudge／UVA／瘋狂程設閱讀，範例用 `cpe import` 匯入）：**
 - `uva10110` Light, more light、`uva11461` Square Numbers、`uva11332` Summing Digits、`uva10300` Ecological Premium、`uva10071` Back to High School Physics、`uva11364` Parking、`uva10190` Divide, But Not Quite Conquer!
+
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **CP-Algorithms：Sieve of Eratosthenes**
+  - 篩法的做法與 O(n log log n)
+- **CPH 21.1 質數與因數（書上印的 pp.197–200）**
+  - 質因數分解、約數個數與和、質數判定
+- **CP-Algorithms：Euclidean algorithm for computing the greatest common divisor**
+  - gcd 與 lcm
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 21 | CP-Algorithms：Sieve of Eratosthenes<br>CPH 21.1 質數與因數（書上印的 pp.197–200） | 埃拉托斯特尼篩法；『先預處理、再 O(1) 查詢』<br>因數成對找到 √n；完全平方數的因數個數是奇數<br>數根（digital root）、平方數個數 isqrt 公式 | `d038` 質數個數查詢、`d116` 哥德巴赫分拆 | `uva10110` Light, more light、`uva11461` Square Numbers、`uva11332` Summing Digits、`uva10300` Ecological Premium |
+| 22 | CP-Algorithms：Euclidean algorithm for computing the greatest common divisor | 遇到數學題先手算小例子找規律<br>約數的成對性質：能整除 i 就也能整除 n//i；完全數／盈數／虧數的分類<br>哥德巴赫分拆與孿生質數：篩一次，之後都是查表 | `d118` 孿生質數對 | `uva10071` Back to High School Physics、`uva11364` Parking、`uva10190` Divide, But Not Quite Conquer!<br>**單元檢核** |
 
 **教材：**[CP-Algorithms（演算法百科）](https://cp-algorithms.com/)
 
@@ -499,8 +653,20 @@
 **真題（選做；題目到 vjudge／UVA／瘋狂程設閱讀，範例用 `cpe import` 匯入）：**
 - `uva10189` Minesweeper、`uva11581` Grid Successors、`uva11498` Division of Nlogonia、`uva11559` Event Planning、`uva11150` Cola、`uva10038` Jolly Jumpers
 
-**要讀的章節：**
-- Python 文件：sys.stdin
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **Python Tutor 視覺化**
+  - 二維陣列與座標的對應
+- **Python 文件：sys.stdin**
+  - 一次讀完所有輸入：`sys.stdin.read().split()`
+- **Python 教學 5.1.3–5.1.4**
+  - 用 comprehension 處理格子
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 23 | Python Tutor 視覺化<br>Python 文件：sys.stdin | 方向陣列 `dirs=[(0,1),(1,0),(0,-1),(-1,0)]` 與轉向（%4）<br>邊界檢查 `0<=nx<R and 0<=ny<C`<br>鄰居計數（八方向，如踩地雷）<br>把『題目的規則』逐條翻成程式，不要跳步 | `d041` 機器人走格子、`d042` 螺旋矩陣 | `uva10189` Minesweeper、`uva11581` Grid Successors、`uva11498` Division of Nlogonia |
+| 24 | Python 教學 5.1.3–5.1.4 | 狀態更新型模擬（骰子翻滾）：只追蹤必要的幾個面，其他由『對面和為 7』推得<br>斜線（反對角線）上的格子，列號加行號是定值<br>在方陣裡沿八個方向找單字：方向表 + 逐字比對 + 邊界 | `d119` 骰子滾動、`d121` 斜線填數 | `uva11559` Event Planning、`uva11150` Cola、`uva10038` Jolly Jumpers<br>**單元檢核** |
 
 **教材：**[Python Tutor（逐步視覺化執行）](https://pythontutor.com/)
 
@@ -534,6 +700,21 @@
 **延伸題庫：**
 - UVA 上日期／時間類一顆星題：用 `cpe add` 登記後練習
 
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **Python 教學 10.8**
+  - datetime 模組（考場可用，但很多題要自己算日期會更可靠）
+- **Python 教學 5.1.1**
+  - 用 list 當 stack：解析運算式的基本工具
+- **Python 文件：str 的方法**
+  - split、strip、isdigit 等字串解析常用方法
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 25 | Python 教學 10.8<br>Python 教學 5.1.1 | datetime.date 與 weekday()；也要會用 Zeller 公式自己算<br>進位換算（秒→時分秒）、12/24 小時制邊界<br>split 後依 token 處理的解析模式 | `d040` 星期幾、`d045` 24 小時轉 12 小時、`d044` 由左到右的算式 | — |
+| 26 | Python 文件：str 的方法 | 後序運算式（postfix）與 stack：先放入的是左運算元<br>時鐘夾角這類『先換成同一個單位再算』的技巧（全部乘 2 避免小數） | `d123` 時鐘的夾角、`d124` 後序運算式求值 | **單元檢核** |
+
 **教材：**[Python 官方教學（繁中）](https://docs.python.org/zh-tw/3/tutorial/)
 
 **常見陷阱：**
@@ -557,6 +738,19 @@
 - 一顆星選集 前 25 題（官網）
 - CPE 歷屆 一～二顆星且全體答對率高於 30% 的題目
 
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **CPE 官網歷屆題目與答對率**
+  - 挑一顆星的題目做；先看答對率判斷難度
+- **CSES Introductory Problems**
+  - 補充練習
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 27 | CPE 官網歷屆題目與答對率 | 用 `cpe import <題號> <題目文字檔>` 把題目與範例匯入（見 README）<br>養成習慣：每題先在註解寫輸入格式、輸出格式、範圍；通過後寫下『這題的陷阱』 | — | — |
+| 28 | CSES Introductory Problems | 每週至少 2 題用英文原題（考場題目是英文，有英文字典可用） | — | **單元檢核** |
+
 **教材：**[CPE 官網（歷屆題目與答對率）](https://cpe.mcu.edu.tw/)
 
 **自我檢查（不看資料回答）：**
@@ -577,8 +771,18 @@
 - 一顆星選集 後 24 題
 - 報名：查 CPE 官網的最新場次與報名日期
 
-**要讀的章節：**
-- CPE 官網『考生使用手冊』（含 Python I/O 範例）
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **CPE 官網『考生使用手冊』**
+  - 報名、考場規則與 Python I/O 範例
+- **CPH 1.6 競賽與資源（書上印的 pp.15–16）**
+  - 賽後怎麼檢討、怎麼找題
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 29 | CPE 官網『考生使用手冊』 | 完成選集剩下題目；全部題目能在 30 分鐘內重寫<br>考前一週模擬：`cpe mock start --kind short`（3 題 90 分鐘） | — | — |
+| 30 | CPH 1.6 競賽與資源（書上印的 pp.15–16） | 考試當天流程：報到、環境測試、題目英文、ICPC 計分（錯一次加 20 分鐘）——先做會的題 | — | **單元檢核** |
 
 **教材：**[CPE 官網（歷屆題目與答對率）](https://cpe.mcu.edu.tw/)
 
@@ -613,8 +817,20 @@
 **延伸題庫：**
 - CSES『Sorting and Searching』挑解題人數最多的 8 題
 
-**要讀的章節：**
-- Competitive Programmer's Handbook 第 2 章『Time complexity』、第 3 章『Sorting』
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **CPH 第 2 章 時間複雜度（書上印的 pp.17–23）**
+  - 計算規則與複雜度類別；用輸入規模估算可行性（p.21）；最大子陣列和的三種做法（pp.21–23）
+- **CPH 3.1–3.2 排序（書上印的 pp.25–30）**
+  - 排序理論與下界；C++ 的 sort（概念同 Python 的 sorted／key）
+- **VisuAlgo：Sorting**
+  - 動畫看各排序的運作與複雜度
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 31 | CPH 第 2 章 時間複雜度（書上印的 pp.17–23）<br>CPH 3.1–3.2 排序（書上印的 pp.25–30） | Big-O：O(n)、O(n log n)、O(n²)；『Python 約每秒 10^7 次簡單運算』的粗估法；看範圍倒推演算法<br>sort 的 key、多重條件、穩定排序；自訂比較（cmp_to_key） | `d049` 學生排名、`d125` 中位數 | `uva10041` Vito's Family、`uva11727` Cost Cutting |
+| 32 | VisuAlgo：Sorting | 計數排序（值域小時）<br>開始建 Git 習慣：每天的程式碼 commit | `d046` 區間和查詢 | `uva11942` Lumberjack Sequencing、`uva11462` Age Sort<br>**單元檢核** |
 
 **教材：**[Competitive Programmer's Handbook（免費 PDF）](https://cses.fi/book/book.pdf)、[CSES Problem Set（分類清楚、純標準輸入輸出）](https://cses.fi/problemset/)、[VisuAlgo（演算法動畫）](https://visualgo.net/)
 
@@ -652,8 +868,20 @@
 - CSES『Sorting and Searching』中標示二分或前綴和的題目
 - AP325 對應章節
 
-**要讀的章節：**
-- Competitive Programmer's Handbook 第 3 章（Binary search）、第 9 章『Range queries』（Static array queries）
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **CPH 3.3 二分搜尋（書上印的 pp.31–33）**
+  - 三種寫法：找值、找邊界、對答案二分
+- **CPH 9.1 靜態陣列查詢（書上印的 pp.84–85）**
+  - 一維與二維前綴和
+- **Python 教學 11.7**
+  - bisect 的 bisect_left／bisect_right（用在二分，比手寫穩定）
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 33 | CPH 3.3 二分搜尋（書上印的 pp.31–33）<br>CPH 9.1 靜態陣列查詢（書上印的 pp.84–85） | 前綴和：pre[i]；區間和 = pre[r]-pre[l-1]；二維前綴和（選修）<br>二分搜尋：lower_bound / upper_bound 語意；迴圈不變量；`bisect` 模組<br>『對答案二分』的入門概念（最小化最大值） | `d047` 第一個不小於 x 的位置、`d128` 矩形區域和 | `uva10474` Where is the Marble? |
+| 34 | Python 教學 11.7 | 二維前綴和（容斥）與差分陣列（區間加值、最後一次還原）<br>對答案二分：『答案越大越不可能』這種單調性，例如切繩子 | `d130` 區間加值 | **單元檢核** |
 
 **教材：**[Competitive Programmer's Handbook（免費 PDF）](https://cses.fi/book/book.pdf)、[CP-Algorithms（演算法百科）](https://cp-algorithms.com/)、[VisuAlgo（演算法動畫）](https://visualgo.net/)
 
@@ -686,8 +914,20 @@
 **真題（選做；題目到 vjudge／UVA／瘋狂程設閱讀，範例用 `cpe import` 匯入）：**
 - `uva11057` Exact Sum、`uva10340` All in All
 
-**要讀的章節：**
-- Competitive Programmer's Handbook 第 8 章『Amortized analysis』（Two pointers）
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **CPH 8.1–8.2（書上印的 pp.77–80）**
+  - 雙指標、最近較小元素：為什麼是 O(n)
+- **CPH 8.3 滑動視窗最小值（書上印的 pp.81–82）**
+  - 單調 deque 的維護
+- **CP-Algorithms：Minimum Stack / Minimum Queue**
+  - 以單調結構維護最小值
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 35 | CPH 8.1–8.2（書上印的 pp.77–80）<br>CPH 8.3 滑動視窗最小值（書上印的 pp.81–82） | 排序後雙指標（兩端往內）；同向雙指標（滑動視窗） | `d048` 和不超過 K 的配對數、`d055` 分餅乾 | `uva11057` Exact Sum |
+| 36 | CP-Algorithms：Minimum Stack / Minimum Queue | 證明為什麼指標只需要單向移動 | `d131` 最短的連續區間、`d132` 最長不重複子字串 | `uva10340` All in All<br>**單元檢核** |
 
 **教材：**[CP-Algorithms（演算法百科）](https://cp-algorithms.com/)
 
@@ -719,8 +959,20 @@
 **真題（選做；題目到 vjudge／UVA／瘋狂程設閱讀，範例用 `cpe import` 匯入）：**
 - `uva673` Parentheses Balance、`uva514` Rails、`uva10901` Ferry Loading III、`uva11995` I Can Guess the Data Structure!、`uva10935` Throwing cards away I、`uva12100` Printer Queue
 
-**要讀的章節：**
-- Competitive Programmer's Handbook 第 4 章『Data structures』（Deque、Stack）
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **CPH 4.5 其他資料結構（書上印的 pp.41–43）**
+  - deque、stack、queue、priority_queue 的用途
+- **Python 教學 5.1.1–5.1.2**
+  - 用 list 當 stack、用 collections.deque 當 queue（list.pop(0) 是 O(n)）
+- **CP-Algorithms：Minimum Stack / Minimum Queue**
+  - 單調 stack 的典型題型
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 37 | CPH 4.5 其他資料結構（書上印的 pp.41–43）<br>Python 教學 5.1.1–5.1.2 | stack（list）、queue / deque（`collections.deque`）；括號配對、單調 stack／deque<br>模擬類題目（Rails、Ferry Loading）<br>找規律取代模擬（約瑟夫） | `d050` 括號配對、`d133` 下一個更大的數 | `uva673` Parentheses Balance、`uva514` Rails、`uva10901` Ferry Loading III |
+| 38 | CP-Algorithms：Minimum Stack / Minimum Queue | 用 stack 判斷『能不能依這個順序出站』（火車調度）<br>單調 stack：下一個更大的數、直方圖最大矩形 | `d051` 約瑟夫問題、`d053` 滑動視窗最大值 | `uva11995` I Can Guess the Data Structure!、`uva10935` Throwing cards away I、`uva12100` Printer Queue<br>**單元檢核** |
 
 **教材：**[VisuAlgo（演算法動畫）](https://visualgo.net/)、[CP-Algorithms（演算法百科）](https://cp-algorithms.com/)
 
@@ -752,8 +1004,20 @@
 **真題（選做；題目到 vjudge／UVA／瘋狂程設閱讀，範例用 `cpe import` 匯入）：**
 - `uva10954` Add All、`uva10107` What is the Median?、`uva11136` Hoax or what
 
-**要讀的章節：**
-- Competitive Programmer's Handbook 第 4 章（Priority queues）
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **CPH 4.5 其他資料結構（書上印的 pp.41–43）**
+  - priority_queue 的用途
+- **Python 教學 11.7**
+  - heapq：只有最小堆；最大堆用取負數
+- **VisuAlgo：Heap**
+  - 動畫看 sift-up／sift-down
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 39 | CPH 4.5 其他資料結構（書上印的 pp.41–43）<br>Python 教學 11.7 | heapq：heappush / heappop / heapify；max-heap 用負數<br>貪心 + heap（合併最小兩個） | `d052` 合併成本、`d136` 資料流的第 k 大 | `uva10954` Add All、`uva10107` What is the Median? |
+| 40 | VisuAlgo：Heap | 動態中位數（bisect.insort 或雙 heap） | `d127` 會議室數量 | `uva11136` Hoax or what<br>**單元檢核** |
 
 **教材：**[CP-Algorithms（演算法百科）](https://cp-algorithms.com/)、[VisuAlgo（演算法動畫）](https://visualgo.net/)
 
@@ -782,8 +1046,18 @@
 **真題（選做；題目到 vjudge／UVA／瘋狂程設閱讀，範例用 `cpe import` 匯入）：**
 - `uva10020` Minimal coverage、`uva10026` Shoemaker's Problem、`uva11389` The Bus Driver Problem、`uva10037` Bridge
 
-**要讀的章節：**
-- Competitive Programmer's Handbook 第 6 章『Greedy algorithms』
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **CPH 第 6 章 貪心演算法（書上印的 pp.57–63）**
+  - 找零、排程、任務與期限、最小化總和、霍夫曼；貪心的正確性靠交換論證證明
+- **CPH 6.2 排程（書上印的 pp.58–59）**
+  - 依結束時間排序的區間排程為什麼最優
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 41 | CPH 第 6 章 貪心演算法（書上印的 pp.57–63） | 貪心的典型：區間排程（依結束時間）、區間覆蓋、配對（排序後雙指標）、Huffman（heap）<br>怎麼證明：交換論證——假設最優解跟你的選擇不同，換成你的選擇不會變差 | `d054` 活動選擇 | `uva10020` Minimal coverage、`uva10026` Shoemaker's Problem |
+| 42 | CPH 6.2 排程（書上印的 pp.58–59） | 反例思維：寫完貪心後，用 5 分鐘找反例 | `d140` 最小總等待時間 | `uva11389` The Bus Driver Problem、`uva10037` Bridge<br>**單元檢核** |
 
 **教材：**[Competitive Programmer's Handbook（免費 PDF）](https://cses.fi/book/book.pdf)、[CP-Algorithms（演算法百科）](https://cp-algorithms.com/)
 
@@ -817,8 +1091,23 @@
 **真題（選做；題目到 vjudge／UVA／瘋狂程設閱讀，範例用 `cpe import` 匯入）：**
 - `uva750` 8 Queens Chess Problem、`uva524` Prime Ring Problem、`uva10344` 23 out of 5、`uva624` CD
 
-**要讀的章節：**
-- Competitive Programmer's Handbook 第 5 章『Complete search』
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **CPH 5.1–5.4（書上印的 pp.47–53）**
+  - 子集與排列的產生、回溯、剪枝
+- **CPH 5.5 折半枚舉（書上印的 pp.54–55）**
+  - 把 2^n 降成 2^(n/2)
+- **Python 教學 4.8**
+  - 遞迴函式的寫法；預設遞迴深度限制約 1000，要用 `sys.setrecursionlimit` 並注意風險
+- **Python Tutor 視覺化**
+  - 看遞迴的呼叫堆疊
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 43 | CPH 5.1–5.4（書上印的 pp.47–53）<br>CPH 5.5 折半枚舉（書上印的 pp.54–55） | 遞迴三要素：終止條件、縮小問題、合併結果；呼叫堆疊（用 Python Tutor 看）<br>回溯：選擇 → 遞迴 → 還原；全排列、N 皇后、子集合 | `d056` 全排列、`d141` 河內塔 | `uva750` 8 Queens Chess Problem、`uva524` Prime Ring Problem |
+| 44 | Python 教學 4.8 | 剪枝：提早放棄不可能的分支；可行性剪枝與最優性剪枝<br>`sys.setrecursionlimit` 與遞迴深度的限制 | `d142` 組合列舉 | `uva10344` 23 out of 5 |
+| 45 | Python Tutor 視覺化 | 河內塔與組合列舉：遞迴參數帶『下一個可選的最小值』避免重複<br>質數環：邊放邊檢查的剪枝 | `d057` N 皇后方案數 | `uva624` CD<br>**單元檢核** |
 
 **教材：**[Python Tutor（逐步視覺化執行）](https://pythontutor.com/)、[Competitive Programmer's Handbook（免費 PDF）](https://cses.fi/book/book.pdf)
 
@@ -849,8 +1138,20 @@
 **延伸題庫：**
 - CSES『Introductory Problems』中位元／子集合相關題目
 
-**要讀的章節：**
-- Competitive Programmer's Handbook 第 10 章『Bit manipulation』
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **CPH 10.1–10.4（書上印的 pp.95–101）**
+  - 位元表示與運算；用位元表示集合；位元優化
+- **CP-Algorithms：Bit manipulation**
+  - 常用技巧
+- **CP-Algorithms：Enumerating submasks of a bitmask**
+  - 枚舉子遮罩 3^n 的來由
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 46 | CPH 10.1–10.4（書上印的 pp.95–101）<br>CP-Algorithms：Bit manipulation | & | ^ ~ << >> 與常用技巧（判斷第 i 位、設定、清除、lowbit）<br>n≤20 時 `for mask in range(1<<n)` 枚舉子集合 | `d059` 落單的數、`d145` 子集合列舉 | — |
+| 47 | CP-Algorithms：Enumerating submasks of a bitmask | XOR 的性質（a^a=0）<br>位元 1 的總數：逐位看週期，不要逐個數 | `d058` 子集合和 | **單元檢核** |
 
 **教材：**[Competitive Programmer's Handbook（免費 PDF）](https://cses.fi/book/book.pdf)、[CP-Algorithms（演算法百科）](https://cp-algorithms.com/)
 
@@ -873,6 +1174,18 @@
 
 **延伸題庫：**
 - APCS 實作題（中級～中高級）歷屆題：ZeroJudge 有收錄
+
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **ZeroJudge 題庫**
+  - 限時練習階段 2 的題型
+- **王一哲 APCS 教學網站**
+  - APCS 題目的解析與寫法對照
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 48 | ZeroJudge 題庫<br>王一哲 APCS 教學網站 | 整理錯題本：每個錯誤分類（格式／邊界／演算法／超時／粗心）<br>完整 3 小時模擬考一次，然後逐題檢討<br>報考 CPE：目標 3 題（A- 進階級） | — | **單元檢核** |
 
 **教材：**[ZeroJudge（繁中題庫）](https://zerojudge.tw/)、[王一哲教學網站（APCS）](https://sites.google.com/view/yizhe/%E8%AA%B2%E7%A8%8B/apcs)
 
@@ -909,8 +1222,24 @@
 **延伸題庫：**
 - CSES『Graph Algorithms』前幾題（Counting Rooms、Labyrinth）
 
-**要讀的章節：**
-- Competitive Programmer's Handbook 第 11 章『Basics of graphs』、第 12 章『Graph traversal』
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **CPH 第 11 章 圖的基礎（書上印的 pp.109–116）**
+  - 圖的術語；鄰接表／鄰接矩陣／邊列表的選擇
+- **CPH 第 12 章 圖的遍歷（書上印的 pp.117–122）**
+  - DFS、BFS；連通性、環、二分圖
+- **CP-Algorithms：Breadth First Search**
+  - 最短步數、多源 BFS
+- **CP-Algorithms：Depth First Search**
+  - 遞迴與改成迭代避免爆 stack
+- **VisuAlgo：Graph Traversal**
+  - 動畫看 BFS／DFS
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 49 | CPH 第 11 章 圖的基礎（書上印的 pp.109–116）<br>CPH 第 12 章 圖的遍歷（書上印的 pp.117–122）<br>CP-Algorithms：Breadth First Search | 鄰接表 `adj=[[] for _ in range(n+1)]`；鄰接矩陣；有向／無向／加權<br>BFS：用 deque、dist 初始 -1、每點只入隊一次；格子 BFS | `d060` 迷宮最短路、`d147` 騎士的最少步數 | `uva572` Oil Deposits、`uva336` A Node Too Far、`uva10009` All Roads Lead Where? |
+| 50 | CP-Algorithms：Depth First Search<br>VisuAlgo：Graph Traversal | DFS：遞迴與迭代（用 stack）；flood fill；二分圖著色<br>Python 遞迴深度限制：大圖一律寫迭代 | `d148` 二分圖判斷 | `uva10004` Bicoloring、`uva439` Knight Moves、`uva10653` Bombs! NO they are Mines!!<br>**單元檢核** |
 
 **教材：**[Competitive Programmer's Handbook（免費 PDF）](https://cses.fi/book/book.pdf)、[CP-Algorithms（演算法百科）](https://cp-algorithms.com/)、[VisuAlgo（演算法動畫）](https://visualgo.net/)
 
@@ -941,8 +1270,18 @@
 **真題（選做；題目到 vjudge／UVA／瘋狂程設閱讀，範例用 `cpe import` 匯入）：**
 - `uva10608` Friends、`uva459` Graph Connectivity、`uva11503` Virtual Friends、`uva11902` Dominator
 
-**要讀的章節：**
-- Competitive Programmer's Handbook 第 15 章『Spanning trees』（Union-find）
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **CPH 15.2 並查集（書上印的 pp.145–146）**
+  - 路徑壓縮與按大小合併；近似 O(α(n))
+- **CP-Algorithms：Disjoint Set Union**
+  - 實作與應用（連通元件、環偵測）
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 51 | CPH 15.2 並查集（書上印的 pp.145–146） | Union-Find：路徑壓縮 + 按大小合併；維護集合大小<br>離線處理：先排序再合併（Kruskal 的基礎） | `d061` 並查集：連通分量、`d150` 第一條形成環的邊 | `uva10608` Friends、`uva459` Graph Connectivity |
+| 52 | CP-Algorithms：Disjoint Set Union | 字串節點→編號的 dict<br>用並查集偵測環：加邊前兩端已在同一組，這條邊就形成環；樹的判斷 = m = n−1 且無環 | `d151` 最大的朋友圈 | `uva11503` Virtual Friends、`uva11902` Dominator<br>**單元檢核** |
 
 **教材：**[CP-Algorithms（演算法百科）](https://cp-algorithms.com/)、[VisuAlgo（演算法動畫）](https://visualgo.net/)
 
@@ -972,8 +1311,20 @@
 **真題（選做；題目到 vjudge／UVA／瘋狂程設閱讀，範例用 `cpe import` 匯入）：**
 - `uva10305` Ordering Tasks、`uva11060` Beverages、`uva10926` How Many Dependencies?
 
-**要讀的章節：**
-- Competitive Programmer's Handbook 第 16 章『Directed graphs』（Topological sorting）
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **CPH 16.1 拓撲排序（書上印的 pp.149–150）**
+  - 入度法（Kahn）與 DFS 法
+- **CPH 16.2 有向圖上的 DP（書上印的 pp.151–153）**
+  - 在 DAG 上依拓撲順序做 DP
+- **CP-Algorithms：Topological Sorting**
+  - 偵測環與唯一性
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 53 | CPH 16.1 拓撲排序（書上印的 pp.149–150）<br>CPH 16.2 有向圖上的 DP（書上印的 pp.151–153） | Kahn 演算法（入度）與 DFS 後序；字典序最小要用 heap<br>DAG 上的 DP（最長路徑） | `d062` 字典序最小的拓撲排序 | `uva10305` Ordering Tasks、`uva11060` Beverages |
+| 54 | CP-Algorithms：Topological Sorting | 依賴關係題：先建圖再想順序<br>分層的 Kahn：每一輪取出所有入度 0 的點，輪數就是最少學期數（DAG 最長路徑的點數） | `d153` 拓撲順序唯一嗎 | `uva10926` How Many Dependencies?<br>**單元檢核** |
 
 **教材：**[CP-Algorithms（演算法百科）](https://cp-algorithms.com/)、[VisuAlgo（演算法動畫）](https://visualgo.net/)
 
@@ -1008,8 +1359,23 @@
 **延伸題庫：**
 - CSES『Graph Algorithms』最短路徑題
 
-**要讀的章節：**
-- Competitive Programmer's Handbook 第 13 章『Shortest paths』
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **CPH 第 13 章 最短路徑（書上印的 pp.123–132）**
+  - Bellman–Ford（負權）、Dijkstra（priority_queue）、Floyd–Warshall（全點對）
+- **CP-Algorithms：Dijkstra on sparse graphs**
+  - 用 heapq 的實作；過期節點要略過
+- **CP-Algorithms：0-1 BFS**
+  - 雙端佇列處理 0／1 權
+- **CP-Algorithms：Bellman-Ford - finding shortest paths with negative weights**
+  - 負環偵測
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 55 | CPH 第 13 章 最短路徑（書上印的 pp.123–132）<br>CP-Algorithms：Dijkstra on sparse graphs | Dijkstra：dist + heapq、lazy deletion；為什麼不能有負權<br>Floyd–Warshall：k 在最外層；O(n³) 適用 n≤400（C++）／n≤100（Python） | `d063` Dijkstra 最短路徑 | `uva10986` Sending email、`uva341` Non-Stop Travel、`uva10171` Meeting Prof. Miguel |
+| 56 | CP-Algorithms：0-1 BFS | 變形：最小化最大邊（minimax）、多源最短路、路徑還原<br>最短路徑計數：Dijkstra 時同時維護 cnt（更短→覆蓋，相等→累加） | `d065` Floyd–Warshall 全點對最短路 | `uva567` Risk、`uva821` Page Hopping |
+| 57 | CP-Algorithms：Bellman-Ford - finding shortest paths with negative weights | 最小瓶頸路徑：最小生成樹上兩點之間的最大邊 | `d154` 最短路徑有幾條 | `uva10099` The Tourist Guide、`uva10048` Audiophobia<br>**單元檢核** |
 
 **教材：**[CP-Algorithms（演算法百科）](https://cp-algorithms.com/)、[VisuAlgo（演算法動畫）](https://visualgo.net/)、[Competitive Programmer's Handbook（免費 PDF）](https://cses.fi/book/book.pdf)
 
@@ -1039,8 +1405,22 @@
 **真題（選做；題目到 vjudge／UVA／瘋狂程設閱讀，範例用 `cpe import` 匯入）：**
 - `uva10034` Freckles、`uva11631` Dark roads、`uva10147` Highways、`uva11747` Heavy Cycle Edges
 
-**要讀的章節：**
-- Competitive Programmer's Handbook 第 15 章『Spanning trees』（Kruskal、Prim）
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **CPH 15.1 Kruskal（書上印的 pp.142–144）**
+  - 排序邊＋並查集
+- **CPH 15.3 Prim（書上印的 pp.147–148）**
+  - 與 Dijkstra 的相似與差別
+- **CP-Algorithms：Minimum Spanning Tree - Kruskal with Disjoint Set Union**
+  - 完整實作
+- **CP-Algorithms：Minimum Spanning Tree - Prim's Algorithm**
+  - 稠密圖的選擇
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 58 | CPH 15.1 Kruskal（書上印的 pp.142–144）<br>CPH 15.3 Prim（書上印的 pp.147–148） | Kruskal：邊排序 + 並查集；Prim：堆積版<br>MST 的性質（切割性質、環性質） | `d064` 最小生成樹 | `uva10034` Freckles、`uva11631` Dark roads |
+| 59 | CP-Algorithms：Minimum Spanning Tree - Kruskal with Disjoint Set Union<br>CP-Algorithms：Minimum Spanning Tree - Prim's Algorithm | 變形：總長減去 MST、次小生成樹（選修）<br>最小生成森林：Kruskal 不需要連通，組數 = n − 成功合併次數 | `d158` 最小生成樹唯一嗎 | `uva10147` Highways、`uva11747` Heavy Cycle Edges<br>**單元檢核** |
 
 **教材：**[CP-Algorithms（演算法百科）](https://cp-algorithms.com/)、[VisuAlgo（演算法動畫）](https://visualgo.net/)
 
@@ -1078,8 +1458,20 @@
 **延伸題庫：**
 - CSES『Dynamic Programming』前 6 題
 
-**要讀的章節：**
-- Competitive Programmer's Handbook 第 7 章『Dynamic programming』（Coin problem）
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **CPH 7.1 找零問題（書上印的 pp.65–69）**
+  - 最佳化版與計數版；由遞迴改成 DP 的過程
+- **CP-Algorithms：Introduction to Dynamic Programming**
+  - 狀態、轉移、順序的系統化想法
+- **Python 文件：functools.lru_cache**
+  - 做記憶化時參數必須可雜湊；遞迴深度仍受限制
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 60 | CPH 7.1 找零問題（書上印的 pp.65–69）<br>CP-Algorithms：Introduction to Dynamic Programming | DP 的四步：定義狀態 → 轉移式 → 初始值 → 答案在哪<br>最大子段和（Kadane）、爬樓梯、零錢（最少枚數／組合數） | `d159` 爬樓梯、`d160` 不能相鄰的最大和、`d071` 最大連續子陣列和 | `uva674` Coin Change、`uva357` Let Me Count The Ways、`uva10684` The jackpot |
+| 61 | Python 文件：functools.lru_cache | 迴圈順序決定『組合』或『排列』<br>貪心 vs DP：何時貪心會錯 | `d066` 硬幣組合數、`d067` 最少硬幣數 | `uva507` Jill Rides Again、`uva10465` Homer Simpson<br>**單元檢核** |
 
 **教材：**[Competitive Programmer's Handbook（免費 PDF）](https://cses.fi/book/book.pdf)、[CP-Algorithms（演算法百科）](https://cp-algorithms.com/)
 
@@ -1113,8 +1505,18 @@
 **延伸題庫：**
 - CSES『Dynamic Programming』背包類題
 
-**要讀的章節：**
-- Competitive Programmer's Handbook 第 7 章（Knapsack）
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **CPH 7.4 背包問題（書上印的 pp.72–73）**
+  - 0-1 背包與一維滾動陣列倒序更新的原因
+- **CP-Algorithms：Knapsack Problem**
+  - 0-1、完全背包與恰好裝滿
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 62 | CPH 7.4 背包問題（書上印的 pp.72–73） | 0/1 背包（容量逆序）、完全背包（容量順序）、恰好裝滿 vs 不超過<br>子集合和、分割等和問題的背包化 | `d068` 0/1 背包 | `uva10130` SuperSale、`uva562` Dividing coins |
+| 63 | CP-Algorithms：Knapsack Problem | 二維→一維滾動陣列 | `d163` 完全背包 | `uva11450` Wedding Shopping<br>**單元檢核** |
 
 **教材：**[Competitive Programmer's Handbook（免費 PDF）](https://cses.fi/book/book.pdf)、[CP-Algorithms（演算法百科）](https://cp-algorithms.com/)
 
@@ -1146,8 +1548,20 @@
 **真題（選做；題目到 vjudge／UVA／瘋狂程設閱讀，範例用 `cpe import` 匯入）：**
 - `uva10131` Is Bigger Smarter?、`uva10405` Longest Common Subsequence、`uva10192` Vacation
 
-**要讀的章節：**
-- Competitive Programmer's Handbook 第 7 章（Longest increasing subsequence、Edit distance）
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **CPH 7.2 最長上升子序列（書上印的 pp.70–70）**
+  - O(n²) 與 O(n log n) 做法
+- **CPH 7.5 編輯距離（書上印的 pp.74–74）**
+  - 二維 DP 的狀態與轉移
+- **CP-Algorithms：Longest increasing subsequence**
+  - 還原答案的做法
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 64 | CPH 7.2 最長上升子序列（書上印的 pp.70–70）<br>CPH 7.5 編輯距離（書上印的 pp.74–74） | LIS O(n²) 與 O(n log n)（tails + bisect）；嚴格 vs 非嚴格<br>LCS 二維表；編輯距離；路徑還原（前驅陣列） | `d069` 最長遞增子序列、`d070` 最長共同子序列 | `uva10131` Is Bigger Smarter?、`uva10405` Longest Common Subsequence |
+| 65 | CP-Algorithms：Longest increasing subsequence | 滾動陣列省空間<br>編輯距離（插入／刪除／替換）、最長回文子序列（= 字串與其反轉的 LCS）、LIS 計數 | `d166` 最長遞增子序列的個數、`d168` 最長回文子序列 | `uva10192` Vacation<br>**單元檢核** |
 
 **教材：**[Competitive Programmer's Handbook（免費 PDF）](https://cses.fi/book/book.pdf)、[CP-Algorithms（演算法百科）](https://cp-algorithms.com/)
 
@@ -1179,8 +1593,18 @@
 **真題（選做；題目到 vjudge／UVA／瘋狂程設閱讀，範例用 `cpe import` 匯入）：**
 - `uva116` Unidirectional TSP、`uva825` Walking on the Safe Side、`uva10337` Flight Planner
 
-**要讀的章節：**
-- Competitive Programmer's Handbook 第 7 章（Paths in a grid）
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **CPH 7.3 網格路徑（書上印的 pp.71–71）**
+  - 格子上的路徑最佳化與計數
+- **CPH 7.6 方塊鋪排計數（書上印的 pp.75–76）**
+  - 網格 DP 的進階入門
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 66 | CPH 7.3 網格路徑（書上印的 pp.71–71） | dp[i][j] 由上與左轉移；邊界處理<br>字典序最小路徑要由後往前 DP（Unidirectional TSP） | `d170` 格子路徑數、`d072` 網格最小路徑和 | `uva116` Unidirectional TSP、`uva825` Walking on the Safe Side |
+| 67 | CPH 7.6 方塊鋪排計數（書上印的 pp.75–76） | 有障礙、有權重、可繞回（列循環）的變形<br>數字三角形（由下往上）、最大全 1 正方形（上、左、左上取最小）、格子路徑數（組合數的 DP 版本） | `d169` 數字三角形、`d091` 有障礙的格子路徑數 | `uva10337` Flight Planner<br>**單元檢核** |
 
 **教材：**[Competitive Programmer's Handbook（免費 PDF）](https://cses.fi/book/book.pdf)
 
@@ -1212,8 +1636,18 @@
 **真題（選做；題目到 vjudge／UVA／瘋狂程設閱讀，範例用 `cpe import` 匯入）：**
 - `uva10003` Cutting Sticks、`uva10304` Optimal Binary Search Tree、`uva10891` Game of Sum
 
-**要讀的章節：**
-- Competitive Programmer's Handbook 第 7 章；搜尋『interval DP』
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **CPH 第 7 章（區間 DP 的概念沿用 DP 的狀態設計）（書上印的 pp.65–76）**
+  - 區間 DP 的轉移是『枚舉分割點』；依區間長度由短到長計算
+- **CP-Algorithms：Introduction to Dynamic Programming**
+  - 回顧；挑區間型的例題對照
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 68 | CPH 第 7 章（區間 DP 的概念沿用 DP 的狀態設計）（書上印的 pp.65–76） | 狀態 dp[l][r]；依區間長度由小到大計算；枚舉分割點<br>矩陣連乘、切木棍、最佳二元搜尋樹、取兩端博弈<br>O(n³) 的規模：Python n≈100 內，C++ n≈400 內 | `d073` 矩陣連乘、`d173` 最少回文切割 | `uva10003` Cutting Sticks、`uva10304` Optimal Binary Search Tree |
+| 69 | CP-Algorithms：Introduction to Dynamic Programming | 石子合併（只能合併相鄰）與 d052 合併成本（任兩堆）的差別——前者是區間 DP，後者是貪心<br>回文切割：先預處理 is_pal[i][j]，再做一維 DP | `d174` 切木棒 | `uva10891` Game of Sum<br>**單元檢核** |
 
 **教材：**[Competitive Programmer's Handbook（免費 PDF）](https://cses.fi/book/book.pdf)、[CP-Algorithms（演算法百科）](https://cp-algorithms.com/)
 
@@ -1241,8 +1675,20 @@
 **真題（選做；題目到 vjudge／UVA／瘋狂程設閱讀，範例用 `cpe import` 匯入）：**
 - `uva10911` Forming Quiz Teams、`uva10032` Tug of War
 
-**要讀的章節：**
-- Competitive Programmer's Handbook 第 7 章（Counting tilings 之前的 bit 技巧）；搜尋『bitmask DP』
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **CPH 10.3 用位元表示集合（書上印的 pp.98–99）**
+  - 集合與遮罩互相轉換
+- **CPH 10.5 位元 DP（書上印的 pp.102–107）**
+  - 子集 DP 與排列 DP
+- **CP-Algorithms：Enumerating submasks of a bitmask**
+  - 子集枚舉的複雜度
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 70 | CPH 10.3 用位元表示集合（書上印的 pp.98–99）<br>CPH 10.5 位元 DP（書上印的 pp.102–107） | dp[mask][i]；O(2^n · n²)；n≤20 的訊號<br>旅行推銷員、指派問題、完美匹配 | `d074` 旅行推銷員（小規模） | `uva10911` Forming Quiz Teams |
+| 71 | CP-Algorithms：Enumerating submasks of a bitmask | 固定最低位未選者來避免重複計數 | `d176` 漢米爾頓路徑數 | `uva10032` Tug of War<br>**單元檢核** |
 
 **教材：**[Competitive Programmer's Handbook（免費 PDF）](https://cses.fi/book/book.pdf)、[CP-Algorithms（演算法百科）](https://cp-algorithms.com/)
 
@@ -1275,8 +1721,25 @@
 **真題（選做；題目到 vjudge／UVA／瘋狂程設閱讀，範例用 `cpe import` 匯入）：**
 - `uva374` Big Mod、`uva10104` Euclid Problem、`uva10127` Ones、`uva583` Prime Factors
 
-**要讀的章節：**
-- Competitive Programmer's Handbook 第 21 章『Number theory』、第 22 章『Combinatorics』
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **CPH 第 21 章 數論（書上印的 pp.197–206）**
+  - 質數與因數、模運算、解方程式
+- **CPH 第 22 章 組合數學（書上印的 pp.207–216）**
+  - 二項式係數、卡特蘭數、容斥原理
+- **CP-Algorithms：Binary Exponentiation**
+  - 快速冪（Python 內建 `pow(a, b, m)` 可直接用）
+- **CP-Algorithms：Modular Inverse**
+  - 模逆元與用法
+- **CP-Algorithms：Binomial Coefficients**
+  - 預處理階乘求組合數
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 72 | CPH 第 21 章 數論（書上印的 pp.197–206）<br>CPH 第 22 章 組合數學（書上印的 pp.207–216） | 模運算規則；快速冪 `pow(a,b,m)` 與手寫；費馬小定理求逆元<br>質因數分解（試除、篩法最小質因數）；歐拉函數 | `d075` 組合數取模、`d177` 快速冪取模 | `uva374` Big Mod、`uva10104` Euclid Problem |
+| 73 | CP-Algorithms：Binary Exponentiation<br>CP-Algorithms：Modular Inverse | 組合數取模：階乘 + 逆元階乘預處理；帕斯卡三角形<br>擴展歐幾里得（選修） | `d178` 模逆元 | `uva10127` Ones |
+| 74 | CP-Algorithms：Binomial Coefficients | 模逆元與擴展歐幾里得（模數不是質數時也能用）<br>篩出最小質因數 spf，批次質因數分解 | `d093` 歐拉函數 | `uva583` Prime Factors<br>**單元檢核** |
 
 **教材：**[CP-Algorithms（演算法百科）](https://cp-algorithms.com/)、[Competitive Programmer's Handbook（免費 PDF）](https://cses.fi/book/book.pdf)
 
@@ -1300,6 +1763,18 @@
 
 **延伸題庫：**
 - Codeforces rating 800–1300，各 tag 各 5 題
+
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **Codeforces 題庫**
+  - 做階段 3 範圍（依 tag：graphs、dp、math）的題
+- **AtCoder ABC**
+  - A–D 題的虛擬賽練習
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 75 | Codeforces 題庫<br>AtCoder ABC | 完整 3 小時模擬；逐題檢討：為什麼沒做出來？缺知識／缺技巧／沒時間／粗心<br>報考 CPE：目標 4 題（A 專業級）<br>完成一個含 pytest 的 CLI 小專案（工程任務） | — | **單元檢核** |
 
 **教材：**[Codeforces 題庫（可依 tag / rating 篩選）](https://codeforces.com/problemset)、[AtCoder（ABC 的 A–D 題）](https://atcoder.jp/)
 
@@ -1335,8 +1810,26 @@
 - `d031` 直到 0 0 為止
 - `d049` 學生排名
 
-**要讀的章節：**
-- learncpp.com 第 0–8 章
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **learncpp 課 0.4–0.7、0.9、0.11–0.12**
+  - 編譯、連結與組態；打開警告；指定標準 -std=c++17
+- **learncpp 課 1.5、4.3–4.6、4.12**
+  - cin／cout；整數型別與溢位；固定寬度整數；static_cast
+- **learncpp 課 6.2–6.3、8.8–8.11**
+  - 整數除法對負數的行為（和 Python 不同）；while 與 for 的寫法
+- **learncpp 課 16.1–16.8、5.7**
+  - vector 與 string 的基本用法（對應 Python 的 list 與 str）
+- **cppreference 的 C++ 語言參考**
+  - 查語法與標準庫用法
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 76 | learncpp 課 0.4–0.7、0.9、0.11–0.12<br>learncpp 課 1.5、4.3–4.6、4.12 | 安裝 g++（Linux/Mac 內建；Windows 用 MinGW/MSYS2）；`g++ -O2 -std=c++17`<br>競程模板：`ios::sync_with_stdio(false); cin.tie(nullptr);`；`int` vs `long long`（溢位！） | `d018` 排序、`d021` 質數判斷 | — |
+| 77 | learncpp 課 6.2–6.3、8.8–8.11 | 輸入輸出、vector、string、迴圈、函式、引用；讀到 EOF：`while (cin >> x)` | `d022` 最大公因數與最小公倍數 | — |
+| 78 | learncpp 課 16.1–16.8、5.7 | 對照翻譯：每題先看自己的 Python 解，再逐行翻成 C++ | `d031` 直到 0 0 為止 | — |
+| 79 | cppreference 的 C++ 語言參考 | 常見落差：整數除法對負數向零取整（Python 是向下取整）、陣列越界不報錯、未初始化變數 | `d049` 學生排名 | **單元檢核** |
 
 **教材：**[learncpp.com（C++ 入門教學）](https://www.learncpp.com/)、[cppreference（C++ 標準庫查詢）](https://en.cppreference.com/)
 
@@ -1369,8 +1862,24 @@
 - `d063` Dijkstra 最短路徑
 - `d064` 最小生成樹
 
-**要讀的章節：**
-- cppreference：<vector>、<algorithm>、<set>、<map>、<queue>
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **CPH 第 4 章 資料結構（4.1–4.5）（書上印的 pp.35–45）**
+  - vector／set／map／deque／priority_queue 與 Python 的對照與複雜度
+- **CPH 3.2 C++ 的排序（書上印的 pp.29–30）**
+  - sort 與自訂比較器
+- **learncpp 課 18.2–18.3**
+  - 迭代器與標準演算法
+- **cppreference：<vector> <algorithm> <set> <map> <queue>**
+  - 查成員函式與複雜度保證
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 80 | CPH 第 4 章 資料結構（4.1–4.5）（書上印的 pp.35–45） | vector、sort（含 lambda）、lower_bound / upper_bound、unique | `d047` 第一個不小於 x 的位置、`d052` 合併成本 | — |
+| 81 | CPH 3.2 C++ 的排序（書上印的 pp.29–30） | set / map / unordered_map、priority_queue（預設最大堆積）、deque / stack / queue、pair / tuple、bitset | `d053` 滑動視窗最大值、`d060` 迷宮最短路 | — |
+| 82 | learncpp 課 18.2–18.3 | 複雜度：map 是 O(log n)，unordered_map 平均 O(1) | `d063` Dijkstra 最短路徑 | — |
+| 83 | cppreference：<vector> <algorithm> <set> <map> <queue> | 把 d047、d052、d053、d060、d063、d064 都用 C++ 重寫 | `d064` 最小生成樹 | **單元檢核** |
 
 **教材：**[cppreference（C++ 標準庫查詢）](https://en.cppreference.com/)、[learncpp.com（C++ 入門教學）](https://www.learncpp.com/)
 
@@ -1399,6 +1908,23 @@
 - `d076` 最長共同子序列（大）
 - `d077` 質數個數（大）
 - `d078` 背包（大）
+
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **CPH 第 2 章 時間複雜度（書上印的 pp.17–23）**
+  - 回顧：C++ 約每秒 10^8 次簡單運算，Python 約 10^7
+- **learncpp 課 18.4**
+  - 量測自己程式的執行時間
+- **cppreference：<chrono>**
+  - 用 chrono 量測
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 84 | CPH 第 2 章 時間複雜度（書上印的 pp.17–23） | 10^8 規則：C++ 約 10^8 次簡單運算／秒；Python 約 10^7 | `d076` 最長共同子序列（大） | — |
+| 85 | learncpp 課 18.4 | 記憶體估算：int 4 byte、long long 8 byte；10^7 個 int = 40MB | `d077` 質數個數（大） | — |
+| 86 | cppreference：<chrono> | 快速 I/O；避免 endl；預先配置陣列 | `d078` 背包（大） | — |
+| 87 | — | 把『Python 超時』的題（d076–d079）全部翻成 C++ 並通過 | — | **單元檢核** |
 
 **教材：**[Competitive Programmer's Handbook（免費 PDF）](https://cses.fi/book/book.pdf)、[cppreference（C++ 標準庫查詢）](https://en.cppreference.com/)
 
@@ -1434,8 +1960,26 @@
 **真題（選做；題目到 vjudge／UVA／瘋狂程設閱讀，範例用 `cpe import` 匯入）：**
 - `uva191` Intersection、`uva378` Intersecting Lines、`uva11437` Triangle Fun、`uva681` Convex Hull Finding、`uva11626` Convex Hull、`uva10065` Useless Tile Packers
 
-**要讀的章節：**
-- Competitive Programmer's Handbook 第 29 章『Geometry』
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **CPH 第 29 章 幾何（書上印的 pp.265–274）**
+  - 複數與點線、多邊形面積、距離函數
+- **CPH 第 30 章 掃描線演算法（書上印的 pp.275–280）**
+  - 交點、最近點對、凸包
+- **CP-Algorithms：Basic Geometry**
+  - 叉積與點積；能用整數就不用浮點
+- **CP-Algorithms：Check if two segments intersect**
+  - 含共線與端點
+- **CP-Algorithms：Convex hull construction**
+  - Andrew monotone chain
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 88 | CPH 第 29 章 幾何（書上印的 pp.265–274）<br>CPH 第 30 章 掃描線演算法（書上印的 pp.275–280） | 向量、叉積（方向）、點積；三點共線；整數幾何優先<br>線段相交（含端點、共線）；點在多邊形內（射線法）；多邊形面積（鞋帶公式） | `d082` 多邊形面積、`d181` 三角形的面積與種類 | `uva191` Intersection、`uva378` Intersecting Lines |
+| 89 | CP-Algorithms：Basic Geometry | 凸包（Andrew monotone chain）<br>浮點誤差：eps 的使用；盡量用整數 | `d183` 兩個矩形的交集面積、`d184` 兩圓的關係 | `uva11437` Triangle Fun、`uva681` Convex Hull Finding |
+| 90 | CP-Algorithms：Check if two segments intersect | 全整數幾何：叉積判方向、內積判角度、距離比較用平方——不要用 sqrt 與浮點 | `d081` 線段相交 | `uva11626` Convex Hull |
+| 91 | CP-Algorithms：Convex hull construction | 點在多邊形內（射線法與邊上的判斷）、矩形交集、兩圓關係 | `d080` 凸包 | `uva10065` Useless Tile Packers<br>**單元檢核** |
 
 **教材：**[CP-Algorithms（演算法百科）](https://cp-algorithms.com/)
 
@@ -1465,8 +2009,26 @@
 - `d186` 樹的直徑
 - `d090` 最大流（選修）
 
-**要讀的章節：**
-- Competitive Programmer's Handbook 第 17 章『Strong connectivity』、第 20 章『Flows and cuts』
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **CPH 第 17 章 強連通（書上印的 pp.157–162）**
+  - Kosaraju；2SAT
+- **CPH 第 20 章 流與割（書上印的 pp.181–196）**
+  - Ford–Fulkerson；不相交路徑；最大匹配；路徑覆蓋
+- **CP-Algorithms：Strongly Connected Components and Condensation Graph**
+  - 縮點圖
+- **CP-Algorithms：Maximum flow - Dinic's algorithm**
+  - 分層圖與阻塞流
+- **CP-Algorithms：Kuhn's Algorithm - Maximum Bipartite Matching**
+  - 增廣路徑
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 92 | CPH 第 17 章 強連通（書上印的 pp.157–162）<br>CPH 第 20 章 流與割（書上印的 pp.181–196） | Bellman-Ford 與負環偵測；SPFA 的風險<br>強連通分量（Kosaraju / Tarjan）；縮點成 DAG | `d088` 負權邊與負環 | — |
+| 93 | CP-Algorithms：Strongly Connected Components and Condensation Graph | 最大流入門（Edmonds–Karp）——CPE 少考，建立概念即可 | `d089` 強連通分量 | — |
+| 94 | CP-Algorithms：Maximum flow - Dinic's algorithm | 無向圖的橋與關節點（選修） | `d186` 樹的直徑 | — |
+| 95 | CP-Algorithms：Kuhn's Algorithm - Maximum Bipartite Matching | 樹的直徑（雙 BFS）與最近共同祖先（倍增）；樹一律寫成迭代 | `d090` 最大流（選修） | **單元檢核** |
 
 **教材：**[CP-Algorithms（演算法百科）](https://cp-algorithms.com/)、[VisuAlgo（演算法動畫）](https://visualgo.net/)
 
@@ -1500,8 +2062,26 @@
 **真題（選做；題目到 vjudge／UVA／瘋狂程設閱讀，範例用 `cpe import` 匯入）：**
 - `uva10010` Where's Waldorf?、`uva401` Palindromes、`uva11221` Magic Square Palindromes、`uva10115` Automatic Editing
 
-**要讀的章節：**
-- Competitive Programmer's Handbook 第 26 章『String algorithms』
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **CPH 第 26 章 字串演算法（書上印的 pp.243–250）**
+  - Trie；字串雜湊；Z 演算法
+- **CP-Algorithms：Prefix function - Knuth-Morris-Pratt**
+  - 字首函數與 KMP
+- **CP-Algorithms：Z-function**
+  - 與字首函數的關係
+- **CP-Algorithms：String Hashing**
+  - 雙模數與衝突機率
+- **CP-Algorithms：Aho-Corasick algorithm**
+  - 多模式匹配（選讀）
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 96 | CPH 第 26 章 字串演算法（書上印的 pp.243–250）<br>CP-Algorithms：Prefix function - Knuth-Morris-Pratt | 前綴函數（KMP 失敗函數）與週期；Z 函數（選修）<br>迴文：中心擴展、Manacher | `d083` 最短週期、`d084` 最長迴文子字串 | `uva10010` Where's Waldorf? |
+| 97 | CP-Algorithms：Z-function | 字串雜湊（選修）；Trie（選修） | `d189` 樣式出現次數 | `uva401` Palindromes |
+| 98 | CP-Algorithms：String Hashing | 運算式解析：遞迴下降（expr / term / factor） | `d190` 前綴相似度總和 | `uva11221` Magic Square Palindromes |
+| 99 | CP-Algorithms：Aho-Corasick algorithm | KMP 計數（可重疊）、Z 函數與前綴相似度、排序＋二分的前綴查詢（或字典樹） | `d095` 運算式求值 | `uva10115` Automatic Editing<br>**單元檢核** |
 
 **教材：**[CP-Algorithms（演算法百科）](https://cp-algorithms.com/)
 
@@ -1534,8 +2114,22 @@
 **真題（選做；題目到 vjudge／UVA／瘋狂程設閱讀，範例用 `cpe import` 匯入）：**
 - `uva10404` Bachet's Game
 
-**要讀的章節：**
-- Competitive Programmer's Handbook 第 14 章『Tree algorithms』、第 25 章『Game theory』
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **CPH 第 14 章 樹演算法（書上印的 pp.133–140）**
+  - 樹的遍歷、直徑、所有最長路徑、二元樹
+- **CPH 第 25 章 博弈論（書上印的 pp.235–242）**
+  - 博弈狀態、Nim、Sprague–Grundy
+- **CP-Algorithms：Sprague-Grundy theorem. Nim**
+  - SG 函數的計算
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 100 | CPH 第 14 章 樹演算法（書上印的 pp.133–140） | 樹 DP（選／不選）、換根（選修）；用迭代避免遞迴深度問題<br>數位 DP：貼上界旗標 tight | `d085` 樹上最大獨立集 | `uva10404` Bachet's Game |
+| 101 | CPH 第 25 章 博弈論（書上印的 pp.235–242） | 博弈 DP：必勝／必敗狀態、Nim（選修）<br>格子路徑計數與取模 | `d092` 取石子遊戲 | — |
+| 102 | CP-Algorithms：Sprague-Grundy theorem. Nim | 樹上最大路徑和：每個點維護『往下最大』與『最大兩條的和』 | `d193` Nim 遊戲 | — |
+| 103 | — | Nim 與 XOR：先手必勝 ⇔ 所有堆的 XOR 不為 0 | `d094` 數位 DP | **單元檢核** |
 
 **教材：**[Competitive Programmer's Handbook（免費 PDF）](https://cses.fi/book/book.pdf)、[CP-Algorithms（演算法百科）](https://cp-algorithms.com/)
 
@@ -1565,8 +2159,24 @@
 - `d087` 區間最小值
 - `d195` 動態區間和
 
-**要讀的章節：**
-- Competitive Programmer's Handbook 第 9 章『Range queries』、第 28 章『More segment trees』
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **CPH 9.2–9.4（書上印的 pp.86–94）**
+  - BIT、線段樹與其他技巧
+- **CPH 第 28 章 線段樹再探（書上印的 pp.257–264）**
+  - 懶標、動態樹、二維
+- **CP-Algorithms：Fenwick Tree**
+  - 區間更新與二維版本
+- **CP-Algorithms：Segment Tree**
+  - 遞迴與非遞迴寫法、懶標
+- **CP-Algorithms：Sparse Table**
+  - O(1) 區間最值
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 104 | CPH 9.2–9.4（書上印的 pp.86–94）<br>CPH 第 28 章 線段樹再探（書上印的 pp.257–264）<br>CP-Algorithms：Fenwick Tree | Sparse Table（RMQ）；樹狀陣列 BIT；線段樹（選修）<br>分治：合併排序算逆序對 | `d086` 逆序數對、`d087` 區間最小值 | — |
+| 105 | CP-Algorithms：Segment Tree<br>CP-Algorithms：Sparse Table | 座標壓縮<br>樹狀陣列（BIT）與線段樹：支援『修改』的區間查詢；稀疏表只能處理靜態資料 | `d195` 動態區間和 | **單元檢核** |
 
 **教材：**[CP-Algorithms（演算法百科）](https://cp-algorithms.com/)、[Competitive Programmer's Handbook（免費 PDF）](https://cses.fi/book/book.pdf)
 
@@ -1589,6 +2199,18 @@
 
 **延伸題庫：**
 - CPE 歷屆三、四顆星題，按答對率排序，由高到低
+
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **CPE 官網**
+  - 實際報考：把階段 4 的成績記下來
+- **CPH 1.6 競賽與資源（書上印的 pp.15–16）**
+  - 賽後檢討
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 106 | CPE 官網<br>CPH 1.6 競賽與資源（書上印的 pp.15–16） | 完整 3 小時模擬考；用 C++ 解需要效能的題、用 Python 解實作題<br>報考 CPE：目標 5 題（A 專業級上緣） | — | **單元檢核** |
 
 **教材：**[CPE 官網（歷屆題目與答對率）](https://cpe.mcu.edu.tw/)
 
@@ -1617,6 +2239,23 @@
 - 每週一場完整模擬（3 小時），賽後必檢討每一題
 - `cpe mock start --kind full` 會從內建題庫（每題的測資都經過獨立解與錯誤解驗證）抽 7 題：3 題 ★、2 題 ★★、1 題 ★★★、1 題 ★★★★；加 `--real` 只出有英文題目的題
 
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **CPE 官網『考生使用手冊』與歷屆題目**
+  - 考場環境、題目語言與計分規則；ICPC 計分（罰時 20 分鐘）
+- **CPH 1.6 競賽與資源（書上印的 pp.15–16）**
+  - 比賽策略與資源
+- **歷屆整場模擬（本系統『考試』頁）**
+  - 練習讀題順序：先看全部題目、先做最有把握的
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 107 | CPE 官網『考生使用手冊』與歷屆題目 | 考場流程：先花 5 分鐘掃過所有題，從最簡單的開始（前三題通常最簡單）<br>時間分配：前 3 題 ≤ 60 分鐘；卡住 20 分鐘就換題 | — | — |
+| 108 | CPH 1.6 競賽與資源（書上印的 pp.15–16） | 自己的模板：C++ 模板、Python I/O 模板、對拍腳本 | — | — |
+| 109 | 歷屆整場模擬（本系統『考試』頁） | 除錯清單：邊界、溢位、初始化、多組測資是否清空、輸出格式 | — | — |
+| 110 | — | 用 `cpe stress` 對拍找反例；用 `cpe mock start` 每週一場 | — | **單元檢核** |
+
 **教材：**[CPE 官網（歷屆題目與答對率）](https://cpe.mcu.edu.tw/)
 
 **自我檢查（不看資料回答）：**
@@ -1636,6 +2275,23 @@
 **延伸題庫：**
 - CPE 歷屆全體答對率 5%–20% 的題目
 - Codeforces rating 1200–1600，指定弱點 tag
+
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **依自己的弱點回到對應章節（見統計頁或 `cpe weak`）**
+  - 用統計頁的弱點排序決定重讀哪一章；重讀時只做『我之前錯過的類型』
+- **CPE 官網歷屆題目**
+  - 挑弱點對應主題的歷屆題補強
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 111 | 依自己的弱點回到對應章節（見統計頁或 `cpe weak`） | `cpe weak`（或統計頁的『主題弱點』）依你的失敗次數、提示與重練失敗，列出最卡的主題；今日計畫會自動多排這些主題的題 | — | — |
+| 112 | CPE 官網歷屆題目 | 每個弱點主題：重讀教材 → 做 10 題 → 重寫 → 考試 | — | — |
+| 113 | — | 整理『錯題本』：每題寫下最初的錯誤想法與正確想法 | — | — |
+| 114 | — | — | — | — |
+| 115 | — | — | — | — |
+| 116 | — | — | — | **單元檢核** |
 
 **教材：**[CPE 官網（歷屆題目與答對率）](https://cpe.mcu.edu.tw/)、[Codeforces 題庫（可依 tag / rating 篩選）](https://codeforces.com/problemset)
 
@@ -1658,6 +2314,25 @@
 - Codeforces rating 1400–1800
 - 內建的 ★★★★ 題當熱身：d074 旅行推銷員、d080 凸包、d081 線段相交、d088 負環、d089 強連通分量、d094 數位 DP、d187 LCA、d194 樹上最大路徑、d196 線段樹、e403 分層最短路——限時 60 分鐘，失敗後走提示階梯，24 小時後重寫
 
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **CPE 官網答對率低的歷屆題**
+  - 挑答對率最低的題：先分析為什麼低（題意陷阱、複雜實作、冷門演算法）
+- **Codeforces 依 tag 與 rating 篩選**
+  - rating 1600–2000 的題是低答對率題的練習來源
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 117 | CPE 官網答對率低的歷屆題 | 歷屆題中，答對率低於 5% 的題目通常是進階 DP／圖論／幾何／長模擬 | — | — |
+| 118 | Codeforces 依 tag 與 rating 篩選 | 做法：限時 60 分鐘 → 失敗後走提示階梯 → 24 小時後重寫 | — | — |
+| 119 | — | 建立題型卡片：看到什麼特徵 → 想到什麼演算法 | — | — |
+| 120 | — | — | — | — |
+| 121 | — | — | — | — |
+| 122 | — | — | — | — |
+| 123 | — | — | — | — |
+| 124 | — | — | — | **單元檢核** |
+
 **教材：**[CPE 官網（歷屆題目與答對率）](https://cpe.mcu.edu.tw/)、[Codeforces 題庫（可依 tag / rating 篩選）](https://codeforces.com/problemset)
 
 **自我檢查（不看資料回答）：**
@@ -1678,6 +2353,23 @@
 - 自己出模擬：`cpe mock start`（內建題庫抽題）；也用歷屆題組出整場
 - 把每場模擬的題目、卡關點、解法分類記進錯題本（`cpe err`），週末照『弱點修補』的方法補
 
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **CPE 官網歷屆整場**
+  - 每週一次 180 分鐘全真模擬，賽後逐題檢討：錯在讀題、演算法、還是實作
+- **CPH 1.6 競賽與資源（書上印的 pp.15–16）**
+  - 賽後整理方法
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 125 | CPE 官網歷屆整場 | 每週一場 3 小時全真模擬（ICPC 計分），賽後 2 小時檢討 | — | — |
+| 126 | CPH 1.6 競賽與資源（書上印的 pp.15–16） | 模擬環境：關閉 AI 與搜尋、只開字典；用考場同版本 Python 3.9 | — | — |
+| 127 | — | 目標：連續 3 場至少 2 場達到 6 題 | — | — |
+| 128 | — | — | — | — |
+| 129 | — | — | — | — |
+| 130 | — | — | — | **單元檢核** |
+
 **教材：**[CPE 官網（歷屆題目與答對率）](https://cpe.mcu.edu.tw/)
 
 **自我檢查（不看資料回答）：**
@@ -1695,6 +2387,19 @@
 - 考前一週清單：睡眠、環境測試、模板、字典
 - 整理作品集：3 個專案（含 README、測試、說明）；把這個學習系統本身整理成作品
 - 規劃下一步：實習、LeetCode／系統設計、專案經驗
+
+**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）
+- **CPE 官網報名與考生使用手冊**
+  - 報名時程與考場規則
+- **Pro Git：Git Basics 一章**
+  - 把學習紀錄與作品整理成版本控制的專案
+
+**每週安排**
+
+| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |
+|---|---|---|---|---|
+| 131 | CPE 官網報名與考生使用手冊 | 考前一週清單：睡眠、環境測試、模板、字典<br>整理作品集：3 個專案（含 README、測試、說明）；把這個學習系統本身整理成作品 | — | — |
+| 132 | Pro Git：Git Basics 一章 | 規劃下一步：實習、LeetCode／系統設計、專案經驗 | — | **實際報考** |
 
 **教材：**[Pro Git（繁中）](https://git-scm.com/book/zh-tw/v2)
 
@@ -1724,5 +2429,6 @@
 - [learncpp.com（C++ 入門教學）](https://www.learncpp.com/)
 - [cppreference（C++ 標準庫查詢）](https://en.cppreference.com/)
 - [Pro Git（繁中）](https://git-scm.com/book/zh-tw/v2)
+- [Python 標準函式庫文件（繁中）](https://docs.python.org/zh-tw/3/library/index.html)
 
 _網址可能變動，失效請自行搜尋名稱；章節編號以教材目錄為準。_

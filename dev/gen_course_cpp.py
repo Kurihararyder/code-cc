@@ -32,12 +32,12 @@ def lessons_ok(spec):
     return None
 
 
-def readings_errors(n, title, rs):
+def readings_errors(n, title, rs, res_keys=None):
     errs = []
     if not rs:
         errs.append(f"單元 {n}《{title}》: 沒有閱讀")
     for src, where, focus, pages in rs:
-        if src not in C.RES and src not in RD.EXTRA_RES:
+        if src not in (res_keys if res_keys is not None else set(C.RES) | set(RD.EXTRA_RES)):
             errs.append(f"單元 {n}: 不認得的來源 {src}")
         if not focus:
             errs.append(f"單元 {n}: {src} 沒有重點")
@@ -54,7 +54,7 @@ def readings_errors(n, title, rs):
     return errs
 
 
-SHORT = {"learncpp": "learncpp 課 ", "cphb": "", "cpalgo": "CP-Algorithms：", "tour": "", "emcpp": "", "cpp_guide": "", "csapp": "", "cmake": "",
+SHORT = {"pytut": "Python 教學 ", "learncpp": "learncpp 課 ", "cphb": "", "cpalgo": "CP-Algorithms：", "tour": "", "emcpp": "", "cpp_guide": "", "csapp": "", "cmake": "",
          "gtest": "", "progit": "", "clrs": "", "cppref": "", "godbolt": "", "gbench": "", "ir_book": "", "redblob": "", "ch_paper": "", "deflate": "",
          "mahoney": "", "sa_paper": "", "ctci": "", "ddia": "", "cpe": "", "cf": ""}
 

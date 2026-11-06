@@ -60,7 +60,7 @@ async function openUnit(n) {
       D.past_pool ? pastPool(D.past_pool, close) : null,
       D.cpe_pool ? pastPool(D.cpe_pool, close, { title: "CPE 原題", limit: 40, unit: D.n, missing: "尚未匯入", empty: "還沒有匯入 CPE 原題。到「考試」頁按『從 GitHub 匯入』（需要連網），這裡就會列出可以練的題。" }) : null,
       g ? h("div", { class: "callout mt" }, icon("target"), h("div", null, h("b", { text: "單元檢核" }), h("div", { class: "small", text: g.type === "mock" ? `模擬考（${g.kind}），至少答對 ${g.need} 題` : `${g.minutes} 分鐘、不看提示，${g.problems.map((p) => p.id).join("、")}，至少答對 ${g.need} 題${g.lang === "cpp" ? "（C++）" : ""}` }))) : h("div", { class: "callout mt" }, icon("flag" in {} ? "flag" : "target"), h("span", { text: "這個單元的檢核是實際報考 CPE。" })),
-      sec("常見陷阱", D.pitfalls), sec("自我檢查（不看資料回答）", D.check), sec("要讀的章節", D.read), sec("延伸題庫", D.pool),
+      sec("常見陷阱", D.pitfalls), sec("自我檢查（不看資料回答）", D.check), sec("要讀的章節與重點", D.read), sec("每週安排", D.weekly_text), sec("延伸題庫", D.pool),
       D.resources.length ? h("div", { class: "mt" }, h("h4", { text: "教材" }), h("ul", { class: "small" }, D.resources.map((r) => h("li", null, h("a", { href: r.url, target: "_blank", rel: "noopener noreferrer" }, r.name, " ", icon("external")))))) : null,
       h("div", { class: "row wrap mt-lg" },
         D.status === "current" ? h("button", { class: "btn primary", onclick: () => { close(); go("/practice"); } }, icon("play"), "去練習") : null,

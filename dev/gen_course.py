@@ -1,11 +1,14 @@
 """產生 course.json、problems_extra.json 與 COURSE.md。"""
 import json
+import re
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(Path(__file__).parent))
 import course_data as C  # noqa: E402
+import course_py_readings as PR  # noqa: E402
+import gen_course_cpp as G  # noqa: E402
 
 DATA = ROOT / "cpe_coach" / "data"
 
@@ -37,6 +40,57 @@ EXTRA = [  # (編號, 標題, 階段, 難度, 主題)
 ]
 
 
+SEC = re.compile(r"^(\d+(?:\.\d+)*)(?:–(\d+(?:\.\d+)*))?$")
+
+
+def py_reading_errors(n, title, rs):
+    """Python 官方教學的章節號都要存在；其餘來源（CPH 頁碼、CP-Algorithms 標題、learncpp 課號）用共用的驗證。"""
+    errs = G.readings_errors(n, title, rs, res_keys=set(C.RES) | set(PR.EXTRA_RES))
+    for src, where, focus, pages in rs:
+        if src != "pytut":
+            continue
+        for tok in [t.strip() for t in where.split("、") if t.strip()]:
+            m = SEC.match(tok)
+            if not m:
+                errs.append(f"單元 {n}: 看不懂的章節號 {tok}")
+                continue
+            a, b = m.group(1), m.group(2)
+            for x in (a, b):
+                if x and x not in PR.PYTUT:
+                    errs.append(f"單元 {n}: Python 教學沒有 {x} 這一節")
+            if b and a.split(".")[0] != b.split(".")[0]:
+                errs.append(f"單元 {n}: {tok} 跨章")
+    return errs
+
+
+def weekly_py(u):
+    w = u["weeks"]
+    rs, ls, ds, an = G.split(u["readings"], w), G.split(u["learn"], w), G.split(u["drills"], w), G.split(u["anchors"], w)
+    out = []
+    for i in range(w):
+        last = i == w - 1
+        out.append({"week": u["start"] + i, "readings": [r["label"] for r in rs[i]], "learn": ls[i], "drills": ds[i], "anchors": an[i], "gate": last})
+    return out
+
+
+def merge_readings(units):
+    errs = []
+    for u in units:
+        rs = PR.R.get(u["n"], [])
+        errs += py_reading_errors(u["n"], u["title"], rs)
+        if not rs:
+            errs.append(f"單元 {u['n']}: 沒有閱讀")
+        u["readings"] = [{"src": a, "where": b, "focus": c, "pages": list(p) if p else None, "label": G.label(a, b)} for a, b, c, p in rs]
+        u["read"] = [f"{r['label']}：{'；'.join(r['focus'])}" for r in u["readings"]]      # 舊欄位：介面「要讀的章節」直接顯示
+        u["weekly"] = weekly_py(u)
+        u["weekly_text"] = [f"第 {w['week']} 週：" + "；".join(x for x in (
+            ("讀 " + "、".join(w["readings"])) if w["readings"] else "", ("題 " + "、".join(w["drills"])) if w["drills"] else "",
+            ("真題 " + "、".join(w["anchors"])) if w["anchors"] else "", "單元檢核" if w["gate"] else "") if x) for w in u["weekly"]]
+    if errs:
+        print("\n".join(errs))
+        sys.exit(1)
+
+
 def main():
     extra = [{"id": f"uva{n}", "title": t, "source": "UVA", "number": n, "stage": s, "difficulty": d, "topic": top,
               "hint_category": f"這題的主題：{top}。", "hint_insight": None,
@@ -48,8 +102,9 @@ def main():
     for i, u in enumerate(C.UNITS, 1):
         u["n"], u["start"] = i, w
         w += u["weeks"]
+    merge_readings(C.UNITS)
     course = {"rhythm": [{"day": a, "name": b, "what": c} for a, b, c in C.RHYTHM],
-              "resources": {k: {"name": v[0], "url": v[1]} for k, v in C.RES.items()},
+              "resources": {k: {"name": v[0], "url": v[1]} for k, v in dict(C.RES, **PR.EXTRA_RES).items()},
               "total_weeks": w - 1, "units": C.UNITS}
     (DATA / "course.json").write_text(json.dumps(course, ensure_ascii=False, indent=1), encoding="utf-8")
     write_md(course)
@@ -124,8 +179,18 @@ def write_md(course):
             o += ["**真題（選做；題目到 vjudge／UVA／瘋狂程設閱讀，範例用 `cpe import` 匯入）：**", "- " + "、".join(name(a) for a in u["anchors"]), ""]
         if u["pool"]:
             o += ["**延伸題庫：**"] + [f"- {x}" for x in u["pool"]] + [""]
-        if u.get("read"):
-            o += ["**要讀的章節：**"] + [f"- {x}" for x in u["read"]] + [""]
+        o += ["**閱讀與重點**（頁碼是書上印的頁碼；章節號是 Python 官方教學的章節；課號是 learncpp 的課）"]
+        for r in u["readings"]:
+            o.append(f"- **{r['label']}**")
+            o += [f"  - {f}" for f in r["focus"]]
+        o += ["", "**每週安排**", "", "| 週 | 閱讀 | 學習重點 | 必做練習 | 真題／檢核 |", "|---|---|---|---|---|"]
+        for wk in u["weekly"]:
+            tail = ["、".join(name(x) for x in wk["anchors"])] if wk["anchors"] else []
+            if wk["gate"]:
+                tail.append("**單元檢核**" if u["gate"] else "**實際報考**")
+            o.append("| {w} | {r} | {l} | {d} | {t} |".format(w=wk["week"], r="<br>".join(wk["readings"]) or "—", l="<br>".join(wk["learn"]) or "—",
+                                                            d="、".join(name(x) for x in wk["drills"]) or "—", t="<br>".join(tail) or "—"))
+        o.append("")
         if u["resources"]:
             o += ["**教材：**" + "、".join(f"[{res[r]['name']}]({res[r]['url']})" for r in u["resources"]), ""]
         if u["pitfalls"]:

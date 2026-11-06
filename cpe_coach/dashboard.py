@@ -163,7 +163,7 @@ def unit_detail(ws: Workspace, bank: Dict[str, dict], course: Dict[str, Any], n:
         g = u["gate"]
         gate = {**g, "problems": [prob(x, "檢核") for x in g.get("problems", [])]}
     return {**_unit_stub(u), "goal": u["goal"], "learn": u["learn"], "pitfalls": u["pitfalls"], "check": u["check"],
-            "read": u.get("read", []), "pool": u["pool"], "eng": u["eng"],
+            "read": u.get("read", []), "weekly_text": u.get("weekly_text", []), "pool": u["pool"], "eng": u["eng"],
             "resources": [course["resources"][r] for r in u["resources"]],
             "drills": [prob(d, "必做") for d in u["drills"]], "anchors": [prob(a, "真題") for a in u["anchors"]],
             "gate": gate, "past_pool": pastexams.unit_pool(ws, bank, n), "cpe_pool": cpeset.unit_pool(ws, bank, n),
