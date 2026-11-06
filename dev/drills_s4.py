@@ -28,7 +28,7 @@ D("d078", "背包（大）", 4, "DP／效能",
   "第一行 n W；接著 n 行 `w v`。", "一個整數。",
   "背包（C++ 練習）", "5×10^7 次轉移。Python 迴圈會超時，C++ 幾十毫秒。",
   "n,W=map(int,input().split());dp=[0]*(W+1)\nfor _ in range(n):\n    w,v=map(int,input().split())\n    if w<=W: dp[w:]=[a if a>b+v else b+v for a,b in zip(dp[w:],dp)]\nprint(dp[W])",
-  ["3 50\n10 60\n20 100\n30 120\n", "1 5\n6 100\n",
+  ["3 50\n10 60\n20 100\n30 120\n", "1 5\n6 100\n", "2 8\n8 12\n5 11\n", "1 50000\n50000 7\n",
    (lambda r: lines("1000 50000", *[f"{r.randint(1,2000)} {r.randint(1,10**6)}" for _ in range(1000)]))(rng(78))],
   "狀態數 × 轉移數 = 運算量。10^8 以內 C++ 安全，Python 約 10^7 就危險。", diff=3, timeout=90)
 

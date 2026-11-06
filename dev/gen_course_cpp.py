@@ -135,6 +135,10 @@ def validate(units, bank_ids, reserve):
 
 
 def main():
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")                     # Windows 主控台是 cp1252：不重設的話印中文會失敗
+    except (AttributeError, OSError):
+        pass
     bank = json.loads((DATA / "drills" / "index.json").read_text(encoding="utf-8"))
     ids = {d["id"] for d in bank}
     reserve = {d["id"] for d in bank if d.get("reserve")}
