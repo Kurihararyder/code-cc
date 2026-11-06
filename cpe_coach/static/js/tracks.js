@@ -9,7 +9,8 @@ export const TRACKS = [["py", "Python"], ["cpp", "C++"], ["verilog", "Verilog"],
 
 export function trackTabs(cur) {
   return h("div", { class: "seg", role: "tablist", "aria-label": "課程軌道" },
-    TRACKS.map(([k, n]) => h("button", { role: "tab", "aria-selected": String(k === cur), onclick: () => go(k === "py" ? "/course" : "/course/" + k) }, n)));
+    [...TRACKS.map(([k, n]) => h("button", { role: "tab", "aria-selected": String(k === cur), onclick: () => go(k === "py" ? "/course" : "/course/" + k) }, n)),
+      h("button", { role: "tab", "aria-selected": "false", onclick: () => go("/guide") }, "指南")]);
 }
 
 export async function mountTrack(view, params) {

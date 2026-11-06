@@ -12,7 +12,8 @@ export async function mountStudy(view, params) {
   const tab = TABS.some(([k]) => k === params[0]) ? params[0] : "insights";
   const body = h("div", { id: "studyBody" }, h("div", { class: "card pad" }, skeleton(5)));
   const tabs = h("div", { class: "seg", role: "tablist", "aria-label": t("學習") }, TABS.map(([k, label]) => h("button", { role: "tab", "aria-selected": String(k === tab), onclick: () => go("/study/" + k) }, t(label))));
-  view.append(h("div", { class: "page" }, h("div", { class: "page-head" }, h("div", null, h("h1", { text: t("學習") }), h("p", { text: "記憶、知識點、診斷、練習、目標，都從你的紀錄算出來。" }))), tabs, body));
+  view.append(h("div", { class: "page" }, h("div", { class: "page-head" }, h("div", null, h("h1", { text: t("學習") }), h("p", { text: "記憶、知識點、診斷、練習、目標，都從你的紀錄算出來。" })),
+    h("button", { class: "btn", onclick: () => go("/guide") }, "學習指南測驗")), tabs, body));
   try {
     const fn = { insights, lab, notes, goal }[tab];
     await fn(body);

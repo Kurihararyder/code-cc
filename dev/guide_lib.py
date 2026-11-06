@@ -6,9 +6,11 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import random
 import shutil
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -53,20 +55,35 @@ def run_verify(v: Dict[str, str]) -> str:
             return _run(["tclsh", "t.tcl"], d)
         if lang == "py":
             Path(d, "t.py").write_text(code, encoding="utf-8")
-            return _run(["python3", "-I", "t.py"], d)
+            return _run([sys.executable, "-I", "t.py"], d)
         if lang == "verilog":
             Path(d, "t.v").write_text(code, encoding="utf-8")
             _run(["iverilog", "-g2012", "-o", "sim", "t.v"], d)
             return _run(["vvp", "-n", "sim"], d)
         if lang == "cpp":
             Path(d, "t.cpp").write_text(code, encoding="utf-8")
-            _run(["g++", "-std=c++17", "-O0", "-o", "t", "t.cpp"], d, 120)
-            return _run(["./t"], d)
+            exe = "t.exe" if os.name == "nt" else "t"
+            _run(["g++", "-std=c++17", "-O0", "-o", exe, "t.cpp"], d, 120)
+            return _run([str(Path(d, exe))], d)
     raise ValueError("verify.lang 只能是 tcl／py／verilog／cpp")
 
 
+_cpp_ok: Optional[bool] = None
+
+
 def available(lang: str) -> bool:
-    need = {"tcl": ["tclsh"], "py": ["python3"], "verilog": ["iverilog", "vvp"], "cpp": ["g++"]}[lang]
+    global _cpp_ok
+    if lang == "py":
+        return True
+    if lang == "cpp":                                   # 題目用 <bits/stdc++.h>（GCC 專有）：macOS 的 g++ 是 clang，沒有這個標頭
+        if _cpp_ok is None:
+            _cpp_ok = False
+            if shutil.which("g++"):
+                with tempfile.TemporaryDirectory() as d:
+                    Path(d, "a.cpp").write_text("#include <bits/stdc++.h>\nint main(){}\n", encoding="utf-8")
+                    _cpp_ok = subprocess.run(["g++", "-std=c++17", "-o", os.path.join(d, "a"), os.path.join(d, "a.cpp")], capture_output=True).returncode == 0
+        return _cpp_ok
+    need = {"tcl": ["tclsh"], "verilog": ["iverilog", "vvp"]}[lang]
     return all(shutil.which(x) for x in need)
 
 

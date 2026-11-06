@@ -7,7 +7,7 @@ import { openPalette } from "./palette.js";
 import { t } from "./i18n.js";
 import { CLOUD, userButton, updatePill, offlinePill } from "./account.js";
 
-const NAV = [["home", "今日", "home"], ["practice", "練習", "code"], ["course", "課程", "map"], ["exam", "考試", "target"], ["study", "學習", "bulb"], ["guide", "指南", "book"], ["stats", "統計", "chart"], ["settings", "設定", "settings"]];
+const NAV = [["home", "今日", "home"], ["practice", "練習", "code"], ["course", "課程", "map"], ["exam", "考試", "target"], ["study", "學習", "bulb"], ["stats", "統計", "chart"], ["settings", "設定", "settings"]];
 let tick = null;
 
 export function buildShell() {
