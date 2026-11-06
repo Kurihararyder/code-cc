@@ -12,7 +12,7 @@ export async function mountHome(view) {
   view.append(h("div", { class: "page" }, h("div", { class: "card pad" }, skeleton(4))));
   let d;
   try { d = await get("/api/dashboard"); } catch (e) { clear(view); view.append(h("div", { class: "page" }, empty("alert", "讀取失敗：" + e.message))); return; }
-  clear(view); view.append(build(d));
+  clear(view); const pg = build(d); view.append(pg); addAssignments(pg);
   if (d.first_run && !pref.get("onboarded", false)) onboarding();
   const t = setInterval(() => { const el = document.getElementById("examBig"); if (!el) return; /* 倒數由頂列負責；這裡只同步顯示 */ const top = document.getElementById("examLeft"); if (top) el.textContent = top.textContent; }, 1000);
   return () => clearInterval(t);
@@ -81,4 +81,22 @@ function onboarding() {
   m = modal({ body, label: "歡迎使用", onClose: () => pref.set("onboarded", true) });
   const f = h("div", { class: "modal-f" }, h("button", { class: "btn ghost", onclick: () => { pref.set("onboarded", true); m.close(); } }, "略過"), back, next);
   m.el.append(f); paint();
+}
+
+async function addAssignments(page) {
+  let st; try { st = await get("/api/cloud/status"); } catch (e) { return; }
+  const list = (st.assignments || []).filter((a) => !a.done || (a.due_at && Date.parse(a.due_at) > Date.now() - 7 * 864e5));
+  if (!list.length) return;
+  const left = (t, ms) => { const d = ms / 864e5; return d < 0 ? "已逾期" : d < 1 ? "今天截止" : `還有 ${Math.ceil(d)} 天`; };
+  const trackName = { py: "Python", cpp: "C++", verilog: "Verilog", tcl: "Tcl" };
+  const card = h("section", { class: "card pad mt", "aria-label": "作業" }, h("h3", { text: "老師指定的作業" }),
+    h("ul", { class: "list" }, list.map((a) => {
+      const due = a.due_at ? Date.parse(a.due_at) : null;
+      const todo = [...(a.units_left || []).map((u) => `單元 ${u}`), ...(a.problems_left || [])];
+      return h("li", null, h("div", { class: "li" }, h("span", { class: "status" + (a.done ? " done" : "") }, a.done ? "✓" : ""),
+        h("span", { class: "grow" }, h("b", { text: a.title }), h("span", { class: "muted small", text: `　${trackName[a.track] || a.track}${a.done ? "・已完成" : "・待完成：" + todo.join("、")}` })),
+        due ? h("span", { class: "pill " + (a.done ? "ok" : due < Date.now() ? "bad" : due - Date.now() < 3 * 864e5 ? "warn" : "info"), text: a.done ? new Date(due).toLocaleDateString() : left(a, due - Date.now()) }) : null));
+    })));
+  const first = page.querySelector(".page-head");
+  first ? first.after(card) : page.prepend(card);
 }

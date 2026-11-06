@@ -4,6 +4,7 @@ import { post, get } from "./api.js";
 import { skeleton, empty } from "./widgets.js";
 import { fmtT } from "./gate.js";
 import { CLOUD, loadCloud } from "./account.js";
+import { classView, assignView } from "./admin_class.js";
 
 const rpc = async (name, args) => (await post("/api/admin/rpc", { name, args: args || {} })).result;
 const fn = (body) => post("/api/admin/fn", body);
@@ -15,7 +16,7 @@ const endOf = (v) => (v ? new Date(v + "T23:59:59").toISOString() : null);
 const lines = (t) => t.split(/[\n,;]+/).map((x) => x.trim()).filter(Boolean);
 const ago = (ts) => { if (!ts) return "—"; const m = Math.round((Date.now() / 1000 - ts) / 60); return m < 1 ? "剛剛" : m < 60 ? m + " 分鐘前" : m < 1440 ? Math.round(m / 60) + " 小時前" : Math.round(m / 1440) + " 天前"; };
 
-function csvDownload(name, rows) {
+export function csvDownload(name, rows) {
   // 試算表公式注入：學員可控的欄位（姓名、備註、回報內容）若以 = + - @ 開頭，Excel 會當成公式執行；前面補一個單引號
   const esc = (v) => { v = v == null ? "" : String(v); if (/^[=+\-@\t\r]/.test(v) && !/^-?\d+(\.\d+)?$/.test(v)) v = "'" + v; return /[",\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
   const blob = new Blob(["﻿" + rows.map((r) => r.map(esc).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" });
@@ -23,7 +24,7 @@ function csvDownload(name, rows) {
 }
 const sw = (checked, onchange, label) => h("label", { class: "switch" }, h("input", { type: "checkbox", checked, onchange: (e) => onchange(e.target.checked) }), h("span", { class: "sw" }), label ? h("span", { text: label }) : null);
 
-const TABS = [["overview", "總覽", "chart"], ["users", "學員帳號", "users"], ["insights", "學習分析", "target"], ["network", "授權與網路", "lock"], ["ai", "AI 與金鑰", "sparkle"], ["release", "版本與公告", "bulb"], ["reports", "題目回報", "alert"], ["audit", "稽核紀錄", "list"]];
+const TABS = [["overview", "總覽", "chart"], ["users", "學員帳號", "users"], ["class", "班級總覽", "users"], ["assign", "作業", "target"], ["insights", "學習分析", "target"], ["network", "授權與網路", "lock"], ["ai", "AI 與金鑰", "sparkle"], ["release", "版本與公告", "bulb"], ["reports", "題目回報", "alert"], ["audit", "稽核紀錄", "list"]];
 
 export async function mountAdmin(view, params) {
   if (!CLOUD.is_admin) { view.append(h("div", { class: "page" }, empty("lock", "只有管理員可以使用"))); return; }
@@ -32,7 +33,7 @@ export async function mountAdmin(view, params) {
   view.append(h("div", { class: "page wide" }, h("div", { class: "page-head" }, h("div", null, h("h1", null, icon("shield"), " 管理後台"), h("p", { text: "靜宜大學 晶片設計學士學位學程 · CPE 練功系統" }))),
     h("div", { class: "tabs admin-tabs", role: "tablist" }, TABS.map(([k, t, ic]) => h("button", { role: "tab", "aria-selected": String(k === tab), onclick: () => { location.hash = "#/admin/" + k; } }, icon(ic), t))), body));
   body.append(h("div", { class: "card pad mt" }, skeleton(6)));
-  try { clear(body); await ({ overview, users, insights, network, ai, release, reports, audit }[tab] || overview)(body); } catch (e) { clear(body); body.append(empty("alert", e.message)); }
+  try { clear(body); await ({ overview, users, class: classView, assign: assignView, insights, network, ai, release, reports, audit }[tab] || overview)(body); } catch (e) { clear(body); body.append(empty("alert", e.message)); }
 }
 
 // ---------------- 總覽 ----------------

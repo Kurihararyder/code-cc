@@ -14,7 +14,7 @@ from .cloud import Cloud, CloudError
 
 ADMIN_RPC = {"admin_list_users", "admin_update_user", "admin_bulk_update", "admin_get_settings", "admin_set_setting", "admin_secret_status",
              "admin_set_secret", "admin_audit", "admin_overview", "admin_ai_usage", "admin_set_archived", "admin_set_notices", "admin_expiring",
-             "admin_insights", "admin_export", "admin_reports", "admin_resolve_report", "admin_anomalies", "admin_auto_archive"}
+             "admin_insights", "admin_export", "admin_reports", "admin_resolve_report", "admin_anomalies", "admin_auto_archive", "admin_assign_save", "admin_assign_delete", "admin_assign_list", "admin_class_overview"}
 ADMIN_FN = {"create_users", "reset_password", "delete_user"}
 OPEN_GET = {"/api/ping", "/api/cloud/status"}
 OPEN_POST = {"/api/cloud/login", "/api/cloud/logout", "/api/cloud/password", "/api/cloud/recheck", "/api/update/check", "/api/update/apply", "/api/restart"}
@@ -43,6 +43,9 @@ class CloudMixin:
         st["version"] = __version__
         ok, why = self.cloud.ai_available()
         st["ai"] = {"available": ok, "why": why}
+        if st.get("assignments"):
+            from . import tracks as tracks_mod
+            st["assignments"] = tracks_mod.assignment_progress(self.ws(), st["assignments"])
         return st
 
     def cloud_login(self, body: Dict[str, Any]) -> Dict[str, Any]:

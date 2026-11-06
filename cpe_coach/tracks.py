@@ -137,3 +137,16 @@ def goto(ws: Workspace, track: str, n: int) -> Dict[str, Any]:
     ts["done"] = sorted(set(ts["done"]) | set(range(1, n)))
     _save(ws, track, ts)
     return {"unit": n, "title": u["title"]}
+
+
+def assignment_progress(ws: Workspace, assignments: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """學生端：依本機進度算每份作業的完成狀況（伺服器端用同步的摘要算同一件事）。"""
+    from .cloud import summarize
+    s = summarize(ws)
+    done_ids, td = set(s["done_ids"]), s["track_done"]
+    out = []
+    for a in assignments:
+        units_left = [u for u in a.get("units", []) if u not in td.get(a.get("track"), [])]
+        probs_left = [q for q in a.get("problems", []) if q not in done_ids]
+        out.append({**a, "units_left": units_left, "problems_left": probs_left, "done": not units_left and not probs_left})
+    return out

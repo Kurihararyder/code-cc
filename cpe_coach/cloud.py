@@ -197,6 +197,10 @@ class Cloud:
             self.sess["notices"] = self.rpc("my_notices", timeout=10) if r.get("ok") else []
         except CloudError:
             pass                                             # 公告取不到不影響授權
+        try:
+            self.sess["assignments"] = self.rpc("my_assignments", timeout=10) if r.get("ok") else []
+        except CloudError:
+            pass                                             # 作業取不到也不影響授權
         self.sess.update(acc=r, app=info, checked_at=self.clock())
         self._save()
         return r
@@ -242,7 +246,7 @@ class Cloud:
                 "message": REASONS.get(acc.get("reason", ""), ""), "offline": bool(acc.get("offline")), "need_update": need_update,
                 "must_change_pw": bool(acc.get("must_change_pw")) and logged, "is_admin": acc.get("role") == "admin" and bool(acc.get("ok")),
                 "user": {k: acc.get(k) for k in ("student_id", "name", "cohort", "role", "valid_from", "valid_until", "ai_allowed", "ip")} if logged else None,
-                "app": info, "notices": self.sess.get("notices") or [], "last_sync": self.last_sync, "last_error": self.last_error, "org": self.cfg.get("org", "")}
+                "app": info, "notices": self.sess.get("notices") or [], "assignments": self.sess.get("assignments") or [], "last_sync": self.last_sync, "last_error": self.last_error, "org": self.cfg.get("org", "")}
 
     COMMON = {"password", "12345678", "123456789", "1234567890", "qwertyui", "qwerty123", "abcd1234", "11111111", "00000000", "iloveyou", "admin123", "password1", "init1234"}
 
@@ -391,6 +395,11 @@ def summarize(ws, now: Optional[float] = None) -> Dict[str, Any]:
         weekly.append(len({time.strftime("%Y-%m-%d", time.localtime(t)) for t in stamps if lo < t <= hi}))
     stuck = sorted(({"id": pid, "attempts": int(p.get("attempts", 0))} for pid, p in probs.items() if int(p.get("attempts", 0)) >= 4 and not p.get("first_pass")),
                    key=lambda x: -x["attempts"])[:5]
-    return {"solved": sum(1 for p in probs.values() if p.get("first_pass")), "attempted": sum(1 for p in probs.values() if p.get("attempts")),
+    done_ids = {pid for pid, p in probs.items() if p.get("first_pass")}
+    done_ids |= {e["problem"] for e in evs if e.get("kind") == "test" and e.get("verdict") == "AC" and e.get("lang") in ("verilog", "tcl") and e.get("problem")}
+    track_done = {"py": sorted((st.get("course") or {}).get("done", []))}
+    for t, v in (st.get("tracks") or {}).items():
+        track_done[t] = sorted(v.get("done", []))
+    return {"done_ids": sorted(done_ids)[:1500], "track_done": track_done, "solved": sum(1 for p in probs.values() if p.get("first_pass")), "attempted": sum(1 for p in probs.values() if p.get("attempts")),
             "unit": (st.get("course") or {}).get("unit", 1), "events": len(evs), "last_active": last or None, "active_days": len(days),
             "exams": len(st.get("exams", [])), "weekly": weekly, "stuck": stuck}
