@@ -5,9 +5,85 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(Path(__file__).parent))
+import re  # noqa: E402
 import course_cpp_data as C  # noqa: E402
+import course_cpp_readings as RD  # noqa: E402
 
 DATA = ROOT / "cpe_coach" / "data"
+
+
+LESSON = re.compile(r"^([0-9]+|[OF])\.(\d+)(?:–(?:([0-9]+|[OF])\.)?(\d+))?$")
+
+
+def lessons_ok(spec):
+    """learncpp 課號清單（例如 '0.4–0.7、0.9、12.3–12.6'）：每個課號都要存在。回傳錯誤訊息或 None。"""
+    for tok in [t.strip() for t in spec.split("、") if t.strip()]:
+        m = LESSON.match(tok)
+        if not m:
+            return f"看不懂的課號 {tok}"
+        ch, a, ch2, b = m.group(1), int(m.group(2)), m.group(3), m.group(4)
+        if ch2 and ch2 != ch:
+            return f"{tok} 跨章"
+        if ch not in RD.LEARNCPP:
+            return f"沒有第 {ch} 章"
+        hi = int(b) if b else a
+        if not (1 <= a <= hi <= RD.LEARNCPP[ch]) and not (ch in ("O", "F") and 1 <= a <= hi <= RD.LEARNCPP[ch]):
+            return f"{tok} 超出第 {ch} 章的課數（{RD.LEARNCPP[ch]}）"
+    return None
+
+
+def readings_errors(n, title, rs):
+    errs = []
+    if not rs:
+        errs.append(f"單元 {n}《{title}》: 沒有閱讀")
+    for src, where, focus, pages in rs:
+        if src not in C.RES and src not in RD.EXTRA_RES:
+            errs.append(f"單元 {n}: 不認得的來源 {src}")
+        if not focus:
+            errs.append(f"單元 {n}: {src} 沒有重點")
+        if src == "learncpp":
+            e = lessons_ok(where)
+            if e:
+                errs.append(f"單元 {n}: learncpp {e}")
+        if src == "cpalgo" and where not in RD.CPALGO:
+            errs.append(f"單元 {n}: CP-Algorithms 沒有這篇文章：{where}")
+        if pages:
+            a, b = pages
+            if not any(lo <= a <= b <= hi for lo, hi in RD.CPH.values()):
+                errs.append(f"單元 {n}: CPH 頁碼 {a}–{b} 不在同一章內")
+    return errs
+
+
+SHORT = {"learncpp": "learncpp 課 ", "cphb": "", "cpalgo": "CP-Algorithms：", "tour": "", "emcpp": "", "cpp_guide": "", "csapp": "", "cmake": "",
+         "gtest": "", "progit": "", "clrs": "", "cppref": "", "godbolt": "", "gbench": "", "ir_book": "", "redblob": "", "ch_paper": "", "deflate": "",
+         "mahoney": "", "sa_paper": "", "ctci": "", "ddia": "", "cpe": "", "cf": ""}
+
+
+def label(src, where):
+    return SHORT.get(src, "") + where
+
+
+def split(lst, k):
+    """把清單依序切成 k 份（盡量平均）。"""
+    q, r = divmod(len(lst), k)
+    out, i = [], 0
+    for j in range(k):
+        n = q + (1 if j < r else 0)
+        out.append(lst[i:i + n])
+        i += n
+    return out
+
+
+def weekly(u):
+    w = u["weeks"]
+    rs, ls, ds = split(u["readings"], w), split(u["learn"], w), split(u["drills"], w)
+    pl = split(u["planned"], w)
+    out = []
+    for i in range(w):
+        last = i == w - 1
+        out.append({"week": u["start"] + i, "readings": [r["label"] for r in rs[i]], "learn": ls[i], "drills": ds[i], "planned": [p["id"] for p in pl[i]],
+                    "build": u["build"] if last else [], "gate": last})
+    return out
 
 
 def validate(units, bank_ids, reserve):
@@ -15,6 +91,7 @@ def validate(units, bank_ids, reserve):
     seen_drill, seen_planned = {}, {}
     for i, u in enumerate(units, 1):
         where = f"單元 {i}《{u['title']}》"
+        errs += readings_errors(i, u["title"], RD.R.get(i, []))
         if not u["learn"] or not u["goal"]:
             errs.append(f"{where}: 缺 goal 或 learn")
         for r in u["resources"]:
@@ -66,11 +143,19 @@ def main():
     for n, u in enumerate(units, 1):
         u["n"], u["start"] = n, start
         start += u["weeks"]
+    resources = dict(C.RES, **RD.EXTRA_RES)
+    for u in units:
+        rs = RD.R.get(u["n"], [])
+        u["readings"] = [{"src": a, "where": b, "focus": c, "pages": list(p) if p else None, "label": label(a, b)}
+                         for a, b, c, p in rs]
+        u.pop("read", None)
     errs, used, planned = validate(units, ids, reserve)
     if errs:
         print("\n".join(errs))
         sys.exit(1)
-    out = {"track": "cpp", "rhythm": [list(r) for r in C.RHYTHM], "resources": {k: list(v) for k, v in C.RES.items()},
+    for u in units:
+        u["weekly"] = weekly(u)
+    out = {"track": "cpp", "rhythm": [list(r) for r in C.RHYTHM], "resources": {k: list(v) for k, v in resources.items()},
            "stages": [{"id": a, "title": b, "goal": c} for a, b, c in C.STAGES], "total_weeks": start - 1, "units": units}
     (DATA / "course_cpp.json").write_text(json.dumps(out, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     (ROOT / "COURSE_CPP.md").write_text(render(out, used, planned), encoding="utf-8")
@@ -118,12 +203,25 @@ def render(c, used, planned):
                 L += ["", "**常見陷阱**："] + [f"- {x}" for x in u["pitfalls"]]
             if u["check"]:
                 L += ["", "**自我檢查**："] + [f"- {x}" for x in u["check"]]
-            if u["read"]:
-                L += ["", "**閱讀**：" + "；".join(u["read"])]
+            L += ["", "**閱讀與重點**（頁碼是書上印的頁碼；課號是 learncpp 的課）"]
+            for r in u["readings"]:
+                L.append(f"- **{r['label']}**")
+                L += [f"  - {f}" for f in r["focus"]]
             L += ["", "**資源**：" + "、".join(f"[{c['resources'][r][0]}]({c['resources'][r][1]})" for r in u["resources"]) if u["resources"] else ""]
+            L += ["", "**每週安排**", "", "| 週 | 閱讀 | 學習重點 | 題庫題目 | 作業／檢核 |", "|---|---|---|---|---|"]
+            for wk in u["weekly"]:
+                todo = []
+                if wk["planned"]:
+                    todo.append("待新增 " + "、".join(wk["planned"]))
+                todo += wk["build"]
+                if wk["gate"]:
+                    todo.append("**單元檢核**")
+                L.append("| {w} | {r} | {l} | {d} | {t} |".format(
+                    w=wk["week"], r="<br>".join(wk["readings"]) or "—", l="<br>".join(wk["learn"]) or "—",
+                    d="、".join(f"`{x}`" for x in wk["drills"]) or "—", t="<br>".join(todo) or "—"))
             g = u["gate"]
             if g["type"] == "set":
-                L += ["", f"**檢核**：{g['minutes']} 分鐘內用 C++ 通過 " + "、".join(f"`{p}`" for p in g["problems"]) + f" 其中 {g['need']} 題"]
+                L += ["", f"**檢核**：{g['minutes']} 分鐘內用 C++ 通過 " + "、".join(f"`{p}`" for p in g["problems"]) + (" 其中 " + str(g['need']) + " 題" if g['need'] < len(g['problems']) else "（全部）")]
             else:
                 L += ["", f"**作品驗收**（{g['days']} 天內，逐條對照）："] + [f"- [ ] {x}" for x in g["criteria"]]
             L.append("")

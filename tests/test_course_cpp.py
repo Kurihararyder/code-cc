@@ -55,10 +55,25 @@ class CppCourseTests(unittest.TestCase):
         self.assertEqual(len(ids), len(set(ids)))
         self.assertTrue(all(i not in self.ids for i in ids))                 # 待新增的題號不能和現有題庫衝突
 
+    def test_every_unit_has_readings_with_key_points_and_a_weekly_plan(self):
+        for u in self.c["units"]:
+            self.assertTrue(u["readings"], u["title"])
+            for r in u["readings"]:
+                self.assertTrue(r["focus"], (u["title"], r["where"]))
+                self.assertIn(r["src"], self.c["resources"])
+                if r["pages"]:
+                    a, b = r["pages"]
+                    self.assertLessEqual(a, b)
+            self.assertEqual(len(u["weekly"]), u["weeks"])
+            self.assertEqual([w["week"] for w in u["weekly"]], list(range(u["start"], u["start"] + u["weeks"])))
+            self.assertTrue(u["weekly"][-1]["gate"] and not any(w["gate"] for w in u["weekly"][:-1]))
+            self.assertEqual(sorted(d for w in u["weekly"] for d in w["drills"]), sorted(u["drills"]))        # 每題都被排進某一週
+
     def test_resources_resolve(self):
         for u in self.c["units"]:
             for r in u["resources"]:
                 self.assertIn(r, self.c["resources"], r)
+            self.assertNotIn("read", u)
 
     def test_python_track_is_unchanged_by_default(self):
         self.assertEqual(len(course.load()["units"]), 52)
